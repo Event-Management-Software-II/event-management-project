@@ -14,9 +14,16 @@ export interface CategoryFormErrors {
   name?: string
 }
 
+function validateForm(name: string): CategoryFormErrors {
+  const errors: CategoryFormErrors = {}
+  if (!name.trim()) errors.name = 'El nombre es obligatorio.'
+  else if (name.trim().length < 2) errors.name = 'Mínimo 2 caracteres.'
+  return errors
+}
+
 const categories = ref<Category[]>([])
-const loading    = ref(false)
-const error      = ref<string | null>(null)
+const loading = ref(false)
+const error = ref<string | null>(null)
 
 export function useCategories() {
   const activeCategories = computed(() =>
@@ -50,13 +57,6 @@ export function useCategories() {
       categories.value = await res.json()
     } catch (e: any) { error.value = e.message }
     finally { loading.value = false }
-  }
-
-  function validateForm(name: string): CategoryFormErrors {
-    const errors: CategoryFormErrors = {}
-    if (!name.trim())           errors.name = 'El nombre es obligatorio.'
-    else if (name.trim().length < 2) errors.name = 'Mínimo 2 caracteres.'
-    return errors
   }
 
   async function createCategory(name: string): Promise<{ success: boolean; errors?: CategoryFormErrors; message?: string }> {

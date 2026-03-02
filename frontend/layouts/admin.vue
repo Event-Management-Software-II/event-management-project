@@ -82,7 +82,7 @@ watch(() => route.path, () => { mobileOpen.value = false })
   --border-strong: #cbd2dc;
   --text-primary: #1a2332;
   --text-secondary: #4a5568;
-  --text-muted: #8a9bb0;
+  --text-muted: #5e718d;
   --danger: #c0392b;
   --danger-border: #f5c6c2;
   --danger-pale: #fdf3f2;
@@ -158,18 +158,19 @@ a {
   border-radius: var(--radius-md);
   font-size: .84rem;
   font-weight: 600;
-  color: #94a3b8;
+  color: #5e718d;
   transition: background var(--transition), color var(--transition);
 }
 
 .nav-item:hover {
-  background: rgba(255, 255, 255, .07);
-  color: #e2e8f0;
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
 }
 
 .nav-item.active {
   background: var(--primary);
-  color: #fff;
+  color: #ffffff;
 }
 
 .sidebar-footer {
@@ -187,7 +188,7 @@ a {
 }
 
 .back-link:hover {
-  color: #94a3b8;
+  color: #5e718d;
 }
 
 /* ── Main ── */

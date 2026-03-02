@@ -91,7 +91,7 @@ function barWidth(count: number): number {
 .td-count { min-width:160px; }
 .rank-badge { display:inline-flex; align-items:center; justify-content:center; width:24px; height:24px; border-radius:50%; font-size:.75rem; font-weight:800; background:var(--bg-elevated); color:var(--text-muted); }
 .rank-badge.gold   { background:#fef9c3; color:#b45309; }
-.rank-badge.silver { background:#f1f5f9; color:#64748b; }
+.rank-badge.silver { background:#f1f5f9; color:#5e718d; }
 .rank-badge.bronze { background:#fff7ed; color:#c2410c; }
 .bar-wrap { display:flex; align-items:center; gap:10px; }
 .bar { height:8px; background:var(--primary-light); border-radius:4px; transition:width .4s ease; min-width:4px; }

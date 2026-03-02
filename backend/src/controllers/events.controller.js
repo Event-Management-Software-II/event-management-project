@@ -36,6 +36,7 @@ const getEventById = async (req, res) => {
     if (result.rowCount === 0) return res.status(404).json({ error: 'Event not found' });
     res.json(result.rows[0]);
   } catch (err) {
+    console.error(err);
     res.status(500).json({ error: 'Failed to fetch event' });
   }
 };
@@ -46,6 +47,7 @@ const getEventsAdmin = async (req, res) => {
     const result = await pool.query(`SELECT * FROM v_events`);
     res.json(result.rows);
   } catch (err) {
+    console.error(err);
     res.status(500).json({ error: 'Failed to fetch events' });
   }
 };
@@ -58,7 +60,7 @@ const createEvent = async (req, res) => {
     return res.status(400).json({ error: 'Invalid name: only letters, numbers and spaces allowed' });
   if (!Id_category)
     return res.status(400).json({ error: 'Category is required' });
-  if (value === undefined || isNaN(Number(value)) || Number(value) < 0)
+  if (value === undefined || Number.isNaN(Number(value)) || Number(value) < 0)
     return res.status(400).json({ error: 'Value must be a number >= 0' });
   if (!description || description.trim().length < 20)
     return res.status(400).json({ error: 'Description must be at least 20 characters' });
@@ -83,7 +85,8 @@ const createEvent = async (req, res) => {
     await client.query('COMMIT');
     res.status(201).json(event);
   } catch (err) {
-    await client.query('ROLLBACK');
+    if (client) await client.query('ROLLBACK');
+    console.error('Error in createEvent:', err);
     if (err.code === '23505') return res.status(409).json({ error: 'An event with that name already exists' });
     if (err.code === '23503') return res.status(400).json({ error: 'The specified category does not exist' });
     res.status(500).json({ error: 'Failed to create event' });
@@ -99,7 +102,7 @@ const updateEvent = async (req, res) => {
 
   if (NameEvent && !/^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s]+$/.test(NameEvent))
     return res.status(400).json({ error: 'Invalid name' });
-  if (value !== undefined && (isNaN(Number(value)) || Number(value) < 0))
+  if (value !== undefined && (Number.isNaN(Number(value)) || Number(value) < 0))
     return res.status(400).json({ error: 'Value must be >= 0' });
   if (description && description.trim().length < 20)
     return res.status(400).json({ error: 'Description must be at least 20 characters' });
@@ -166,6 +169,7 @@ const deleteEvent = async (req, res) => {
       return res.status(404).json({ error: 'Event not found or already deleted' });
     res.json({ message: 'Event deleted successfully' });
   } catch (err) {
+    console.error(err);
     res.status(500).json({ error: 'Failed to delete event' });
   }
 };
@@ -185,6 +189,7 @@ const restoreEvent = async (req, res) => {
       return res.status(404).json({ error: 'Event not found or already active' });
     res.json({ message: 'Event restored successfully' });
   } catch (err) {
+    console.error('Error in restoreEvent:', err);
     res.status(500).json({ error: 'Failed to restore event' });
   }
 };
@@ -205,8 +210,9 @@ const registerInterest = async (req, res) => {
       [id, userIdentifier]
     );
     const count = await pool.query(`SELECT COUNT(*) FROM "Interest" WHERE "id_event" = $1`, [id]);
-    res.status(201).json({ message: 'Interest registered!', total_interests: parseInt(count.rows[0].count) });
+    res.status(201).json({ message: 'Interest registered!', total_interests: Number.parseInt(count.rows[0].count, 10) });
   } catch (err) {
+    console.error('Error in registerInterest:', err);
     if (err.code === '23505') return res.status(409).json({ error: 'You already registered interest in this event' });
     res.status(500).json({ error: 'Failed to register interest' });
   }
@@ -223,8 +229,9 @@ const removeInterest = async (req, res) => {
     );
     if (result.rowCount === 0) return res.status(404).json({ error: 'No interest found to remove' });
     const count = await pool.query(`SELECT COUNT(*) FROM "Interest" WHERE "id_event" = $1`, [id]);
-    res.json({ message: 'Interest removed', total_interests: parseInt(count.rows[0].count) });
+    res.json({ message: 'Interest removed', total_interests: Number.parseInt(count.rows[0].count, 10) });
   } catch (err) {
+    console.error('Error in removeInterest:', err);
     res.status(500).json({ error: 'Failed to remove interest' });
   }
 };
@@ -238,8 +245,9 @@ const getInterestStatus = async (req, res) => {
       pool.query(`SELECT "id_interest" FROM "Interest" WHERE "id_event" = $1 AND "user_identifier" = $2`, [id, userIdentifier]),
       pool.query(`SELECT COUNT(*) FROM "Interest" WHERE "id_event" = $1`, [id]),
     ]);
-    res.json({ interested: status.rowCount > 0, total_interests: parseInt(count.rows[0].count) });
+    res.json({ interested: status.rowCount > 0, total_interests: Number.parseInt(count.rows[0].count, 10) });
   } catch (err) {
+    console.error('Error in getInterestStatus:', err);
     res.status(500).json({ error: 'Failed to fetch interest status' });
   }
 };
