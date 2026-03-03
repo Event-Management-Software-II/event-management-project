@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
 
+const authRoutes       = require('./routes/auth.routes');
 const categoriesRoutes = require('./routes/categories.routes');
 const eventsRoutes     = require('./routes/events.routes');
 const reportsRoutes    = require('./routes/reports.routes');
@@ -17,9 +18,10 @@ app.use((req, _res, next) => {
   next();
 });
 
-app.use('/api/categories',     categoriesRoutes);
-app.use('/api/events',         eventsRoutes);
-app.use('/api/admin/reports',  reportsRoutes);
+app.use('/api/auth',          authRoutes);
+app.use('/api/categories',    categoriesRoutes);
+app.use('/api/events',        eventsRoutes);
+app.use('/api/admin/reports', reportsRoutes);
 
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
