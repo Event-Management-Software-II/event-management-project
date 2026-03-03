@@ -10,7 +10,7 @@
   --color-surface:     #ffffff;
   --color-primary:     #2563eb;
   --color-primary-600: #1e40af;
-  --color-muted:       #6b7280;
+  --color-muted:       #4b5563;
   --color-text:        #0f172a;
   --radius-sm:         6px;
   --radius-md:         12px;
@@ -273,6 +273,7 @@ body {
 .card-body .date {
   font-size: 11px;
   color: var(--color-muted);
+  font-weight: 600;
   margin: 0;
 }
 
@@ -387,17 +388,17 @@ body {
 .btn-like:hover {
   background: #fee2e2;
   border-color: #fca5a5;
-  color: #ef4444;
+  color: #b91c1c;
 }
 
 .btn-like.active {
   background: #fee2e2;
   border-color: #fca5a5;
-  color: #ef4444;
+  color: #b91c1c;
 }
 
 .btn-like.active .like-count {
-  color: #ef4444;
+  color: #b91c1c;
 }
 
 .like-count {

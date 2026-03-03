@@ -8,6 +8,7 @@ const getCategories = async (req, res) => {
     const result = await pool.query(`SELECT * FROM v_categories ORDER BY ${orderBy}`);
     res.json(result.rows);
   } catch (err) {
+    console.error(err);
     res.status(500).json({ error: 'Failed to fetch categories' });
   }
 };
@@ -18,6 +19,7 @@ const getCategoriesAdmin = async (req, res) => {
     const result = await pool.query(`SELECT * FROM v_categories ORDER BY "nameCategory" ASC`);
     res.json(result.rows);
   } catch (err) {
+    console.error(err);
     res.status(500).json({ error: 'Failed to fetch categories' });
   }
 };
@@ -35,6 +37,7 @@ const createCategory = async (req, res) => {
     res.status(201).json(result.rows[0]);
   } catch (err) {
     if (err.code === '23505') return res.status(409).json({ error: 'A category with that name already exists' });
+    console.error(err);
     res.status(500).json({ error: 'Failed to create category' });
   }
 };
@@ -58,6 +61,7 @@ const updateCategory = async (req, res) => {
     res.json(result.rows[0]);
   } catch (err) {
     if (err.code === '23505') return res.status(409).json({ error: 'A category with that name already exists' });
+    console.error(err);
     res.status(500).json({ error: 'Failed to update category' });
   }
 };
@@ -70,10 +74,10 @@ const deleteCategory = async (req, res) => {
       `SELECT COUNT(*) FROM v_events WHERE "id_category" = $1`,
       [id]
     );
-    if (parseInt(activeEvents.rows[0].count) > 0)
+    if (Number.parseInt(activeEvents.rows[0].count, 10) > 0)
       return res.status(409).json({
         error: 'This category has active events linked to it. Reassign them before deleting.',
-        active_events: parseInt(activeEvents.rows[0].count),
+        active_events: Number.parseInt(activeEvents.rows[0].count, 10),
       });
 
     const result = await pool.query(
@@ -87,6 +91,7 @@ const deleteCategory = async (req, res) => {
       return res.status(404).json({ error: 'Category not found' });
     res.json({ message: 'Category deleted successfully' });
   } catch (err) {
+    console.error(err);
     res.status(500).json({ error: 'Failed to delete category' });
   }
 };
@@ -106,6 +111,7 @@ const restoreCategory = async (req, res) => {
       return res.status(404).json({ error: 'Category not found or already active' });
     res.json({ message: 'Category restored successfully' });
   } catch (err) {
+    console.error(err);
     res.status(500).json({ error: 'Failed to restore category' });
   }
 };

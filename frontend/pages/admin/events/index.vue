@@ -206,13 +206,27 @@ function openModal(m: 'create' | 'edit', ev?: Event) {
 function closeModal() { modalOpen.value = false; formErrors.value = {} }
 
 async function save() {
-  saving.value = true
-  const result = mode.value === 'create'
-    ? await createEvent(form.value)
-    : await updateEvent(editing.value!.id_event, form.value)
-  if (result.success) closeModal()
-  else formErrors.value = { ...(result.errors ?? {}), _global: result.message ?? '' }
-  saving.value = false
+  saving.value = true;
+  
+  try {
+    const result = mode.value === 'create'
+      ? await createEvent(form.value)
+      : await updateEvent(editing.value!.id_event, form.value);
+
+    if (result.success) {
+      closeModal();
+    } else {
+      formErrors.value = { 
+        ...(result.errors || {}), 
+        _global: result.message || '' 
+      };
+    }
+  } catch (error) {
+    console.error('Error al guardar el evento:', error);
+    formErrors.value = { _global: 'Error de conexión con el servidor.' };
+  } finally {
+    saving.value = false;
+  }
 }
 
 // ── Delete ──
