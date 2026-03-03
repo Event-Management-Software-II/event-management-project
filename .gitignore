@@ -1,3 +1,35 @@
+# Dependencies
 node_modules
+package-lock.json
+
+# Frontend builds
 frontend/.nuxt
 .nuxt
+.output
+.env
+
+# Environment variables (sensitive)
+.env
+.env.local
+.env.*.local
+
+# IDE files
+.vscode
+.idea
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Temporary files
+tmpclaude*
+*.tmp
+*.log
+
+# Backend
+backend/dist
+backend/build
+
+# OS files
+Thumbs.db
+.DS_Store

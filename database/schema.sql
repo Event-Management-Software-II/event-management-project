@@ -3,6 +3,25 @@
 -- Soft delete con deleted_at TIMESTAMP (NULL = activo)
 -- ============================================================
 
+-- Tabla de roles
+CREATE TABLE "Role" (
+    "id_role"   SERIAL PRIMARY KEY,
+    "nameRole"  VARCHAR(100) NOT NULL UNIQUE,
+    "created_at" TIMESTAMP DEFAULT NOW()
+);
+
+-- Tabla de usuarios
+CREATE TABLE "User" (
+    "id_user"    SERIAL PRIMARY KEY,
+    "email"      VARCHAR(255) NOT NULL UNIQUE,
+    "password"   VARCHAR(255) NOT NULL,
+    "fullName"   VARCHAR(255) NOT NULL,
+    "id_role"    INTEGER NOT NULL REFERENCES "Role"("id_role"),
+    "created_at" TIMESTAMP DEFAULT NOW(),
+    "updated_at" TIMESTAMP DEFAULT NOW(),
+    "deleted_at" TIMESTAMP DEFAULT NULL   -- NULL = activo
+);
+
 -- Tabla de categorías
 CREATE TABLE "Category" (
     "id_category"  SERIAL PRIMARY KEY,
@@ -80,6 +99,10 @@ CREATE TRIGGER trg_category_updated_at
     BEFORE UPDATE ON "Category"
     FOR EACH ROW EXECUTE FUNCTION update_timestamp();
 
+CREATE TRIGGER trg_user_updated_at
+    BEFORE UPDATE ON "User"
+    FOR EACH ROW EXECUTE FUNCTION update_timestamp();
+
 -- Guardar versión anterior antes de cada UPDATE (RF-001.3)
 CREATE OR REPLACE FUNCTION save_event_history()
 RETURNS TRIGGER AS $$
@@ -149,3 +172,9 @@ LEFT JOIN "Interest" i ON e."id_event" = i."id_event"
 WHERE e."deleted_at" IS NULL
 GROUP BY e."id_event", e."NameEvent"
 ORDER BY "Number of Interests" DESC;
+
+-- ============================================================
+-- DATOS INICIALES - Roles
+-- ============================================================
+INSERT INTO "Role" ("nameRole") VALUES ('admin') ON CONFLICT DO NOTHING;
+INSERT INTO "Role" ("nameRole") VALUES ('user') ON CONFLICT DO NOTHING;
