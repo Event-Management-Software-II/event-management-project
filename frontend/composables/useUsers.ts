@@ -11,12 +11,12 @@ export interface User {
   created_at: string
 }
 
-const users   = useState<User[]>('users', () => [])
-const loading = useState<boolean>('users_loading', () => false)
-const error   = useState<string | null>('users_error', () => null)
-
 export function useUsers() {
   const { authHeaders } = useAuth()
+
+  const users   = useState<User[]>('users', () => [])
+  const loading = useState<boolean>('users_loading', () => false)
+  const error   = useState<string | null>('users_error', () => null)
 
   async function fetchUsers() {
     loading.value = true
