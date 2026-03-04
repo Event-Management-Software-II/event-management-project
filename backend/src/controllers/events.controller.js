@@ -41,10 +41,22 @@ const getEventById = async (req, res) => {
   }
 };
 
-// GET /api/events/admin/all — all events for admin
+// GET /api/events/admin/all — all events for admin (includes soft-deleted)
 const getEventsAdmin = async (req, res) => {
   try {
-    const result = await pool.query(`SELECT * FROM v_events`);
+    const result = await pool.query(`
+      SELECT
+        e.*,
+        c."nameCategory",
+        (
+          SELECT "imageUrl" FROM "EventImage"
+          WHERE "id_event" = e."id_event" AND "type" = 'poster'
+          LIMIT 1
+        ) AS "imageUrl"
+      FROM "Event" e
+      JOIN "Category" c ON e."Id_category" = c."id_category"
+      ORDER BY e."id_event" DESC
+    `);
     res.json(result.rows);
   } catch (err) {
     console.error(err);
@@ -197,7 +209,7 @@ const restoreEvent = async (req, res) => {
 // POST /api/events/:id/interest — register interest (RF-002.1)
 const registerInterest = async (req, res) => {
   const { id } = req.params;
-  const userIdentifier = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'anonymous';
+  const id_user = req.userId;
   try {
     const event = await pool.query(
       `SELECT "id_event" FROM v_events WHERE "id_event" = $1`,
@@ -207,7 +219,7 @@ const registerInterest = async (req, res) => {
 
     await pool.query(
       `INSERT INTO "Interest" ("id_event", "user_identifier") VALUES ($1, $2)`,
-      [id, userIdentifier]
+      [id, String(id_user)]
     );
     const count = await pool.query(`SELECT COUNT(*) FROM "Interest" WHERE "id_event" = $1`, [id]);
     res.status(201).json({ message: 'Interest registered!', total_interests: Number.parseInt(count.rows[0].count, 10) });
@@ -221,11 +233,11 @@ const registerInterest = async (req, res) => {
 // DELETE /api/events/:id/interest — remove interest
 const removeInterest = async (req, res) => {
   const { id } = req.params;
-  const userIdentifier = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'anonymous';
+  const id_user = req.userId;
   try {
     const result = await pool.query(
       `DELETE FROM "Interest" WHERE "id_event" = $1 AND "user_identifier" = $2`,
-      [id, userIdentifier]
+      [id, String(id_user)]
     );
     if (result.rowCount === 0) return res.status(404).json({ error: 'No interest found to remove' });
     const count = await pool.query(`SELECT COUNT(*) FROM "Interest" WHERE "id_event" = $1`, [id]);
@@ -239,10 +251,10 @@ const removeInterest = async (req, res) => {
 // GET /api/events/:id/interest/status
 const getInterestStatus = async (req, res) => {
   const { id } = req.params;
-  const userIdentifier = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'anonymous';
+  const id_user = req.userId;
   try {
     const [status, count] = await Promise.all([
-      pool.query(`SELECT "id_interest" FROM "Interest" WHERE "id_event" = $1 AND "user_identifier" = $2`, [id, userIdentifier]),
+      pool.query(`SELECT "id_interest" FROM "Interest" WHERE "id_event" = $1 AND "user_identifier" = $2`, [id, String(id_user)]),
       pool.query(`SELECT COUNT(*) FROM "Interest" WHERE "id_event" = $1`, [id]),
     ]);
     res.json({ interested: status.rowCount > 0, total_interests: Number.parseInt(count.rows[0].count, 10) });
