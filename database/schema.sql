@@ -19,7 +19,7 @@ CREATE TABLE "User" (
     "id_role"    INTEGER NOT NULL REFERENCES "Role"("id_role"),
     "created_at" TIMESTAMP DEFAULT NOW(),
     "updated_at" TIMESTAMP DEFAULT NOW(),
-    "deleted_at" TIMESTAMP DEFAULT NULL   -- NULL = activo
+    "deleted_at" TIMESTAMP DEFAULT NULL
 );
 
 -- Tabla de categorías
@@ -28,7 +28,7 @@ CREATE TABLE "Category" (
     "nameCategory" VARCHAR(255) NOT NULL UNIQUE,
     "created_at"   TIMESTAMP DEFAULT NOW(),
     "updated_at"   TIMESTAMP DEFAULT NOW(),
-    "deleted_at"   TIMESTAMP DEFAULT NULL   -- NULL = activa
+    "deleted_at"   TIMESTAMP DEFAULT NULL
 );
 
 -- Tabla de eventos
@@ -44,7 +44,7 @@ CREATE TABLE "Event" (
     "date_time"   TIMESTAMP,
     "created_at"  TIMESTAMP DEFAULT NOW(),
     "updated_at"  TIMESTAMP DEFAULT NOW(),
-    "deleted_at"  TIMESTAMP DEFAULT NULL   -- NULL = visible
+    "deleted_at"  TIMESTAMP DEFAULT NULL
 );
 
 -- Tabla de imágenes de eventos
@@ -77,6 +77,18 @@ CREATE TABLE "Interest" (
     "created_at"       TIMESTAMP DEFAULT NOW(),
     UNIQUE ("id_event", "user_identifier")
 );
+
+-- Tabla de favoritos Usuario ↔ Evento
+CREATE TABLE "UserEvent" (
+    "id_favorite"  SERIAL PRIMARY KEY,
+    "id_user"      INTEGER NOT NULL REFERENCES "User"("id_user") ON DELETE CASCADE,
+    "id_event"     INTEGER NOT NULL REFERENCES "Event"("id_event") ON DELETE CASCADE,
+    "created_at"   TIMESTAMP DEFAULT NOW(),
+    UNIQUE ("id_user", "id_event")
+);
+
+CREATE INDEX idx_userevent_user  ON "UserEvent"("id_user");
+CREATE INDEX idx_userevent_event ON "UserEvent"("id_event");
 
 -- ============================================================
 -- FUNCIONES Y TRIGGERS
@@ -123,11 +135,10 @@ CREATE TRIGGER trg_event_history
     FOR EACH ROW EXECUTE FUNCTION save_event_history();
 
 -- ============================================================
--- GESTOR DE EVENTOS - Views
--- All views filter deleted records (deleted_at IS NULL)
+-- VIEWS
 -- ============================================================
 
--- Active events with category name and poster image
+-- Eventos activos con categoría e imagen poster
 CREATE OR REPLACE VIEW v_events AS
 SELECT
     e."id_event",
@@ -149,9 +160,7 @@ FROM "Event" e
 JOIN "Category" c ON e."Id_category" = c."id_category"
 WHERE e."deleted_at" IS NULL;
 
--- -------------------------------------------------------
-
--- Active categories only
+-- Categorías activas
 CREATE OR REPLACE VIEW v_categories AS
 SELECT
     "id_category",
@@ -160,9 +169,7 @@ SELECT
 FROM "Category"
 WHERE "deleted_at" IS NULL;
 
--- -------------------------------------------------------
-
--- Interest ranking report (RF-002.2)
+-- Ranking de intereses (RF-002.2)
 CREATE OR REPLACE VIEW v_interest_report AS
 SELECT
     e."NameEvent"               AS "Event Name",
@@ -173,8 +180,36 @@ WHERE e."deleted_at" IS NULL
 GROUP BY e."id_event", e."NameEvent"
 ORDER BY "Number of Interests" DESC;
 
+-- Favoritos por usuario (solo eventos y usuarios activos)
+CREATE OR REPLACE VIEW v_user_favorites AS
+SELECT
+    u."id_user",
+    u."email",
+    u."fullName",
+    e."id_event",
+    e."NameEvent",
+    e."value",
+    e."description",
+    e."location",
+    e."date_time",
+    c."nameCategory",
+    (
+        SELECT "imageUrl"
+        FROM "EventImage"
+        WHERE "id_event" = e."id_event" AND "type" = 'poster'
+        LIMIT 1
+    ) AS "imageUrl",
+    ue."created_at" AS "favorited_at"
+FROM "UserEvent" ue
+JOIN "User"     u ON ue."id_user"  = u."id_user"
+JOIN "Event"    e ON ue."id_event" = e."id_event"
+JOIN "Category" c ON e."Id_category" = c."id_category"
+WHERE e."deleted_at" IS NULL
+  AND u."deleted_at" IS NULL
+ORDER BY ue."created_at" DESC;
+
 -- ============================================================
--- DATOS INICIALES - Roles
+-- DATOS INICIALES
 -- ============================================================
 INSERT INTO "Role" ("nameRole") VALUES ('admin') ON CONFLICT DO NOTHING;
-INSERT INTO "Role" ("nameRole") VALUES ('user') ON CONFLICT DO NOTHING;
+INSERT INTO "Role" ("nameRole") VALUES ('user')  ON CONFLICT DO NOTHING;
