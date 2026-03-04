@@ -13,19 +13,6 @@
     </div>
 
     <div class="filter-section">
-      <p class="filter-label">Modalidad</p>
-      <div class="filter-item">
-        <label>
-          <input type="checkbox" v-model="filters.presencial" @change="emit('update:filters', filters)" />
-          Presencial
-        </label>
-      </div>
-      <div class="filter-item">
-        <label>
-          <input type="checkbox" v-model="filters.online" @change="emit('update:filters', filters)" />
-          En línea
-        </label>
-      </div>
     </div>
   </div>
 </template>
@@ -35,7 +22,5 @@ const emit = defineEmits(['update:filters'])
 
 const filters = reactive({
   free: false,
-  presencial: false,
-  online: false
 })
 </script>
