@@ -136,7 +136,7 @@ import type { Category } from '~/composables/useCategories'
 import AppButtonAdmin from '~/components/admin/AppButtonAdmin.vue'
 import AppInputAdmin  from '~/components/admin/AppInputAdmin.vue'
 
-definePageMeta({ layout: 'admin' })
+definePageMeta({ layout: 'admin'})
 
 const { sortedActiveCategories, loading, fetchCategoriesAdmin, createCategory, updateCategory, deactivateCategory } = useCategories()
 const { events, fetchEventsAdmin } = useEvents()

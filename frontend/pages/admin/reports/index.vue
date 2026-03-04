@@ -60,13 +60,18 @@ interface ReportRow {
   'Number of Interests': number
 }
 
+const { restoreSession, authHeaders } = useAuth()
+
 const report  = ref<ReportRow[]>([])
 const loading = ref(false)
 
 onMounted(async () => {
+  restoreSession()
   loading.value = true
   try {
-    const res = await fetch(`${API}/admin/reports/interests`)
+    const res = await fetch(`${API}/admin/reports/interests`, {
+      headers: authHeaders(),
+    })
     if (res.ok) report.value = await res.json()
   } finally {
     loading.value = false
