@@ -30,6 +30,18 @@
           </svg>
           Reportes
         </NuxtLink>
+
+        <NuxtLink to="/admin/users" class="nav-item" active-class="active" @click="closeMobile">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+            <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="currentColor" stroke-width="1.8"
+              stroke-linecap="round" />
+            <circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="1.8" />
+            <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="currentColor" stroke-width="1.8"
+              stroke-linecap="round" />
+          </svg>
+          Usuarios
+        </NuxtLink>
+
       </nav>
 
       <div class="sidebar-footer">
@@ -52,20 +64,93 @@
             <path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
           </svg>
         </button>
+        <div class="user-menu" v-click-outside="closeDropdown">
+          <button class="user-btn" @click="dropdownOpen = !dropdownOpen">
+            <div class="user-avatar">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+                <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" stroke="currentColor" stroke-width="1.8"
+                  stroke-linecap="round" />
+                <circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="1.8" />
+              </svg>
+            </div>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" :class="{ 'chevron-open': dropdownOpen }">
+              <path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+            </svg>
+          </button>
+          <Transition name="dropdown">
+            <div v-if="dropdownOpen" class="dropdown">
+              <div class="dropdown-header">
+                <div class="dropdown-name">{{ user?.name }}</div>
+                <div class="dropdown-email">{{ user?.email }}</div>
+              </div>
+              <div class="dropdown-divider"></div>
+              <NuxtLink to="/admin/profile" class="dropdown-item" @click="closeDropdown">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                  <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" stroke="currentColor" stroke-width="1.8"
+                    stroke-linecap="round" />
+                  <circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="1.8" />
+                </svg>
+                Ver perfil
+              </NuxtLink>
+              <button class="dropdown-item dropdown-item--danger" @click="handleLogout">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                  <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" stroke="currentColor"
+                    stroke-width="1.8" stroke-linecap="round" />
+                </svg>
+                Cerrar sesión
+              </button>
+            </div>
+          </Transition>
+        </div>
       </header>
-      <slot />
+      <div class="admin-content">
+        <slot />
+      </div>
     </main>
 
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
+
 const route = useRoute()
 const mobileOpen = ref(false)
+const dropdownOpen = ref(false)
+
+const { user, logout } = useAuth()
+
+const initials = computed(() => {
+  if (!user.value?.name) return '?'
+  return user.value.name.split(' ').map((n: string) => n[0]).slice(0, 2).join('').toUpperCase()
+})
+
 function closeMobile() { mobileOpen.value = false }
-watch(() => route.path, () => { mobileOpen.value = false })
+function closeDropdown() { dropdownOpen.value = false }
+
+watch(() => route.path, () => {
+  mobileOpen.value = false
+  dropdownOpen.value = false
+})
+
+async function handleLogout() {
+  closeDropdown()
+  await logout()
+  await navigateTo('/login')
+}
+
+const vClickOutside = {
+  mounted(el: HTMLElement, binding: any) {
+    el._clickOutside = (e: MouseEvent) => {
+      if (!el.contains(e.target as Node)) binding.value()
+    }
+    document.addEventListener('click', el._clickOutside)
+  },
+  unmounted(el: HTMLElement) {
+    document.removeEventListener('click', el._clickOutside)
+  },
+}
 </script>
 
 <style>
@@ -194,9 +279,14 @@ a {
 /* ── Main ── */
 .admin-main {
   flex: 1;
-  padding: 32px;
   min-width: 0;
   overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-content {
+  padding: 20px 16px;
 }
 
 /* ── Shared section styles usadas por las páginas (no scoped) ── */
@@ -343,15 +433,16 @@ a {
 }
 
 .topbar {
-  display: none;
+  display: flex;
   height: 56px;
-  background: var(--bg-surface);
-  border-bottom: 1px solid var(--border);
+  background: transparent;
+  border-bottom: none;
   align-items: center;
-  padding: 0 20px;
+  padding: 0 32px;
   position: sticky;
   top: 0;
   z-index: 30;
+  justify-content: space-between;
 }
 
 .hamburger {
@@ -359,8 +450,125 @@ a {
   border: none;
   cursor: pointer;
   color: var(--text-secondary);
-  display: grid;
+  display: none;
   place-items: center;
+  padding: 4px;
+  border-radius: 6px;
+}
+
+.user-menu {
+  position: relative;
+  margin-left: auto;
+}
+
+.user-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 5px 10px 5px 5px;
+  cursor: pointer;
+  transition: border-color var(--transition), background var(--transition);
+}
+
+.user-btn:hover {
+  background: var(--bg-elevated);
+  border-color: var(--border-strong);
+}
+
+.user-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--primary-pale);
+  color: var(--primary);
+  font-size: .68rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chevron-open {
+  transform: rotate(180deg);
+  transition: transform var(--transition);
+}
+
+.dropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .10);
+  min-width: 200px;
+  z-index: 100;
+  overflow: hidden;
+}
+
+.dropdown-header {
+  padding: 12px 14px;
+}
+
+.dropdown-name {
+  font-size: .84rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.dropdown-email {
+  font-size: .74rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.dropdown-divider {
+  height: 1px;
+  background: var(--border);
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 10px 14px;
+  font-size: .82rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition);
+  text-align: left;
+}
+
+.dropdown-item:hover {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+}
+
+.dropdown-item--danger {
+  color: var(--danger);
+}
+
+.dropdown-item--danger:hover {
+  background: var(--danger-pale);
+  color: var(--danger);
+}
+
+.dropdown-enter-active,
+.dropdown-leave-active {
+  transition: opacity .15s ease, transform .15s ease;
+}
+
+.dropdown-enter-from,
+.dropdown-leave-to {
+  opacity: 0;
+  transform: translateY(-6px);
 }
 
 .backdrop {
@@ -380,6 +588,10 @@ a {
     height: 100%;
     transition: left 0.28s ease;
     z-index: 40;
+  }
+
+  .hamburger {
+    display: grid;
   }
 
   .sidebar.mobile-open {
