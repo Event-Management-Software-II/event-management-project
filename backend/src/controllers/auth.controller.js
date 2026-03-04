@@ -2,7 +2,8 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const pool = require('../db/pool');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) throw new Error('JWT_SECRET is not defined in environment variables');
 
 // POST /api/auth/register
 const register = async (req, res) => {
@@ -41,7 +42,7 @@ const register = async (req, res) => {
 
     // Generate JWT token
     const token = jwt.sign(
-      { id: user.id_user, email: user.email, roleId: user.id_role },
+      { id: user.id_user, email: user.email, roleId: user.id_role, role: roleResult.rows[0].nameRole },
       JWT_SECRET,
       { expiresIn: '24h' }
     );
@@ -53,7 +54,8 @@ const register = async (req, res) => {
         id: user.id_user,
         email: user.email,
         fullName: user.fullName,
-        roleId: user.id_role
+        roleId: user.id_role,
+        role: roleResult.rows[0].nameRole
       }
     });
   } catch (err) {
@@ -91,7 +93,8 @@ const login = async (req, res) => {
     const user = result.rows[0];
 
     // Verify password
-    const isPasswordValid = await bcrypt.compare(password, user.password);
+    const normalizedHash = user.password.replace(/^\$2y\$/, '$2b$');
+    const isPasswordValid = await bcrypt.compare(password, normalizedHash);
     if (!isPasswordValid) {
       return res.status(401).json({ error: 'Invalid email or password' });
     }
