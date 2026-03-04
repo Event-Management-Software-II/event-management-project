@@ -6,6 +6,7 @@ const authRoutes       = require('./routes/auth.routes');
 const categoriesRoutes = require('./routes/categories.routes');
 const eventsRoutes     = require('./routes/events.routes');
 const reportsRoutes    = require('./routes/reports.routes');
+const favoritesRoutes  = require('./routes/favorites.routes');
 
 const app  = express();
 const PORT = process.env.PORT || 3001;
@@ -22,6 +23,7 @@ app.use('/api/auth',          authRoutes);
 app.use('/api/categories',    categoriesRoutes);
 app.use('/api/events',        eventsRoutes);
 app.use('/api/admin/reports', reportsRoutes);
+app.use('/api/favorites',     favoritesRoutes);
 
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
