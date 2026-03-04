@@ -35,9 +35,9 @@ export interface EventFormErrors {
   location?: string
 }
 
-const events = ref<Event[]>([])
+const events  = ref<Event[]>([])
 const loading = ref(false)
-const error = ref<string | null>(null)
+const error   = ref<string | null>(null)
 
 function validateForm(form: EventForm): EventFormErrors {
   const errors: EventFormErrors = {}
@@ -54,32 +54,9 @@ function validateForm(form: EventForm): EventFormErrors {
   return errors
 }
 
-async function registerInterest(id: number): Promise<{ success: boolean; total_interests?: number; message?: string }> {
-  try {
-    const res = await fetch(`${API}/events/${id}/interest`, { method: 'POST' })
-    const data = await res.json()
-    if (!res.ok) return { success: false, message: data.error }
-    return { success: true, total_interests: data.total_interests }
-  } catch { return { success: false, message: 'Error de conexión.' } }
-}
-
-async function removeInterest(id: number): Promise<{ success: boolean; total_interests?: number; message?: string }> {
-  try {
-    const res = await fetch(`${API}/events/${id}/interest`, { method: 'DELETE' })
-    const data = await res.json()
-    if (!res.ok) return { success: false, message: data.error }
-    return { success: true, total_interests: data.total_interests }
-  } catch { return { success: false, message: 'Error de conexión.' } }
-}
-
-async function getInterestStatus(id: number): Promise<{ interested: boolean; total_interests: number }> {
-  try {
-    const res = await fetch(`${API}/events/${id}/interest/status`)
-    return await res.json()
-  } catch { return { interested: false, total_interests: 0 } }
-}
-
 export function useEvents() {
+  const { authHeaders } = useAuth()
+
   const visibleEvents = computed(() => events.value.filter(e => !e.deleted_at))
 
   async function fetchEvents(filters?: { name?: string; category_id?: string }) {
@@ -98,20 +75,22 @@ export function useEvents() {
   async function fetchEventsAdmin() {
     loading.value = true; error.value = null
     try {
-      const res = await fetch(`${API}/events/admin/all`)
+      const res = await fetch(`${API}/events/admin/all`, {
+        headers: authHeaders(),
+      })
       if (!res.ok) throw new Error('Error al cargar eventos')
       events.value = await res.json()
     } catch (e: any) { error.value = e.message }
     finally { loading.value = false }
   }
-  
+
   async function createEvent(form: EventForm): Promise<{ success: boolean; errors?: EventFormErrors; message?: string }> {
     const errors = validateForm(form)
     if (Object.keys(errors).length) return { success: false, errors }
     try {
       const res = await fetch(`${API}/events/admin`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
         body: JSON.stringify({ ...form, Id_category: Number(form.Id_category), value: Number(form.value) }),
       })
       const data = await res.json()
@@ -127,7 +106,7 @@ export function useEvents() {
     try {
       const res = await fetch(`${API}/events/admin/${id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
         body: JSON.stringify({ ...form, Id_category: Number(form.Id_category), value: Number(form.value) }),
       })
       const data = await res.json()
@@ -139,7 +118,10 @@ export function useEvents() {
 
   async function deleteEvent(id: number): Promise<{ success: boolean; message?: string }> {
     try {
-      const res = await fetch(`${API}/events/admin/${id}`, { method: 'DELETE' })
+      const res = await fetch(`${API}/events/admin/${id}`, {
+        method: 'DELETE',
+        headers: authHeaders(),
+      })
       if (!res.ok) { const d = await res.json(); return { success: false, message: d.error } }
       await fetchEventsAdmin(); return { success: true }
     } catch { return { success: false, message: 'Error de conexión.' } }
@@ -147,10 +129,46 @@ export function useEvents() {
 
   async function restoreEvent(id: number): Promise<{ success: boolean; message?: string }> {
     try {
-      const res = await fetch(`${API}/events/admin/${id}/restore`, { method: 'PATCH' })
+      const res = await fetch(`${API}/events/admin/${id}/restore`, {
+        method: 'PATCH',
+        headers: authHeaders(),
+      })
       if (!res.ok) { const d = await res.json(); return { success: false, message: d.error } }
       await fetchEventsAdmin(); return { success: true }
     } catch { return { success: false, message: 'Error de conexión.' } }
+  }
+
+  async function registerInterest(id: number): Promise<{ success: boolean; total_interests?: number; message?: string }> {
+    try {
+      const res = await fetch(`${API}/events/${id}/interest`, {
+        method: 'POST',
+        headers: authHeaders(),
+      })
+      const data = await res.json()
+      if (!res.ok) return { success: false, message: data.error }
+      return { success: true, total_interests: data.total_interests }
+    } catch { return { success: false, message: 'Error de conexión.' } }
+  }
+
+  async function removeInterest(id: number): Promise<{ success: boolean; total_interests?: number; message?: string }> {
+    try {
+      const res = await fetch(`${API}/events/${id}/interest`, {
+        method: 'DELETE',
+        headers: authHeaders(),
+      })
+      const data = await res.json()
+      if (!res.ok) return { success: false, message: data.error }
+      return { success: true, total_interests: data.total_interests }
+    } catch { return { success: false, message: 'Error de conexión.' } }
+  }
+
+  async function getInterestStatus(id: number): Promise<{ interested: boolean; total_interests: number }> {
+    try {
+      const res = await fetch(`${API}/events/${id}/interest/status`, {
+        headers: authHeaders(),
+      })
+      return await res.json()
+    } catch { return { interested: false, total_interests: 0 } }
   }
 
   return {

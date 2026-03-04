@@ -22,10 +22,12 @@ function validateForm(name: string): CategoryFormErrors {
 }
 
 const categories = ref<Category[]>([])
-const loading = ref(false)
-const error = ref<string | null>(null)
+const loading    = ref(false)
+const error      = ref<string | null>(null)
 
 export function useCategories() {
+  const { authHeaders } = useAuth()
+
   const activeCategories = computed(() =>
     categories.value.filter(c => !c.deleted_at)
   )
@@ -52,7 +54,9 @@ export function useCategories() {
   async function fetchCategoriesAdmin() {
     loading.value = true; error.value = null
     try {
-      const res = await fetch(`${API}/categories/admin`)
+      const res = await fetch(`${API}/categories/admin`, {
+        headers: authHeaders(),
+      })
       if (!res.ok) throw new Error('Error al cargar categorías')
       categories.value = await res.json()
     } catch (e: any) { error.value = e.message }
@@ -65,7 +69,7 @@ export function useCategories() {
     try {
       const res = await fetch(`${API}/categories/admin`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
         body: JSON.stringify({ nameCategory: name }),
       })
       const data = await res.json()
@@ -81,7 +85,7 @@ export function useCategories() {
     try {
       const res = await fetch(`${API}/categories/admin/${id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
         body: JSON.stringify({ nameCategory: name }),
       })
       const data = await res.json()
@@ -93,7 +97,10 @@ export function useCategories() {
 
   async function deactivateCategory(id: number): Promise<{ success: boolean; message?: string }> {
     try {
-      const res = await fetch(`${API}/categories/admin/${id}`, { method: 'DELETE' })
+      const res = await fetch(`${API}/categories/admin/${id}`, {
+        method: 'DELETE',
+        headers: authHeaders(),
+      })
       const data = await res.json()
       if (!res.ok) return { success: false, message: data.error }
       await fetchCategoriesAdmin()
@@ -103,7 +110,10 @@ export function useCategories() {
 
   async function reactivateCategory(id: number): Promise<{ success: boolean; message?: string }> {
     try {
-      const res = await fetch(`${API}/categories/admin/${id}/restore`, { method: 'PATCH' })
+      const res = await fetch(`${API}/categories/admin/${id}/restore`, {
+        method: 'PATCH',
+        headers: authHeaders(),
+      })
       const data = await res.json()
       if (!res.ok) return { success: false, message: data.error }
       await fetchCategoriesAdmin()
