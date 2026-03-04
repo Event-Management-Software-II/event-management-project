@@ -48,6 +48,21 @@ function validateLogin(form: LoginForm): AuthFormErrors {
   return errors
 }
 
+function mapUser(raw: any): AuthUser {
+  return {
+    id:    raw.id,
+    name:  raw.fullName ?? raw.name ?? '',
+    email: raw.email,
+    role:  mapRole(raw.role ?? raw.nameRole ?? ''),
+  }
+}
+
+function mapRole(r: string): UserRole {
+  if (r === 'admin') return 'admin'
+  if (r === 'user')  return 'external'
+  return 'guest'
+}
+
 export function useAuth() {
   // useState is SSR-safe and shared across the app
   const user    = useState<AuthUser | null>('auth_user', () => null)
@@ -77,14 +92,20 @@ export function useAuth() {
     }
   }
 
-  function saveSession(t: string, u: AuthUser) {
-    token.value = t
-    user.value  = u
-    if (import.meta.client) {
-      localStorage.setItem('auth_token', t)
-      localStorage.setItem('auth_user', JSON.stringify(u))
-    }
+function saveSession(t: string, u: any) {
+  const mapped: AuthUser = {
+    id:    u.id,
+    name:  u.fullName,       // backend devuelve fullName
+    email: u.email,
+    role:  mapRole(u.role),  // backend devuelve 'user', frontend espera 'external'
   }
+  token.value = t
+  user.value  = mapped
+  if (import.meta.client) {
+    localStorage.setItem('auth_token', t)
+    localStorage.setItem('auth_user', JSON.stringify(mapped))
+  }
+}
 
   function clearSession() {
     token.value = null
@@ -128,7 +149,7 @@ export function useAuth() {
       const res  = await fetch(`${API}/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: form.name, email: form.email, password: form.password }),
+        body: JSON.stringify({ fullName: form.name, email: form.email, password: form.password }),
       })
       const data = await res.json()
       if (!res.ok) return { success: false, errors: { _global: data.error ?? 'Error al registrarse.' } }
@@ -176,8 +197,9 @@ export function useAuth() {
     try {
       const res = await fetch(`${API}/auth/me`, { headers: authHeaders() })
       if (!res.ok) { clearSession(); return }
-      user.value = await res.json()
-      if (import.meta.client) localStorage.setItem('auth_user', JSON.stringify(user.value))
+      const mapped = mapUser(await res.json())
+      user.value   = mapped
+      if (import.meta.client) localStorage.setItem('auth_user', JSON.stringify(mapped))
     } catch {
       clearSession()
     }
