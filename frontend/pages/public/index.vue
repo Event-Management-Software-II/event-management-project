@@ -136,7 +136,7 @@ const filtered = computed(() =>
     const matchQuery = !query.value ||
       e.NameEvent.toLowerCase().includes(query.value.toLowerCase()) ||
       e.location.toLowerCase().includes(query.value.toLowerCase())
-    const matchCategory = !selectedCategory.value || e.Id_category === selectedCategory.value
+    const matchCategory = !selectedCategory.value || e.id_category === selectedCategory.value
     const matchFree = !activeFilters.value.free || e.value === 0
     return matchQuery && matchCategory && matchFree
   })
