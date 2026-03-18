@@ -1,4 +1,6 @@
 const pool = require('../db/pool');
+const NodeCache =require('node-cache');
+const favCache = new NodeCache({ stdTTL: 60 });
 
 // POST /api/favorites/:id_event — add to favorites
 const addFavorite = async (req, res) => {
@@ -16,6 +18,7 @@ const addFavorite = async (req, res) => {
       `INSERT INTO "UserEvent" ("id_user", "id_event") VALUES ($1, $2)`,
       [id_user, id_event]
     );
+    favCache.del(`favorites:${id_user}`);
     res.status(201).json({ message: 'Event added to favorites' });
   } catch (err) {
     if (err.code === '23505')
@@ -36,6 +39,7 @@ const removeFavorite = async (req, res) => {
     );
     if (result.rowCount === 0)
       return res.status(404).json({ error: 'Favorite not found' });
+    favCache.del(`favorites:${id_user}`);
     res.json({ message: 'Event removed from favorites' });
   } catch (err) {
     console.error('Error in removeFavorite:', err);
@@ -43,15 +47,34 @@ const removeFavorite = async (req, res) => {
   }
 };
 
-// GET /api/favorites — list favorites of the authenticated user
+// GET /api/favorites  ← este es el BE4-V1 del task
 const getFavorites = async (req, res) => {
   const id_user = req.userId;
+  const cacheKey = `favorites:${id_user}`;
+
+  const cached = favCache.get(cacheKey);
+  if (cached) {
+    return res.status(200).json({ ok: true, data: cached });
+  }
+
   try {
-    const result = await pool.query(
-      `SELECT * FROM v_user_favorites WHERE "id_user" = $1`,
+    const { rows } = await pool.query(
+      `SELECT
+          id_event          AS "idEvent",
+          "NameEvent"       AS "name",
+          value,
+          location,
+          date_time         AS "dateTime",
+          "nameCategory"    AS "category",
+          "imageUrl",
+          favorited_at      AS "favoritedAt"
+       FROM v_user_favorites
+       WHERE "id_user" = $1`,
       [id_user]
     );
-    res.json(result.rows);
+
+    favCache.set(cacheKey, rows);
+    return res.status(200).json({ ok: true, data: rows });
   } catch (err) {
     console.error('Error in getFavorites:', err);
     res.status(500).json({ error: 'Failed to fetch favorites' });

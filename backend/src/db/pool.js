@@ -8,6 +8,9 @@ const pool = new Pool({
   password: process.env.PGPASSWORD,
   port:     5432,
   ssl:      process.env.PGSSL === 'true' ? { rejectUnauthorized: false } : false,
+  max : 10,
+  ideleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 2000,
 });
 
 pool.on('connect', () => console.log('Connected to PostgreSQL'));
