@@ -1,0 +1,121 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Role {
+  id_role    Int      @id @default(autoincrement())
+  nameRole   String   @unique @db.VarChar(100)
+  created_at DateTime @default(now())
+
+  users      User[]
+
+  @@map("Role")
+}
+
+model User {
+  id_user    Int       @id @default(autoincrement())
+  email      String    @unique @db.VarChar(255)
+  password   String    @db.VarChar(255)
+  fullName   String    @db.VarChar(255)
+  id_role    Int
+  created_at DateTime  @default(now())
+  updated_at DateTime  @default(now())
+  deleted_at DateTime?
+
+  role       Role        @relation(fields: [id_role], references: [id_role])
+  favorites  UserEvent[]
+
+  @@map("User")
+}
+
+model Category {
+  id_category    Int       @id @default(autoincrement())
+  nameCategory   String    @unique @db.VarChar(255)
+  created_at     DateTime  @default(now())
+  updated_at     DateTime  @default(now())
+  deleted_at     DateTime?
+
+  events         Event[]
+
+  @@map("Category")
+}
+
+model Event {
+  id_event    Int       @id @default(autoincrement())
+  NameEvent   String    @unique @db.VarChar(255)
+  Id_category Int
+  value       Float     @default(0)
+  description String
+  location    String    @db.VarChar(255)
+  date_time   DateTime?
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @default(now())
+  deleted_at  DateTime?
+
+  category    Category       @relation(fields: [Id_category], references: [id_category])
+  images      EventImage[]
+  history     EventHistory[]
+  interests   Interest[]
+  favorites   UserEvent[]
+
+  @@map("Event")
+}
+
+model EventImage {
+  id_image  Int    @id @default(autoincrement())
+  id_event  Int
+  imageUrl  String @db.VarChar(255)
+  type      String @default("poster") @db.VarChar(50)
+
+  event     Event  @relation(fields: [id_event], references: [id_event], onDelete: Cascade)
+
+  @@map("EventImage")
+}
+
+model EventHistory {
+  id_history  Int       @id @default(autoincrement())
+  id_event    Int
+  NameEvent   String?   @db.VarChar(255)
+  Id_category Int?
+  value       Float?
+  description String?
+  location    String?   @db.VarChar(255)
+  date_time   DateTime?
+  changed_at  DateTime  @default(now())
+
+  event       Event     @relation(fields: [id_event], references: [id_event])
+
+  @@map("EventHistory")
+}
+
+model Interest {
+  id_interest     Int      @id @default(autoincrement())
+  id_event        Int
+  user_identifier String   @db.VarChar(255)
+  created_at      DateTime @default(now())
+
+  event           Event    @relation(fields: [id_event], references: [id_event])
+
+  @@unique([id_event, user_identifier])
+  @@map("Interest")
+}
+
+model UserEvent {
+  id_favorite Int      @id @default(autoincrement())
+  id_user     Int
+  id_event    Int
+  created_at  DateTime @default(now())
+
+  user        User     @relation(fields: [id_user], references: [id_user], onDelete: Cascade)
+  event       Event    @relation(fields: [id_event], references: [id_event], onDelete: Cascade)
+
+  @@unique([id_user, id_event])
+  @@index([id_user])
+  @@index([id_event])
+  @@map("UserEvent")
+}
