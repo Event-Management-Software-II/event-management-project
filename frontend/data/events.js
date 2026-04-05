@@ -1,8 +1,0 @@
-export default [
-  { id: 1, title: 'Festival de Música Latina', date: '2025-03-15', location: 'Bogotá', category: 'Música', price: 50000, description: 'El mejor festival de música latina con artistas internacionales.', attendees: 1200, modality: 'presencial' },
-  { id: 2, title: 'Vue & Nuxt Conference 2025', date: '2025-03-22', location: 'Medellín', category: 'Tecnología', price: 0, description: 'Conferencia anual de la comunidad Vue y Nuxt en Latinoamérica.', attendees: 340, modality: 'online' },
-  { id: 3, title: 'Exposición Arte Contemporáneo', date: '2025-04-05', location: 'Cali', category: 'Arte', price: 15000, description: 'Una muestra de los mejores artistas emergentes del país.', attendees: 210, modality: 'presencial' },
-  { id: 4, title: 'Maratón Ciudad', date: '2025-04-12', location: 'Bogotá', category: 'Deporte', price: 30000, description: 'Recorre las calles de Bogotá en esta maratón de 10K y 21K.', attendees: 890, modality: 'presencial' },
-  { id: 5, title: 'Feria Gastronómica Internacional', date: '2025-04-20', location: 'Cartagena', category: 'Gastronomía', price: 0, description: 'Degusta los mejores platos de chefs nacionales e internacionales.', attendees: 650, modality: 'presencial' },
-  { id: 6, title: 'Workshop Fotografía Urbana', date: '2025-04-28', location: 'Bogotá', category: 'Arte', price: 80000, description: 'Aprende técnicas de fotografía urbana con fotógrafos profesionales.', attendees: 45, modality: 'online' },
-]
