@@ -65,6 +65,10 @@ const { restoreSession, authHeaders } = useAuth()
 const report  = ref<ReportRow[]>([])
 const loading = ref(false)
 
+if (import.meta.server) {
+  await navigateTo('/login')
+}
+
 onMounted(async () => {
   restoreSession()
   loading.value = true

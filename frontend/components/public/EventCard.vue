@@ -4,61 +4,62 @@
     <div class="card-media" @click="openDetail">
       <img v-if="event.imageUrl" :src="event.imageUrl" :alt="event.eventName" class="card-img" />
       <div v-else class="image-placeholder" :style="{ background: categoryGradient }"></div>
-<div class="category-badge">{{ event.categoryName }}</div>
-<span v-if="!isActive" class="past-badge">Finalizado</span>
+      <div class="category-badge">{{ event.categoryName }}</div>
+      <span v-if="!isActive" class="past-badge">Finalizado</span>
       <button class="btn-like" :class="{ active: liked }" @click.stop="toggleLike"
-  :title="liked ? 'Ya no me interesa' : 'Me interesa'">
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-    <path
-      d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"
-      :fill="liked ? '#e74c3c' : 'none'" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
-  </svg>
-</button>
+        :title="liked ? 'Ya no me interesa' : 'Me interesa'">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+          <path
+            d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"
+            :fill="liked ? '#e74c3c' : 'none'" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+        </svg>
+      </button>
     </div>
 
     <!-- Body -->
     <div class="card-body" @click="openDetail">
       <p class="card-meta">
-  <span>📅 {{ formatDate(event.date_time) }}</span>
-  <span>📍 {{ event.location }}</span>
-</p>
+        <span>📅 {{ formatDate(event.date_time) }}</span>
+        <span>📍 {{ event.location }}</span>
+      </p>
       <h2 class="card-title">{{ event.eventName }}</h2>
       <p class="card-description">{{ event.description }}</p>
     </div>
 
     <!-- Footer -->
     <div class="card-footer">
-  <div v-if="!isActive" class="footer-past">
-    <span class="price-tag price-tag--free">Evento finalizado</span>
-    <button class="btn-detail-ghost" @click="openDetail">Ver historial</button>
-  </div>
+      <div v-if="!isActive" class="footer-past">
+        <span class="price-tag price-tag--free">Evento finalizado</span>
+        <button class="btn-detail-ghost" @click="openDetail">Ver historial</button>
+      </div>
 
-  <template v-else-if="ticketTypes.length">
-    <div class="footer-types">
-      <button
-        v-for="tp in ticketTypes.slice(0, 3)"
-        :key="tp.id"
-        class="btn-type"
-        :class="{ 'btn-type--sold': (availability[tp.id] ?? 0) === 0 }"
-        :disabled="(availability[tp.id] ?? 0) === 0"
-        @click="openDetailWithType(tp.id)"
-      >
-        <span class="btn-type-name">{{ tp.name }}</span>
-        <span class="btn-type-price">{{ tp.price === 0 ? 'Gratis' : `$${tp.price.toLocaleString('es-CO')}` }}</span>
-      </button>
-      <button v-if="ticketTypes.length > 3" class="btn-type btn-type--more" @click="openDetail">
-        +{{ ticketTypes.length - 3 }} más
-      </button>
-    </div>
-  </template>
+      <template v-else-if="ticketTypes.length">
+        <div class="footer-types">
+          <button
+            v-for="tp in ticketTypes.slice(0, 3)"
+            :key="tp.id"
+            class="btn-type"
+            :class="{ 'btn-type--sold': (availability[tp.id] ?? 0) === 0 }"
+            :disabled="(availability[tp.id] ?? 0) === 0"
+            @click="openDetailWithType(tp.id)"
+          >
+            <span class="btn-type-name">{{ tp.name }}</span>
+            <span class="btn-type-price">{{ tp.price === 0 ? 'Gratis' : `$${tp.price.toLocaleString('es-CO')}` }}</span>
+          </button>
+          <button v-if="ticketTypes.length > 3" class="btn-type btn-type--more" @click="openDetail">
+            +{{ ticketTypes.length - 3 }} más
+          </button>
+        </div>
+      </template>
 
-  <template v-else>
-    <div class="footer-no-types">
-      <span class="price-tag">{{ event.price === 0 ? 'Gratis' : `Desde $${event.price.toLocaleString('es-CO')}` }}</span>
-      <button class="btn-detail-ghost" @click="openDetail">Ver evento</button>
+      <template v-else>
+        <div class="footer-no-types">
+          <span class="price-tag">{{ event.price === 0 ? 'Gratis' : `Desde $${event.price.toLocaleString('es-CO')}` }}</span>
+          <button class="btn-detail-ghost" @click="openDetail">Ver evento</button>
+        </div>
+      </template>
     </div>
-  </template>
-</div>
+
     <!-- Modal de detalle -->
     <Teleport to="body">
       <EventDetailModal
@@ -111,7 +112,8 @@ const liked = ref(false)
 onMounted(async () => {
   init()
   ensureTypesForEvent(props.event)
-  if (!isAuthenticated.value) {
+  // FIX 1: condición corregida — solo consultar el status si el usuario ESTÁ autenticado
+  if (isAuthenticated.value) {
     try {
       const res = await fetch(`${API}/favorites/${props.event.id_event}/status`, {
         headers: authHeaders(),
@@ -258,7 +260,7 @@ function formatDate(d: string | null) {
   padding: 5px 10px; cursor: pointer; font-size: .78rem; font-weight: 700;
   color: #4a5568; transition: background .15s, transform .15s;
   box-shadow: 0 2px 8px rgba(0,0,0,.10);
-  z-index: 10;
+  z-index: 2;
 }
 .btn-like:hover { background: #fff; transform: scale(1.08); }
 .btn-like.active { color: #e74c3c; }
