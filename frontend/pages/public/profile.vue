@@ -36,6 +36,13 @@
                                     </svg>
                                     Ver favoritos
                                 </NuxtLink>
+                                <NuxtLink to="/public/purchases" class="pub-dropdown-item" @click="closeDropdown">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                                        <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                                        <path d="M3 6h18M16 10a4 4 0 01-8 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                                    </svg>
+                                    Mis compras
+                                </NuxtLink>
                                 <div class="pub-dropdown-divider"></div>
                                 <button class="pub-dropdown-item pub-dropdown-item--danger" @click="handleLogout">
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
@@ -135,12 +142,18 @@ async function handleLogout() {
     await navigateTo('/login')
 }
 
+interface ClickOutsideElement extends HTMLElement {
+    _clickOutside?: (e: MouseEvent) => void
+}
+
 const vClickOutside = {
-    mounted(el: HTMLElement, binding: any) {
+    mounted(el: ClickOutsideElement, binding: any) {
         el._clickOutside = (e: MouseEvent) => { if (!el.contains(e.target as Node)) binding.value() }
         document.addEventListener('click', el._clickOutside)
     },
-    unmounted(el: HTMLElement) { document.removeEventListener('click', el._clickOutside) },
+    unmounted(el: ClickOutsideElement) {
+        if (el._clickOutside) document.removeEventListener('click', el._clickOutside)
+    },
 }
 </script>
 
