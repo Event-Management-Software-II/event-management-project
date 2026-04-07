@@ -87,9 +87,18 @@ const login = async (req, res) => {
 
   try {
     const user = await prisma.user.findFirst({
-      where:   { email, deleted_at: null },
-      include: { role: true },
-    });
+  where: { email, deleted_at: null },
+  select: {
+    id_user:  true,
+    email:    true,
+    fullName: true,
+    password: true,
+    id_role:  true,
+    role: {
+      select: { nameRole: true }
+    },
+  },
+});
 
     if (!user)
       return res.status(401).json({ error: 'Invalid email or password' });
@@ -100,11 +109,27 @@ const login = async (req, res) => {
       return res.status(401).json({ error: 'Invalid email or password' });
 
     const token = jwt.sign(
-      // ✅ CORREGIDO: user.role.roleName en lugar de user.role.name
-      { id: user.id_user, email: user.email, roleId: user.id_role, role: user.role.roleName },
-      JWT_SECRET,
-      { expiresIn: '24h' }
-    );
+  { 
+    id:     user.id_user, 
+    email:  user.email, 
+    roleId: user.id_role, 
+    role:   user.role.nameRole  // 👈 esto faltaba
+  },
+  JWT_SECRET,
+  { expiresIn: '24h' }
+);
+
+res.json({
+  message: 'Login successful',
+  token,
+  user: {
+    id:       user.id_user,
+    email:    user.email,
+    fullName: user.fullName,
+    roleId:   user.id_role,
+    role:     user.role.nameRole  // 👈 esto faltaba
+  },
+});
 
     const userResponse = {
       id:        user.id_user,

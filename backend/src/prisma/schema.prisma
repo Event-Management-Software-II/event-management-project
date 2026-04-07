@@ -1,6 +1,5 @@
 generator client {
-  provider        = "prisma-client-js"
-  previewFeatures = ["driverAdapters"]
+  provider = "prisma-client-js"
 }
 
 datasource db {
@@ -9,7 +8,7 @@ datasource db {
 
 model Role {
   id_role    Int      @id @default(autoincrement())
-  roleName   String   @unique @db.VarChar(100)  // Cambiado de name a roleName
+  nameRole   String   @unique @map("roleName") @db.VarChar(100)
   created_at DateTime @default(now())
 
   users      User[]
@@ -21,50 +20,48 @@ model User {
   id_user    Int       @id @default(autoincrement())
   email      String    @unique @db.VarChar(255)
   password   String    @db.VarChar(255)
-  full_name  String    @db.VarChar(255)
+  fullName   String    @map("full_name") @db.VarChar(255)
   id_role    Int
   created_at DateTime  @default(now())
-  updated_at DateTime  @default(now()) @updatedAt
+  updated_at DateTime  @default(now())
   deleted_at DateTime?
 
-  role       Role       @relation(fields: [id_role], references: [id_role])
+  role       Role        @relation(fields: [id_role], references: [id_role])
   favorites  UserEvent[]
-  purchases  Purchase[]
 
   @@map("User")
 }
 
 model Category {
   id_category  Int       @id @default(autoincrement())
-  categoryName String    @unique @db.VarChar(255)  // Cambiado de name a categoryName
+  nameCategory String    @unique @map("categoryName") @db.VarChar(255)
   created_at   DateTime  @default(now())
-  updated_at   DateTime  @default(now()) @updatedAt
+  updated_at   DateTime  @default(now())
   deleted_at   DateTime?
 
-  events      Event[]
+  events       Event[]
 
   @@map("Category")
 }
 
 model Event {
   id_event    Int       @id @default(autoincrement())
-  eventName   String    @unique @db.VarChar(255)  // Cambiado de name a eventName
-  id_category Int
-  price       Float     @default(0)
+  NameEvent   String    @unique @map("eventName") @db.VarChar(255)
+  Id_category Int       @map("id_category")
+  value       Float     @map("price") @default(0)
   description String
   location    String    @db.VarChar(255)
   date_time   DateTime?
   capacity    Int?
   created_at  DateTime  @default(now())
-  updated_at  DateTime  @default(now()) @updatedAt
+  updated_at  DateTime  @default(now())
   deleted_at  DateTime?
 
-  category    Category       @relation(fields: [id_category], references: [id_category])
+  category    Category       @relation(fields: [Id_category], references: [id_category])
   images      EventImage[]
   history     EventHistory[]
   interests   Interest[]
   favorites   UserEvent[]
-  purchases   Purchase[]
 
   @@map("Event")
 }
@@ -72,7 +69,7 @@ model Event {
 model EventImage {
   id_image  Int    @id @default(autoincrement())
   id_event  Int
-  image_url String @db.VarChar(255)
+  imageUrl  String @map("image_url") @db.VarChar(255)
   type      String @default("poster") @db.VarChar(50)
 
   event     Event  @relation(fields: [id_event], references: [id_event], onDelete: Cascade)
@@ -83,9 +80,9 @@ model EventImage {
 model EventHistory {
   id_history  Int       @id @default(autoincrement())
   id_event    Int
-  eventName   String?   @db.VarChar(255)  // Cambiado de name a eventName
-  id_category Int?
-  price       Float?
+  NameEvent   String?   @map("eventName") @db.VarChar(255)
+  Id_category Int?      @map("id_category")
+  value       Float?    @map("price")
   description String?
   location    String?   @db.VarChar(255)
   date_time   DateTime?
@@ -121,24 +118,4 @@ model UserEvent {
   @@index([id_user])
   @@index([id_event])
   @@map("UserEvent")
-}
-
-model Purchase {
-  id_purchase Int      @id @default(autoincrement())
-  id_user     Int
-  id_event    Int
-  quantity    Int
-  unit_price  Float
-  total_price Float?
-  status      String   @default("pending") @db.VarChar(20)
-  created_at  DateTime @default(now())
-  updated_at  DateTime @default(now()) @updatedAt
-
-  user        User     @relation(fields: [id_user], references: [id_user], onDelete: Cascade)
-  event       Event    @relation(fields: [id_event], references: [id_event], onDelete: Cascade)
-
-  @@index([id_user])
-  @@index([id_event])
-  @@index([status])
-  @@map("Purchase")
 }
