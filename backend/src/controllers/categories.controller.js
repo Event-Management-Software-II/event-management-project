@@ -8,7 +8,7 @@ const getCategories = async (req, res) => {
     const categories = await prisma.category.findMany({
       where: { deleted_at: null },
       orderBy: order === 'asc'
-        ? { nameCategory: 'asc' }
+        ? { name: 'asc' }
         : { id_category: 'asc' },
     });
 
@@ -23,7 +23,7 @@ const getCategoriesAdmin = async (req, res) => {
   try {
     const categories = await prisma.category.findMany({
       where: { deleted_at: null },
-      orderBy: { nameCategory: 'asc' },
+      orderBy: { name: 'asc' },
     });
 
     res.json(categories);
@@ -34,14 +34,14 @@ const getCategoriesAdmin = async (req, res) => {
 };
 
 const createCategory = async (req, res) => {
-  const { nameCategory } = req.body;
+  const { name } = req.body;
 
-  if (!nameCategory || nameCategory.trim() === '')
+  if (!name || name.trim() === '')
     return res.status(400).json({ error: 'Category name is required' });
 
   try {
     const category = await prisma.category.create({
-      data: { nameCategory: nameCategory.trim() },
+      data: { name: name.trim() },
     });
 
     res.status(201).json(category);
@@ -59,16 +59,16 @@ const createCategory = async (req, res) => {
 
 const updateCategory = async (req, res) => {
   const id = Number(req.params.id);
-  const { nameCategory } = req.body;
+  const { name } = req.body;
 
-  if (!nameCategory || nameCategory.trim() === '')
+  if (!name || name.trim() === '')
     return res.status(400).json({ error: 'Category name cannot be empty' });
 
   try {
     const category = await prisma.category.updateMany({
       where: { id_category: id, deleted_at: null },
       data: {
-        nameCategory: nameCategory.trim(),
+        name: name.trim(),
         updated_at: new Date(),
       },
     });
@@ -98,7 +98,7 @@ const deleteCategory = async (req, res) => {
 
   try {
     const activeEventsCount = await prisma.event.count({
-      where: { Id_category: id, deleted_at: null },
+      where: { id_category: id, deleted_at: null },
     });
 
     if (activeEventsCount > 0) {
