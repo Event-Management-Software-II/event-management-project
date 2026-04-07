@@ -1,17 +1,42 @@
 const { Prisma } = require('@prisma/client');
 const prisma = require('../prisma/prisma');
+const NodeCache = require('node-cache');
+
+// TTL de 5 minutos — las categorías cambian con poca frecuencia
+const catCache = new NodeCache({ stdTTL: 300 });
+
+const CACHE_KEYS = {
+  public: 'categories:public',
+  admin:  'categories:admin',
+};
+
+// Invalida ambos cachés al modificar cualquier categoría
+const invalidateCatCache = () => {
+  catCache.del(CACHE_KEYS.public);
+  catCache.del(CACHE_KEYS.admin);
+};
 
 const getCategories = async (req, res) => {
-  try {
-    const { order } = req.query;
+  const { order } = req.query;
+  // La clave incluye el orden para no mezclar resultados
+  const cacheKey = `${CACHE_KEYS.public}:${order ?? 'default'}`;
 
+  const cached = catCache.get(cacheKey);
+  if (cached) return res.json(cached);
+
+  try {
     const categories = await prisma.category.findMany({
       where: { deleted_at: null },
+      select: {
+        id_category:  true,
+        nameCategory: true,
+      },
       orderBy: order === 'asc'
         ? { name: 'asc' }
         : { id_category: 'asc' },
     });
 
+    catCache.set(cacheKey, categories);
     res.json(categories);
   } catch (err) {
     console.error(err);
@@ -20,12 +45,16 @@ const getCategories = async (req, res) => {
 };
 
 const getCategoriesAdmin = async (req, res) => {
+  const cached = catCache.get(CACHE_KEYS.admin);
+  if (cached) return res.json(cached);
+
   try {
     const categories = await prisma.category.findMany({
       where: { deleted_at: null },
       orderBy: { name: 'asc' },
     });
 
+    catCache.set(CACHE_KEYS.admin, categories);
     res.json(categories);
   } catch (err) {
     console.error(err);
@@ -44,14 +73,11 @@ const createCategory = async (req, res) => {
       data: { name: name.trim() },
     });
 
+    invalidateCatCache();
     res.status(201).json(category);
   } catch (err) {
-    if (
-      err instanceof Prisma.PrismaClientKnownRequestError &&
-      err.code === 'P2002'
-    ) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002')
       return res.status(409).json({ error: 'A category with that name already exists' });
-    }
     console.error(err);
     res.status(500).json({ error: 'Failed to create category' });
   }
@@ -65,7 +91,7 @@ const updateCategory = async (req, res) => {
     return res.status(400).json({ error: 'Category name cannot be empty' });
 
   try {
-    const category = await prisma.category.updateMany({
+    const result = await prisma.category.updateMany({
       where: { id_category: id, deleted_at: null },
       data: {
         name: name.trim(),
@@ -73,21 +99,23 @@ const updateCategory = async (req, res) => {
       },
     });
 
-    if (category.count === 0)
+    if (result.count === 0)
       return res.status(404).json({ error: 'Category not found' });
 
     const updated = await prisma.category.findUnique({
       where: { id_category: id },
+      select: {
+        id_category:  true,
+        nameCategory: true,
+        updated_at:   true,
+      },
     });
 
+    invalidateCatCache();
     res.json(updated);
   } catch (err) {
-    if (
-      err instanceof Prisma.PrismaClientKnownRequestError &&
-      err.code === 'P2002'
-    ) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002')
       return res.status(409).json({ error: 'A category with that name already exists' });
-    }
     console.error(err);
     res.status(500).json({ error: 'Failed to update category' });
   }
@@ -116,6 +144,7 @@ const deleteCategory = async (req, res) => {
     if (result.count === 0)
       return res.status(404).json({ error: 'Category not found' });
 
+    invalidateCatCache();
     res.json({ message: 'Category deleted successfully' });
   } catch (err) {
     console.error(err);
@@ -135,6 +164,7 @@ const restoreCategory = async (req, res) => {
     if (result.count === 0)
       return res.status(404).json({ error: 'Category not found or already active' });
 
+    invalidateCatCache();
     res.json({ message: 'Category restored successfully' });
   } catch (err) {
     console.error(err);
