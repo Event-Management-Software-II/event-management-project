@@ -1,4 +1,3 @@
-// composables/useEvents.ts
 import { ref, computed, readonly } from 'vue'
 
 const API = 'http://localhost:3001/api'
@@ -13,8 +12,10 @@ export interface Event {
   date_time: string | null
   created_at: string
   deleted_at: string | null
-  nameCategory: string
-  imageUrl: string | null
+  category: { id_category: number; nameCategory: string }
+  images: { imageUrl: string; type: string }[]
+  nameCategory?: string
+  imageUrl?: string | null
 }
 
 export interface EventForm {
@@ -38,6 +39,14 @@ export interface EventFormErrors {
 const events  = ref<Event[]>([])
 const loading = ref(false)
 const error   = ref<string | null>(null)
+
+function mapEvent(e: any): Event {
+  return {
+    ...e,
+    nameCategory: e.category?.nameCategory ?? '',
+    imageUrl: e.images?.[0]?.imageUrl ?? null,
+  }
+}
 
 function validateForm(form: EventForm): EventFormErrors {
   const errors: EventFormErrors = {}
@@ -67,7 +76,7 @@ export function useEvents() {
       if (filters?.category_id) params.set('category_id', filters.category_id)
       const res = await fetch(`${API}/events?${params}`)
       if (!res.ok) throw new Error('Error al cargar eventos')
-      events.value = await res.json()
+      events.value = (await res.json()).map(mapEvent)
     } catch (e: any) { error.value = e.message }
     finally { loading.value = false }
   }
@@ -79,7 +88,7 @@ export function useEvents() {
         headers: authHeaders(),
       })
       if (!res.ok) throw new Error('Error al cargar eventos')
-      events.value = await res.json()
+      events.value = (await res.json()).map(mapEvent)
     } catch (e: any) { error.value = e.message }
     finally { loading.value = false }
   }
