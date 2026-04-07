@@ -94,7 +94,7 @@ import EventDetailModal from '~/components/public/EventDetailModal.vue'
 const props = defineProps<{ event: Event }>()
 
 // Composables
-const { isGuest, authHeaders } = useAuth()
+const { isAuthenticated, authHeaders } = useAuth()
 const { getTypesForEvent, getAvailability, init, ensureTypesForEvent } = useTickets()
 
 const API = 'http://localhost:3001/api'
@@ -111,7 +111,7 @@ const liked = ref(false)
 onMounted(async () => {
   init()
   ensureTypesForEvent(props.event)
-  if (!isGuest.value) {
+  if (!isAuthenticated.value) {
     try {
       const res = await fetch(`${API}/favorites/${props.event.id_event}/status`, {
         headers: authHeaders(),
@@ -125,7 +125,7 @@ onMounted(async () => {
 })
 
 async function toggleLike() {
-  if (isGuest.value) { showRegisterModal.value = true; return }
+  if (!isAuthenticated.value) { showRegisterModal.value = true; return }
   if (liked.value) {
     const res = await fetch(`${API}/favorites/${props.event.id_event}`, {
       method: 'DELETE',
@@ -258,7 +258,7 @@ function formatDate(d: string | null) {
   padding: 5px 10px; cursor: pointer; font-size: .78rem; font-weight: 700;
   color: #4a5568; transition: background .15s, transform .15s;
   box-shadow: 0 2px 8px rgba(0,0,0,.10);
-  z-index: 2;
+  z-index: 10;
 }
 .btn-like:hover { background: #fff; transform: scale(1.08); }
 .btn-like.active { color: #e74c3c; }
