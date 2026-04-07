@@ -56,7 +56,7 @@
               <td>
                 <div class="cat-name-cell">
                   <div class="cat-bar"></div>
-                  <span class="cat-name">{{ cat.name }}</span>
+                  <span class="cat-name">{{ cat.categoryName }}</span>  <!-- CORREGIDO: categoryName -->
                 </div>
               </td>
               <td class="td-secondary">{{ countActiveEvents(cat.id_category) }}</td>
@@ -96,7 +96,14 @@
               <button class="modal-close" @click="closeModal">✕</button>
             </div>
             <div class="modal-body">
-              <AppInputAdmin v-model="formName" label="Nombre" placeholder="Nombre de la categoría" :error="formError" required helper="Debe ser único y no puede quedar vacío"/>
+              <AppInputAdmin 
+                v-model="formName" 
+                label="Nombre" 
+                placeholder="Nombre de la categoría" 
+                :error="formError" 
+                required 
+                helper="Debe ser único y no puede quedar vacío"
+              />
             </div>
             <div class="modal-footer">
               <AppButtonAdmin variant="secondary" @click="closeModal">Cancelar</AppButtonAdmin>
@@ -153,11 +160,11 @@ const filteredCategories = computed(() => {
     ? [...sortedActiveCategories.value]
     : [...sortedActiveCategories.value].reverse()
   if (!searchQuery.value) return list
-  return list.filter(c => c.name.toLowerCase().includes(searchQuery.value.toLowerCase()))
+  return list.filter(c => c.categoryName.toLowerCase().includes(searchQuery.value.toLowerCase()))  // CORREGIDO: categoryName
 })
 
 function countActiveEvents(categoryId: number): number {
-  return events.value.filter(e => e.Id_category === categoryId && e.deleted_at === null).length
+  return events.value.filter(e => e.id_category === categoryId && e.deleted_at === null).length  // CORREGIDO: id_category (minúscula)
 }
 
 const modalOpen = ref(false)
@@ -170,7 +177,7 @@ const saving    = ref(false)
 function openModal(m: 'create' | 'edit', cat?: Category) {
   mode.value      = m
   formError.value = ''
-  formName.value  = m === 'edit' && cat ? cat.name : ''
+  formName.value  = m === 'edit' && cat ? cat.categoryName : ''  // CORREGIDO: categoryName
   editing.value   = cat ?? null
   modalOpen.value = true
 }
@@ -182,7 +189,7 @@ async function save() {
     ? await createCategory(formName.value)
     : await updateCategory(editing.value!.id_category, formName.value)
   if (result.success) closeModal()
-  else formError.value = result.errors?.name ?? result.message ?? 'Error desconocido.'
+  else formError.value = result.errors?.categoryName ?? result.message ?? 'Error desconocido.'  // CORREGIDO: categoryName
   saving.value = false
 }
 

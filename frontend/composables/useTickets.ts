@@ -1,13 +1,14 @@
 // composables/useTickets.ts
-// Backend aún no implementado — toda la lógica vive en localStorage + caché en memoria
-import { ref, onMounted } from 'vue'
+import { ref } from 'vue'
+
+// ── Interfaces ────────────────────────────────────────────────────────────────
 
 export interface TicketType {
   id: string
-  name: string        // 'Oro', 'Plata', 'VIP', 'General', etc.
+  name: string
   price: number
-  available: number   // cupos disponibles
-  sold: number        // vendidos (calculado)
+  available: number
+  sold: number
 }
 
 export interface Ticket {
@@ -18,7 +19,7 @@ export interface Ticket {
   eventLocation: string
   type: string
   price: number
-  qrCode: string      // string único para el QR
+  qrCode: string
   purchasedAt: string
   holderName: string
 }
@@ -28,8 +29,26 @@ export interface PurchaseForm {
   holderName: string
 }
 
-// ─── Caché en memoria para top 3 ────────────────────────────────────────────
-// Clave: eventId → cantidad de tickets vendidos
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+export function isEventActive(date_time: string | null): boolean {
+  if (!date_time) return true
+  return new Date(date_time) > new Date()
+}
+
+// ── Caché en memoria (compartida entre instancias) ────────────────────────────
+
+// eventId → TicketType[]
+const typesCache = ref<Record<number, TicketType[]>>({})
+// eventId → { typeId → disponibles }
+const availabilityCache = ref<Record<number, Record<string, number>>>({})
+
+const generateId = () => Math.random().toString(36).substring(2, 10)
+const generateQr = (eventId: number, typeName: string, seq: number) =>
+  `QR-${eventId}-${typeName.toUpperCase()}-${seq}-${Date.now()}`
+
+// ── Caché de ventas para top eventos ─────────────────────────────────────────
+
 const salesCache = ref<Record<number, number>>({})
 
 function rebuildSalesCache(tickets: Ticket[]) {
@@ -40,7 +59,6 @@ function rebuildSalesCache(tickets: Ticket[]) {
   salesCache.value = map
 }
 
-// Top 3 eventos activos más vendidos — sin tocar la BD
 export function useTopEvents(activeEventIds: number[]) {
   const topEventIds = ref<number[]>([])
 
@@ -55,17 +73,24 @@ export function useTopEvents(activeEventIds: number[]) {
 
   return { topEventIds, updateTop }
 }
-// ────────────────────────────────────────────────────────────────────────────
+
+// ── Composable principal ──────────────────────────────────────────────────────
 
 export function useTickets() {
   const allTickets = ref<Ticket[]>([])
+
+  // ── Persistencia ────────────────────────────────────────────────────────────
 
   function loadTickets() {
     if (!import.meta.client) return
     const stored = localStorage.getItem('app_tickets')
     if (stored) {
-      allTickets.value = JSON.parse(stored)
-      rebuildSalesCache(allTickets.value)
+      try {
+        allTickets.value = JSON.parse(stored)
+        rebuildSalesCache(allTickets.value)
+      } catch {
+        allTickets.value = []
+      }
     }
   }
 
@@ -75,83 +100,132 @@ export function useTickets() {
     rebuildSalesCache(tickets)
   }
 
-  // Generadores dummy
-  const generateId = () => Math.random().toString(36).substring(2, 10)
-  const generateQr = (eventId: number, typeName: string, seq: number) =>
-    `QR-${eventId}-${typeName.toUpperCase()}-${seq}-${Date.now()}`
+  // ── init: carga tickets y construye caché de tipos/disponibilidad ────────────
+  // Llamar una vez en onMounted desde el componente padre.
 
-  // Retorna entradas predeterminadas para un evento basándose en su capacidad/precio
-  async function getTicketTypes(event: any): Promise<TicketType[]> {
+  function init() {
     loadTickets()
-    const soldForEvent = allTickets.value.filter(t => t.eventId === event.id_event)
+    _rebuildCaches()
+  }
 
-    const soldGeneral = soldForEvent.filter(t => t.type === 'General').length
-    const soldVIP     = soldForEvent.filter(t => t.type === 'VIP').length
+  function _rebuildCaches() {
+    // Reconstruye availabilityCache a partir de tickets guardados
+    const newAvail: Record<number, Record<string, number>> = {}
 
-    const basePrice = Number(event.value) || 0
-    const cap       = Number(event.capacity) || 100 // default si no hay capacidad definida
+    for (const eventId of Object.keys(typesCache.value).map(Number)) {
+      newAvail[eventId] = {}
+      for (const tp of typesCache.value[eventId]) {
+        const sold = allTickets.value.filter(
+          t => t.eventId === eventId && t.type === tp.name
+        ).length
+        newAvail[eventId][tp.id] = Math.max(0, tp.available + tp.sold - sold)
+      }
+    }
+    availabilityCache.value = newAvail
+  }
 
-    // Distribución inventada: 80% General, 20% VIP
+  // ── getTypesForEvent ─────────────────────────────────────────────────────────
+  // Devuelve los TicketType del evento. Si no están cacheados, genera los
+  // predeterminados (General 80% / VIP 20%) basados en capacity y price.
+
+  function getTypesForEvent(eventId: number): TicketType[] {
+    return typesCache.value[eventId] ?? []
+  }
+
+  // Inicializa los tipos de un evento concreto (necesario antes de mostrar la card/modal).
+  // Los componentes pueden llamarlo opcionalmente; si no existe en caché se genera.
+  function ensureTypesForEvent(event: any): TicketType[] {
+    if (typesCache.value[event.id_event]) return typesCache.value[event.id_event]
+
+    const basePrice = Number(event.price) || 0
+    const cap = Number(event.capacity) || 100
     const capGeneral = Math.floor(cap * 0.8)
-    const capVIP     = cap - capGeneral
+    const capVIP = cap - capGeneral
 
-    return [
+    const soldForEvent = allTickets.value.filter(t => t.eventId === event.id_event)
+    const soldGeneral = soldForEvent.filter(t => t.type === 'General').length
+    const soldVIP = soldForEvent.filter(t => t.type === 'VIP').length
+
+    const types: TicketType[] = [
       {
-        id: 't_gen',
+        id: `t_gen_${event.id_event}`,
         name: 'General',
         price: basePrice,
         available: Math.max(0, capGeneral - soldGeneral),
         sold: soldGeneral,
       },
       {
-        id: 't_vip',
+        id: `t_vip_${event.id_event}`,
         name: 'VIP',
-        price: basePrice * 1.5,
+        price: Math.round(basePrice * 1.5),
         available: Math.max(0, capVIP - soldVIP),
         sold: soldVIP,
       },
     ]
+
+    typesCache.value[event.id_event] = types
+
+    // Inicializa availability para este evento
+    availabilityCache.value[event.id_event] = {}
+    for (const tp of types) {
+      availabilityCache.value[event.id_event][tp.id] = tp.available
+    }
+
+    return types
   }
 
-  async function buyTickets(
-    event: any,
-    types: TicketType[],
-    form: PurchaseForm
-  ): Promise<{ success: boolean; tickets?: Ticket[]; error?: string }> {
-    loadTickets()
-    const newTickets: Ticket[] = []
+  // ── getAvailability ──────────────────────────────────────────────────────────
+  // Devuelve { [typeId]: cantidadDisponible } para un evento.
 
-    // Verificar disponibilidad actual en todo el sistema (solo en memoria)
-    const availability: Record<string, number> = {}
-    for (const t of types) {
-      const sold = allTickets.value.filter(tx => tx.eventId === event.id_event && tx.type === t.name).length
-      const totalCap = t.available + t.sold
-      availability[t.id] = totalCap - sold
-    }
+  function getAvailability(eventId: number): Record<string, number> {
+    return availabilityCache.value[eventId] ?? {}
+  }
+
+  // ── purchaseTickets ──────────────────────────────────────────────────────────
+  // Firma esperada por EventDetailModal:
+  //   purchaseTickets(eventInfo, form) → { success, tickets?, error? }
+
+  function purchaseTickets(
+    eventInfo: { id_event: number; NameEvent: string; date_time: string | null; location: string },
+    form: PurchaseForm
+  ): { success: boolean; tickets?: Ticket[]; error?: string } {
+    loadTickets()
+
+    const types = typesCache.value[eventInfo.id_event] ?? []
+    const avail = availabilityCache.value[eventInfo.id_event] ?? {}
+    const newTickets: Ticket[] = []
 
     for (const item of form.types) {
       if (!item.quantity || item.quantity <= 0) continue
+
       const tp = types.find(t => t.id === item.typeId)
-      if (!tp) return { success: false, error: `Tipo de entrada no encontrado.` }
-      const avail = availability[item.typeId] ?? 0
-      if (item.quantity > avail) {
-        return { success: false, error: `Solo quedan ${avail} entradas de tipo "${tp.name}".` }
+      if (!tp) return { success: false, error: 'Tipo de entrada no encontrado.' }
+
+      const available = avail[item.typeId] ?? 0
+      if (item.quantity > available) {
+        return { success: false, error: `Solo quedan ${available} entradas de tipo "${tp.name}".` }
       }
+
       for (let i = 0; i < item.quantity; i++) {
         newTickets.push({
           id: generateId(),
-          eventId: event.id_event,
-          // MAPEO: Corregido NameEvent (que no existía) a eventName o name
-          eventName: event.eventName || event.name,
-          eventDate: event.date_time,
-          eventLocation: event.location,
+          eventId: eventInfo.id_event,
+          eventName: eventInfo.NameEvent,
+          eventDate: eventInfo.date_time,
+          eventLocation: eventInfo.location,
           type: tp.name,
           price: tp.price,
-          qrCode: generateQr(event.id_event, tp.name, i + 1),
+          qrCode: generateQr(eventInfo.id_event, tp.name, i + 1),
           purchasedAt: new Date().toISOString(),
           holderName: form.holderName,
         })
       }
+
+      // Descuenta del caché de disponibilidad inmediatamente
+      availabilityCache.value[eventInfo.id_event][item.typeId] = Math.max(
+        0,
+        available - item.quantity
+      )
     }
 
     if (newTickets.length === 0) {
@@ -161,22 +235,55 @@ export function useTickets() {
     const updated = [...allTickets.value, ...newTickets]
     allTickets.value = updated
     saveTickets(updated)
+
     return { success: true, tickets: newTickets }
   }
 
-  function getUserTickets(emailOrName: string) {
+  // ── getUserTickets ───────────────────────────────────────────────────────────
+
+  function getUserTickets(emailOrName: string): Ticket[] {
     loadTickets()
-    // Simplificación: busca por holderName exacto (en app real buscaría por id_user)
-    return allTickets.value.filter(
-      t => t.holderName.toLowerCase() === emailOrName.toLowerCase()
-    ).sort((a, b) => new Date(b.purchasedAt).getTime() - new Date(a.purchasedAt).getTime())
+    return allTickets.value
+      .filter(t => t.holderName.toLowerCase() === emailOrName.toLowerCase())
+      .sort((a, b) => new Date(b.purchasedAt).getTime() - new Date(a.purchasedAt).getTime())
   }
 
-  onMounted(() => {
+  // ── API legacy (getTicketTypes / buyTickets) ─────────────────────────────────
+  // Mantenidas para compatibilidad con cualquier otro componente que las use.
+
+  async function getTicketTypes(event: any): Promise<TicketType[]> {
     loadTickets()
-  })
+    return ensureTypesForEvent(event)
+  }
+
+  async function buyTickets(
+    event: any,
+    types: TicketType[],
+    form: PurchaseForm
+  ): Promise<{ success: boolean; tickets?: Ticket[]; error?: string }> {
+    // Sincroniza tipos al caché antes de comprar
+    if (!typesCache.value[event.id_event]) {
+      typesCache.value[event.id_event] = types
+    }
+    return purchaseTickets(
+      {
+        id_event: event.id_event,
+        NameEvent: event.NameEvent ?? event.eventName ?? event.name,
+        date_time: event.date_time,
+        location: event.location,
+      },
+      form
+    )
+  }
 
   return {
+    // Nueva API (usada por EventCard y EventDetailModal)
+    init,
+    getTypesForEvent,
+    getAvailability,
+    purchaseTickets,
+    ensureTypesForEvent,
+    // API legacy
     getTicketTypes,
     buyTickets,
     getUserTickets,

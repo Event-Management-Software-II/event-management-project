@@ -2,9 +2,9 @@
   <article class="event-card" :class="{ 'event-card--past': !isActive }">
     <!-- Media -->
     <div class="card-media" @click="openDetail">
-      <img v-if="event.imageUrl" :src="event.imageUrl" :alt="event.NameEvent" class="card-img" />
+      <img v-if="event.imageUrl" :src="event.imageUrl" :alt="event.eventName" class="card-img" />
       <div v-else class="image-placeholder" :style="{ background: categoryGradient }"></div>
-<div class="category-badge">{{ event.nameCategory }}</div>
+<div class="category-badge">{{ event.categoryName }}</div>
 <span v-if="!isActive" class="past-badge">Finalizado</span>
       <button class="btn-like" :class="{ active: liked }" @click.stop="toggleLike"
   :title="liked ? 'Ya no me interesa' : 'Me interesa'">
@@ -22,7 +22,7 @@
   <span>📅 {{ formatDate(event.date_time) }}</span>
   <span>📍 {{ event.location }}</span>
 </p>
-      <h2 class="card-title">{{ event.NameEvent }}</h2>
+      <h2 class="card-title">{{ event.eventName }}</h2>
       <p class="card-description">{{ event.description }}</p>
     </div>
 
@@ -54,7 +54,7 @@
 
   <template v-else>
     <div class="footer-no-types">
-      <span class="price-tag">{{ event.value === 0 ? 'Gratis' : `Desde $${event.value.toLocaleString('es-CO')}` }}</span>
+      <span class="price-tag">{{ event.price === 0 ? 'Gratis' : `Desde $${event.price.toLocaleString('es-CO')}` }}</span>
       <button class="btn-detail-ghost" @click="openDetail">Ver evento</button>
     </div>
   </template>
@@ -95,7 +95,7 @@ const props = defineProps<{ event: Event }>()
 
 // Composables
 const { isGuest, authHeaders } = useAuth()
-const { getTypesForEvent, getAvailability, init } = useTickets()
+const { getTypesForEvent, getAvailability, init, ensureTypesForEvent } = useTickets()
 
 const API = 'http://localhost:3001/api'
 
@@ -110,6 +110,7 @@ const liked = ref(false)
 
 onMounted(async () => {
   init()
+  ensureTypesForEvent(props.event)
   if (!isGuest.value) {
     try {
       const res = await fetch(`${API}/favorites/${props.event.id_event}/status`, {
@@ -162,7 +163,7 @@ const gradients: Record<string, string> = {
 }
 
 const categoryGradient = computed(() =>
-  gradients[props.event.nameCategory ?? ''] ?? 'linear-gradient(135deg, #6366f1, #a78bfa)'
+  gradients[props.event.categoryName ?? ''] ?? 'linear-gradient(135deg, #6366f1, #a78bfa)'
 )
 
 function formatDate(d: string | null) {
