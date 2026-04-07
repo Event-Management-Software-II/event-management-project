@@ -4,34 +4,38 @@ const API = 'http://localhost:3001/api'
 
 export interface Event {
   id_event: number
-  NameEvent: string
-  Id_category: number
-  value: number
+  eventName: string
+  id_category: number
+  price: number
   description: string
   location: string
   date_time: string | null
+  capacity?: number | null
   created_at: string
   deleted_at: string | null
-  category: { id_category: number; nameCategory: string }
-  images: { imageUrl: string; type: string }[]
-  nameCategory?: string
+  category?: { 
+    id_category: number
+    categoryName: string
+  }
+  images?: { image_url: string; type: string }[]
+  categoryName?: string
   imageUrl?: string | null
 }
 
 export interface EventForm {
-  NameEvent: string
-  Id_category: string
-  value: string
+  eventName: string
+  id_category: string
+  price: string
   description: string
   location: string
   date_time?: string
-  imageUrl?: string
+  image_url?: string
 }
 
 export interface EventFormErrors {
-  NameEvent?: string
-  Id_category?: string
-  value?: string
+  eventName?: string
+  id_category?: string
+  price?: string
   description?: string
   location?: string
 }
@@ -43,19 +47,19 @@ const error   = ref<string | null>(null)
 function mapEvent(e: any): Event {
   return {
     ...e,
-    nameCategory: e.category?.nameCategory ?? '',
-    imageUrl: e.images?.[0]?.imageUrl ?? null,
+    categoryName: e.category?.categoryName ?? '',
+    imageUrl: e.images?.[0]?.image_url ?? null,
   }
 }
 
 function validateForm(form: EventForm): EventFormErrors {
   const errors: EventFormErrors = {}
   const alphanum = /^[a-zA-Z0-9ÁÉÍÓÚáéíóúÑñüÜ\s]+$/
-  if (!form.NameEvent.trim()) errors.NameEvent = 'El nombre es obligatorio.'
-  else if (!alphanum.test(form.NameEvent)) errors.NameEvent = 'Solo letras, números y espacios.'
-  if (!form.Id_category) errors.Id_category = 'Debes seleccionar una categoría.'
-  if (form.value === '' || Number.isNaN(Number(form.value)) || Number(form.value) < 0)
-    errors.value = 'Debe ser un número >= 0.'
+  if (!form.eventName.trim()) errors.eventName = 'El nombre es obligatorio.'
+  else if (!alphanum.test(form.eventName)) errors.eventName = 'Solo letras, números y espacios.'
+  if (!form.id_category) errors.id_category = 'Debes seleccionar una categoría.'
+  if (form.price === '' || Number.isNaN(Number(form.price)) || Number(form.price) < 0)
+    errors.price = 'Debe ser un número >= 0.'
   if (!form.description.trim()) errors.description = 'La descripción es obligatoria.'
   else if (form.description.trim().length < 20)
     errors.description = `Mínimo 20 caracteres. Faltan ${20 - form.description.trim().length}.`
@@ -91,7 +95,7 @@ export function useEvents() {
       events.value = (await res.json()).map(mapEvent)
     } catch (e: any) { error.value = e.message }
     finally { loading.value = false }
-  }
+    }
 
   async function createEvent(form: EventForm): Promise<{ success: boolean; errors?: EventFormErrors; message?: string }> {
     const errors = validateForm(form)
@@ -100,10 +104,18 @@ export function useEvents() {
       const res = await fetch(`${API}/events/admin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...authHeaders() },
-        body: JSON.stringify({ ...form, Id_category: Number(form.Id_category), value: Number(form.value) }),
+        body: JSON.stringify({ 
+          eventName: form.eventName,              // CORREGIDO: eventName en lugar de name
+          id_category: Number(form.id_category), 
+          price: Number(form.price),
+          description: form.description,
+          location: form.location,
+          date_time: form.date_time,
+          image_url: form.image_url
+        }),
       })
       const data = await res.json()
-      if (!res.ok) return res.status === 409 ? { success: false, errors: { NameEvent: data.error } } : { success: false, message: data.error }
+      if (!res.ok) return res.status === 409 ? { success: false, errors: { eventName: data.error } } : { success: false, message: data.error }
       await fetchEventsAdmin()
       return { success: true }
     } catch { return { success: false, message: 'Error de conexión.' } }
@@ -116,10 +128,18 @@ export function useEvents() {
       const res = await fetch(`${API}/events/admin/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', ...authHeaders() },
-        body: JSON.stringify({ ...form, Id_category: Number(form.Id_category), value: Number(form.value) }),
+        body: JSON.stringify({ 
+          eventName: form.eventName,              // CORREGIDO: eventName en lugar de name
+          id_category: Number(form.id_category), 
+          price: Number(form.price),
+          description: form.description,
+          location: form.location,
+          date_time: form.date_time,
+          image_url: form.image_url
+        }),
       })
       const data = await res.json()
-      if (!res.ok) return res.status === 409 ? { success: false, errors: { NameEvent: data.error } } : { success: false, message: data.error }
+      if (!res.ok) return res.status === 409 ? { success: false, errors: { eventName: data.error } } : { success: false, message: data.error }
       await fetchEventsAdmin()
       return { success: true }
     } catch { return { success: false, message: 'Error de conexión.' } }
@@ -171,13 +191,13 @@ export function useEvents() {
     } catch { return { success: false, message: 'Error de conexión.' } }
   }
 
-  async function getInterestStatus(id: number): Promise<{ interested: boolean; total_interests: number }> {
+  async function getInterestStatus(id: number): Promise<{ interested: boolean }> {
     try {
       const res = await fetch(`${API}/events/${id}/interest/status`, {
         headers: authHeaders(),
       })
       return await res.json()
-    } catch { return { interested: false, total_interests: 0 } }
+    } catch { return { interested: false } }
   }
 
   return {

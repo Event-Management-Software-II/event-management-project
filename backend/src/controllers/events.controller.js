@@ -25,7 +25,7 @@ const getEvents = async (req, res) => {
     const events = await prisma.event.findMany({
       where: {
         deleted_at: null,
-        ...(name && { name: { contains: name, mode: 'insensitive' } }),
+        ...(name && { eventName: { contains: name, mode: 'insensitive' } }),
         ...(category_id && { id_category: Number(category_id) }),
       },
       include: {
@@ -91,9 +91,9 @@ const getEventsAdmin = async (req, res) => {
 };
 
 const createEvent = async (req, res) => {
-  const { name, id_category, price, description, location, date_time, image_url } = req.body;
+  const { eventName, id_category, price, description, location, date_time, image_url } = req.body;
 
-  if (!name || !/^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s]+$/.test(name))
+  if (!eventName || !/^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s]+$/.test(eventName))
     return res.status(400).json({ error: 'Invalid name: only letters, numbers and spaces allowed' });
   if (!id_category)
     return res.status(400).json({ error: 'Category is required' });
@@ -105,7 +105,7 @@ const createEvent = async (req, res) => {
   try {
     const event = await prisma.event.create({
       data: {
-        name:        name.trim(),
+        eventName:   eventName.trim(),
         id_category: Number(id_category),
         price:       Number(price),
         description: description.trim(),
@@ -133,7 +133,7 @@ const createEvent = async (req, res) => {
 
 const updateEvent = async (req, res) => {
   const { id } = req.params;
-  const { name, id_category, price, description, location, date_time, image_url } = req.body;
+  const { eventName, id_category, price, description, location, date_time, image_url } = req.body;
 
   try {
     const existing = await prisma.event.findFirst({
@@ -146,7 +146,7 @@ const updateEvent = async (req, res) => {
     const updated = await prisma.event.update({
       where: { id_event: Number(id) },
       data: {
-        ...(name        && { name: name.trim() }),
+        ...(eventName    && { eventName: eventName.trim() }),
         ...(id_category && { id_category: Number(id_category) }),
         ...(price !== undefined && { price: Number(price) }),
         ...(description && { description: description.trim() }),
