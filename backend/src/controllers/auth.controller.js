@@ -1,48 +1,43 @@
 const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const pool = require('../db/pool');
+const jwt    = require('jsonwebtoken');
+const { Prisma } = require('@prisma/client');
+const prisma = require('../prisma/prisma');
 
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) throw new Error('JWT_SECRET is not defined in environment variables');
 
-// POST /api/auth/register
 const register = async (req, res) => {
   const { email, password, fullName } = req.body;
 
-  // Validations
-  if (!email || !password || !fullName) {
+  if (!email || !password || !fullName)
     return res.status(400).json({ error: 'Email, password, and full name are required' });
-  }
-
-  if (password.length < 6) {
+  if (password.length < 6)
     return res.status(400).json({ error: 'Password must be at least 6 characters' });
-  }
 
   try {
-    // Get default 'user' role
-    const roleResult = await pool.query(`SELECT "id_role" FROM "Role" WHERE "nameRole" = 'user'`);
-    if (roleResult.rowCount === 0) {
+    const role = await prisma.role.findFirst({ where: { nameRole: 'user' } });
+    if (!role)
       return res.status(500).json({ error: 'Default user role not found' });
-    }
 
-    const roleId = roleResult.rows[0].id_role;
-
-    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create user
-    const result = await pool.query(
-      `INSERT INTO "User" ("email", "password", "fullName", "id_role")
-       VALUES ($1, $2, $3, $4)
-       RETURNING "id_user", "email", "fullName", "id_role"`,
-      [email, hashedPassword, fullName, roleId]
-    );
+    const user = await prisma.user.create({
+      data: {
+        email,
+        password: hashedPassword,
+        fullName,
+        id_role: role.id_role,
+      },
+      select: {
+        id_user:  true,
+        email:    true,
+        fullName: true,
+        id_role:  true,
+      },
+    });
 
-    const user = result.rows[0];
-
-    // Generate JWT token
     const token = jwt.sign(
-      { id: user.id_user, email: user.email, roleId: user.id_role, role: roleResult.rows[0].nameRole },
+      { id: user.id_user, email: user.email, roleId: user.id_role, role: role.nameRole },
       JWT_SECRET,
       { expiresIn: '24h' }
     );
@@ -51,57 +46,44 @@ const register = async (req, res) => {
       message: 'User registered successfully',
       token,
       user: {
-        id: user.id_user,
-        email: user.email,
+        id:       user.id_user,
+        email:    user.email,
         fullName: user.fullName,
-        roleId: user.id_role,
-        role: roleResult.rows[0].nameRole
-      }
+        roleId:   user.id_role,
+        role:     role.nameRole,
+      },
     });
   } catch (err) {
-    if (err.code === '23505') {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002')
       return res.status(409).json({ error: 'Email already registered' });
-    }
     console.error('Registration error:', err);
     res.status(500).json({ error: 'Failed to register user' });
   }
 };
 
-// POST /api/auth/login
 const login = async (req, res) => {
   const { email, password } = req.body;
 
-  // Validations
-  if (!email || !password) {
+  if (!email || !password)
     return res.status(400).json({ error: 'Email and password are required' });
-  }
 
   try {
-    // Find user
-    const result = await pool.query(
-      `SELECT u."id_user", u."email", u."password", u."fullName", u."id_role", r."nameRole"
-       FROM "User" u
-       JOIN "Role" r ON u."id_role" = r."id_role"
-       WHERE u."email" = $1 AND u."deleted_at" IS NULL`,
-      [email]
-    );
+    const user = await prisma.user.findFirst({
+      where:   { email, deleted_at: null },
+      include: { role: true },
+    });
 
-    if (result.rowCount === 0) {
+    if (!user)
       return res.status(401).json({ error: 'Invalid email or password' });
-    }
 
-    const user = result.rows[0];
-
-    // Verify password
+    // Compatibilidad con hashes $2y$ generados por PHP/Laravel
     const normalizedHash = user.password.replace(/^\$2y\$/, '$2b$');
     const isPasswordValid = await bcrypt.compare(password, normalizedHash);
-    if (!isPasswordValid) {
+    if (!isPasswordValid)
       return res.status(401).json({ error: 'Invalid email or password' });
-    }
 
-    // Generate JWT token
     const token = jwt.sign(
-      { id: user.id_user, email: user.email, roleId: user.id_role, role: user.nameRole },
+      { id: user.id_user, email: user.email, roleId: user.id_role, role: user.role.nameRole },
       JWT_SECRET,
       { expiresIn: '24h' }
     );
@@ -110,12 +92,12 @@ const login = async (req, res) => {
       message: 'Login successful',
       token,
       user: {
-        id: user.id_user,
-        email: user.email,
+        id:       user.id_user,
+        email:    user.email,
         fullName: user.fullName,
-        roleId: user.id_role,
-        role: user.nameRole
-      }
+        roleId:   user.id_role,
+        role:     user.role.nameRole,
+      },
     });
   } catch (err) {
     console.error('Login error:', err);
@@ -123,34 +105,26 @@ const login = async (req, res) => {
   }
 };
 
-// POST /api/auth/logout (optional - mainly used on frontend)
 const logout = async (req, res) => {
   res.json({ message: 'Logout successful' });
 };
 
-// GET /api/auth/me - Get current user info
 const getCurrentUser = async (req, res) => {
   try {
-    const userId = req.userId;
-    const result = await pool.query(
-      `SELECT u."id_user", u."email", u."fullName", u."id_role", r."nameRole"
-       FROM "User" u
-       JOIN "Role" r ON u."id_role" = r."id_role"
-       WHERE u."id_user" = $1 AND u."deleted_at" IS NULL`,
-      [userId]
-    );
+    const user = await prisma.user.findFirst({
+      where:   { id_user: req.userId, deleted_at: null },
+      include: { role: true },
+    });
 
-    if (result.rowCount === 0) {
+    if (!user)
       return res.status(404).json({ error: 'User not found' });
-    }
 
-    const user = result.rows[0];
     res.json({
-      id: user.id_user,
-      email: user.email,
+      id:       user.id_user,
+      email:    user.email,
       fullName: user.fullName,
-      roleId: user.id_role,
-      role: user.nameRole
+      roleId:   user.id_role,
+      role:     user.role.nameRole,
     });
   } catch (err) {
     console.error('Get user error:', err);
