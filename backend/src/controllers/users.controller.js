@@ -1,20 +1,26 @@
-const pool = require('../db/pool')
+const prisma = require('../prisma/prisma');
 
 const getUsers = async (req, res) => {
   try {
-    const result = await pool.query(`
-      SELECT u."id_user" AS id, u."fullName" AS name, u."email",
-             u."created_at", r."nameRole" AS role
-      FROM "User" u
-      JOIN "Role" r ON u."id_role" = r."id_role"
-      WHERE u."deleted_at" IS NULL
-      ORDER BY u."created_at" DESC
-    `)
-    res.json(result.rows)
-  } catch (err) {
-    console.error(err)
-    res.status(500).json({ error: 'Failed to fetch users' })
-  }
-}
+    const users = await prisma.user.findMany({
+      where: { deleted_at: null },
+      include: { role: true },
+      orderBy: { created_at: 'desc' },
+    });
 
-module.exports = { getUsers }
+    const data = users.map(u => ({
+      id:         u.id_user,
+      name:       u.fullName,
+      email:      u.email,
+      role:       u.role.nameRole,
+      created_at: u.created_at,
+    }));
+
+    res.json(data);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to fetch users' });
+  }
+};
+
+module.exports = { getUsers };
