@@ -7,15 +7,15 @@ const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) throw new Error('JWT_SECRET is not defined in environment variables');
 
 const register = async (req, res) => {
-  const { email, password, fullName } = req.body;
+  const { email, password, full_name } = req.body;
 
-  if (!email || !password || !fullName)
+  if (!email || !password || !full_name)
     return res.status(400).json({ error: 'Email, password, and full name are required' });
   if (password.length < 6)
     return res.status(400).json({ error: 'Password must be at least 6 characters' });
 
   try {
-    const role = await prisma.role.findFirst({ where: { nameRole: 'user' } });
+    const role = await prisma.role.findFirst({ where: { name: 'user' } });
     if (!role)
       return res.status(500).json({ error: 'Default user role not found' });
 
@@ -25,19 +25,19 @@ const register = async (req, res) => {
       data: {
         email,
         password: hashedPassword,
-        fullName,
+        full_name,
         id_role: role.id_role,
       },
       select: {
-        id_user:  true,
-        email:    true,
-        fullName: true,
-        id_role:  true,
+        id_user:   true,
+        email:     true,
+        full_name: true,
+        id_role:   true,
       },
     });
 
     const token = jwt.sign(
-      { id: user.id_user, email: user.email, roleId: user.id_role, role: role.nameRole },
+      { id: user.id_user, email: user.email, roleId: user.id_role, role: role.name },
       JWT_SECRET,
       { expiresIn: '24h' }
     );
@@ -46,11 +46,11 @@ const register = async (req, res) => {
       message: 'User registered successfully',
       token,
       user: {
-        id:       user.id_user,
-        email:    user.email,
-        fullName: user.fullName,
-        roleId:   user.id_role,
-        role:     role.nameRole,
+        id:        user.id_user,
+        email:     user.email,
+        full_name: user.full_name,
+        roleId:    user.id_role,
+        role:      role.name,
       },
     });
   } catch (err) {
@@ -83,7 +83,7 @@ const login = async (req, res) => {
       return res.status(401).json({ error: 'Invalid email or password' });
 
     const token = jwt.sign(
-      { id: user.id_user, email: user.email, roleId: user.id_role, role: user.role.nameRole },
+      { id: user.id_user, email: user.email, roleId: user.id_role, role: user.role.name },
       JWT_SECRET,
       { expiresIn: '24h' }
     );
@@ -92,11 +92,11 @@ const login = async (req, res) => {
       message: 'Login successful',
       token,
       user: {
-        id:       user.id_user,
-        email:    user.email,
-        fullName: user.fullName,
-        roleId:   user.id_role,
-        role:     user.role.nameRole,
+        id:        user.id_user,
+        email:     user.email,
+        full_name: user.full_name,
+        roleId:    user.id_role,
+        role:      user.role.name,
       },
     });
   } catch (err) {
@@ -120,11 +120,11 @@ const getCurrentUser = async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
 
     res.json({
-      id:       user.id_user,
-      email:    user.email,
-      fullName: user.fullName,
-      roleId:   user.id_role,
-      role:     user.role.nameRole,
+      id:        user.id_user,
+      email:     user.email,
+      full_name: user.full_name,
+      roleId:    user.id_role,
+      role:      user.role.name,
     });
   } catch (err) {
     console.error('Get user error:', err);
