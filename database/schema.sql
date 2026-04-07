@@ -11,7 +11,7 @@
 -- Roles
 CREATE TABLE "Role" (
     "id_role"    SERIAL PRIMARY KEY,
-    "name"       VARCHAR(100) NOT NULL UNIQUE,
+    "roleName"   VARCHAR(100) NOT NULL UNIQUE,
     "created_at" TIMESTAMP DEFAULT NOW()
 );
 
@@ -29,17 +29,17 @@ CREATE TABLE "User" (
 
 -- Categories
 CREATE TABLE "Category" (
-    "id_category" SERIAL PRIMARY KEY,
-    "name"        VARCHAR(255) NOT NULL UNIQUE,
-    "created_at"  TIMESTAMP DEFAULT NOW(),
-    "updated_at"  TIMESTAMP DEFAULT NOW(),
-    "deleted_at"  TIMESTAMP DEFAULT NULL
+    "id_category"  SERIAL PRIMARY KEY,
+    "categoryName" VARCHAR(255) NOT NULL UNIQUE,
+    "created_at"   TIMESTAMP DEFAULT NOW(),
+    "updated_at"   TIMESTAMP DEFAULT NOW(),
+    "deleted_at"   TIMESTAMP DEFAULT NULL
 );
 
 -- Events
 CREATE TABLE "Event" (
     "id_event"    SERIAL PRIMARY KEY,
-    "name"        VARCHAR(255) NOT NULL UNIQUE,
+    "eventName"   VARCHAR(255) NOT NULL UNIQUE,
     "id_category" INTEGER NOT NULL REFERENCES "Category"("id_category"),
     "price"       DOUBLE PRECISION NOT NULL DEFAULT 0
                     CHECK ("price" >= 0),
@@ -66,7 +66,7 @@ CREATE TABLE "EventImage" (
 CREATE TABLE "EventHistory" (
     "id_history"  SERIAL PRIMARY KEY,
     "id_event"    INTEGER NOT NULL REFERENCES "Event"("id_event"),
-    "name"        VARCHAR(255),
+    "eventName"   VARCHAR(255),
     "id_category" INTEGER,
     "price"       DOUBLE PRECISION,
     "description" TEXT,
@@ -148,10 +148,10 @@ CREATE OR REPLACE FUNCTION save_event_history()
 RETURNS TRIGGER AS $$
 BEGIN
     INSERT INTO "EventHistory" (
-        "id_event", "name", "id_category", "price",
+        "id_event", "eventName", "id_category", "price",
         "description", "location", "date_time"
     ) VALUES (
-        OLD."id_event", OLD."name", OLD."id_category", OLD."price",
+        OLD."id_event", OLD."eventName", OLD."id_category", OLD."price",
         OLD."description", OLD."location", OLD."date_time"
     );
     RETURN NEW;
@@ -163,8 +163,6 @@ CREATE TRIGGER trg_event_history
     FOR EACH ROW EXECUTE FUNCTION save_event_history();
 
 -- Validate available ticket capacity before inserting or updating a purchase.
--- Only counts confirmed (completed) purchases. Raises an exception if the
--- event would be over capacity. Events with NULL capacity are unlimited.
 CREATE OR REPLACE FUNCTION check_ticket_capacity()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -172,7 +170,6 @@ DECLARE
     v_tickets_sold   INTEGER;
     v_current_qty    INTEGER;
 BEGIN
-    -- Skip capacity check for cancelled purchases
     IF NEW."status" = 'cancelled' THEN
         RETURN NEW;
     END IF;
@@ -181,19 +178,16 @@ BEGIN
     FROM "Event"
     WHERE "id_event" = NEW."id_event";
 
-    -- NULL capacity means unlimited tickets
     IF v_capacity IS NULL THEN
         RETURN NEW;
     END IF;
 
-    -- Total completed tickets for this event (excluding the current row on UPDATE)
     SELECT COALESCE(SUM("quantity"), 0) INTO v_tickets_sold
     FROM "Purchase"
     WHERE "id_event"   = NEW."id_event"
       AND "status"     = 'completed'
       AND "id_purchase" <> COALESCE(NEW."id_purchase", -1);
 
-    -- On UPDATE, the old row is already excluded above; on INSERT id_purchase is NULL
     v_current_qty := NEW."quantity";
 
     IF (v_tickets_sold + v_current_qty) > v_capacity THEN
@@ -218,7 +212,7 @@ CREATE TRIGGER trg_purchase_capacity
 CREATE OR REPLACE VIEW v_events AS
 SELECT
     e."id_event",
-    e."name"        AS "event_name",
+    e."eventName"   AS "event_name",
     e."price",
     e."description",
     e."location",
@@ -226,7 +220,7 @@ SELECT
     e."capacity",
     e."created_at",
     c."id_category",
-    c."name"        AS "category_name",
+    c."categoryName" AS "category_name",
     (
         SELECT "image_url"
         FROM "EventImage"
@@ -241,7 +235,7 @@ WHERE e."deleted_at" IS NULL;
 CREATE OR REPLACE VIEW v_categories AS
 SELECT
     "id_category",
-    "name",
+    "categoryName",
     "created_at"
 FROM "Category"
 WHERE "deleted_at" IS NULL;
@@ -249,12 +243,12 @@ WHERE "deleted_at" IS NULL;
 -- Interest ranking (RF-002.2)
 CREATE OR REPLACE VIEW v_interest_report AS
 SELECT
-    e."name"                        AS "event_name",
+    e."eventName"                   AS "event_name",
     COUNT(i."id_interest")::INT     AS "interest_count"
 FROM "Event" e
 LEFT JOIN "Interest" i ON e."id_event" = i."id_event"
 WHERE e."deleted_at" IS NULL
-GROUP BY e."id_event", e."name"
+GROUP BY e."id_event", e."eventName"
 ORDER BY "interest_count" DESC;
 
 -- Favorites per user (active users and events only)
@@ -264,12 +258,12 @@ SELECT
     u."email",
     u."full_name",
     e."id_event",
-    e."name"         AS "event_name",
+    e."eventName"    AS "event_name",
     e."price",
     e."description",
     e."location",
     e."date_time",
-    c."name"         AS "category_name",
+    c."categoryName" AS "category_name",
     (
         SELECT "image_url"
         FROM "EventImage"
@@ -286,8 +280,6 @@ WHERE e."deleted_at" IS NULL
 ORDER BY ue."created_at" DESC;
 
 -- Purchase detail with user and event info
--- Shows all statuses (pending, completed, cancelled) for full history.
--- Filter by status = 'completed' in the application layer when needed.
 CREATE OR REPLACE VIEW v_purchases AS
 SELECT
     p."id_purchase",
@@ -301,10 +293,10 @@ SELECT
     u."email",
     u."full_name",
     e."id_event",
-    e."name"         AS "event_name",
+    e."eventName"    AS "event_name",
     e."location",
     e."date_time",
-    c."name"         AS "category_name",
+    c."categoryName" AS "category_name",
     (
         SELECT "image_url"
         FROM "EventImage"
@@ -323,9 +315,9 @@ ORDER BY p."created_at" DESC;
 CREATE OR REPLACE VIEW v_event_sales AS
 SELECT
     e."id_event",
-    e."name"                                    AS "event_name",
+    e."eventName"                               AS "event_name",
     e."capacity",
-    c."name"                                    AS "category_name",
+    c."categoryName"                            AS "category_name",
     COUNT(p."id_purchase")::INT                 AS "total_orders",
     COALESCE(SUM(p."quantity"), 0)::INT         AS "total_tickets_sold",
     COALESCE(SUM(p."total_price"), 0)           AS "total_revenue"
@@ -334,11 +326,11 @@ JOIN "Category" c ON e."id_category" = c."id_category"
 LEFT JOIN "Purchase" p ON e."id_event" = p."id_event"
     AND p."status" = 'completed'
 WHERE e."deleted_at" IS NULL
-GROUP BY e."id_event", e."name", e."capacity", c."name"
+GROUP BY e."id_event", e."eventName", e."capacity", c."categoryName"
 ORDER BY "total_tickets_sold" DESC;
 
 -- ============================================================
 -- SEED DATA - Roles only (required for the system to work)
 -- ============================================================
-INSERT INTO "Role" ("name") VALUES ('admin') ON CONFLICT DO NOTHING;
-INSERT INTO "Role" ("name") VALUES ('user')  ON CONFLICT DO NOTHING;
+INSERT INTO "Role" ("roleName") VALUES ('admin') ON CONFLICT DO NOTHING;
+INSERT INTO "Role" ("roleName") VALUES ('user')  ON CONFLICT DO NOTHING;
