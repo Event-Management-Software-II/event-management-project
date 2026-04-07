@@ -148,7 +148,7 @@ const gradients: Record<string, string> = {
 }
 
 const categoryGradient = computed(() =>
-  gradients[props.event.nameCategory] ?? 'linear-gradient(135deg, #6366f1, #a78bfa)'
+  gradients[props.event.nameCategory ?? ''] ?? 'linear-gradient(135deg, #6366f1, #a78bfa)'
 )
 
 function formatDate(d: string | null) {
@@ -254,7 +254,7 @@ function formatDate(d: string | null) {
 .card-title { font-size: 1rem; font-weight: 800; color: var(--text-primary, #1a2332); margin-bottom: 6px; line-height: 1.3; }
 .card-description {
   font-size: .8rem; color: var(--text-secondary, #4a5568); line-height: 1.5;
-  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
 
 /* Footer */
