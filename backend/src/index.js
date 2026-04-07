@@ -8,6 +8,7 @@ const eventsRoutes     = require('./routes/events.routes');
 const reportsRoutes    = require('./routes/reports.routes');
 const favoritesRoutes  = require('./routes/favorites.routes');
 const usersRoutes = require('./routes/users.routes');
+const purchasesRouter = require('./routes/purchases.routes');
 
 const app  = express();
 const PORT = process.env.PORT || 3001;
@@ -20,6 +21,8 @@ app.use((req, _res, next) => {
   next();
 });
 
+
+app.use('/api/purchases', purchasesRouter);
 app.use('/api/auth',          authRoutes);
 app.use('/api/categories',    categoriesRoutes);
 app.use('/api/events',        eventsRoutes);
