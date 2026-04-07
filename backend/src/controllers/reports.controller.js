@@ -1,6 +1,20 @@
 const prisma = require('../prisma/prisma');
+const NodeCache = require('node-cache');
+
+const repCache = new NodeCache({ stdTTL: 300 });
+
+const CACHE_KEYS = {
+  interest: 'reports:interest',
+};
+
+const invalidateRepCache = () => {
+  repCache.del(CACHE_KEYS.interest);
+};
 
 const getInterestReport = async (req, res) => {
+  const cached = repCache.get(CACHE_KEYS.interest);
+  if (cached) return res.json(cached);
+
   try {
     const grouped = await prisma.interest.groupBy({
       by: ['id_event'],
@@ -8,7 +22,11 @@ const getInterestReport = async (req, res) => {
       orderBy: { _count: { id_event: 'desc' } },
     });
 
-    if (grouped.length === 0) return res.json([]);
+    if (grouped.length === 0) {
+      const report = [];
+      repCache.set(CACHE_KEYS.interest, report);
+      return res.json(report);
+    }
 
     const events = await prisma.event.findMany({
       where: {
@@ -36,6 +54,7 @@ const getInterestReport = async (req, res) => {
       };
     });
 
+    repCache.set(CACHE_KEYS.interest, report);
     res.json(report);
   } catch (err) {
     console.error(err);
