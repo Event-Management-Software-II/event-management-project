@@ -5,7 +5,7 @@ const API = 'http://localhost:3001/api'
 
 export interface Category {
   id_category: number
-  nameCategory: string
+  name: string
   created_at: string
   deleted_at?: string | null
 }
@@ -33,11 +33,11 @@ export function useCategories() {
   )
 
   const sortedCategories = computed(() =>
-    [...categories.value].sort((a, b) => a.nameCategory.localeCompare(b.nameCategory, 'es'))
+    [...categories.value].sort((a, b) => a.name.localeCompare(b.name, 'es'))
   )
 
   const sortedActiveCategories = computed(() =>
-    [...activeCategories.value].sort((a, b) => a.nameCategory.localeCompare(b.nameCategory, 'es'))
+    [...activeCategories.value].sort((a, b) => a.name.localeCompare(b.name, 'es'))
   )
 
   async function fetchCategories(order?: 'asc') {
@@ -70,7 +70,7 @@ export function useCategories() {
       const res = await fetch(`${API}/categories/admin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...authHeaders() },
-        body: JSON.stringify({ nameCategory: name }),
+        body: JSON.stringify({ name: name }),
       })
       const data = await res.json()
       if (!res.ok) return res.status === 409 ? { success: false, errors: { name: data.error } } : { success: false, message: data.error }
@@ -86,7 +86,7 @@ export function useCategories() {
       const res = await fetch(`${API}/categories/admin/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', ...authHeaders() },
-        body: JSON.stringify({ nameCategory: name }),
+        body: JSON.stringify({ name: name }),
       })
       const data = await res.json()
       if (!res.ok) return res.status === 409 ? { success: false, errors: { name: data.error } } : { success: false, message: data.error }

@@ -56,7 +56,7 @@
               <td>
                 <div class="cat-name-cell">
                   <div class="cat-bar"></div>
-                  <span class="cat-name">{{ cat.nameCategory }}</span>
+                  <span class="cat-name">{{ cat.name }}</span>
                 </div>
               </td>
               <td class="td-secondary">{{ countActiveEvents(cat.id_category) }}</td>
@@ -153,7 +153,7 @@ const filteredCategories = computed(() => {
     ? [...sortedActiveCategories.value]
     : [...sortedActiveCategories.value].reverse()
   if (!searchQuery.value) return list
-  return list.filter(c => c.nameCategory.toLowerCase().includes(searchQuery.value.toLowerCase()))
+  return list.filter(c => c.name.toLowerCase().includes(searchQuery.value.toLowerCase()))
 })
 
 function countActiveEvents(categoryId: number): number {
@@ -170,7 +170,7 @@ const saving    = ref(false)
 function openModal(m: 'create' | 'edit', cat?: Category) {
   mode.value      = m
   formError.value = ''
-  formName.value  = m === 'edit' && cat ? cat.nameCategory : ''
+  formName.value  = m === 'edit' && cat ? cat.name : ''
   editing.value   = cat ?? null
   modalOpen.value = true
 }
