@@ -1,6 +1,18 @@
 const prisma = require('../prisma/prisma');
+const NodeCache = require('node-cache');
+
+// TTL de 5 minutos — la lista de usuarios es de consulta frecuente en el panel admin
+const userCache = new NodeCache({ stdTTL: 300 });
+const CACHE_KEYS = {
+  admin: 'users:admin',
+};
+
+const invalidateUserCache = () => userCache.del(CACHE_KEYS.admin);
 
 const getUsers = async (req, res) => {
+  const cached = userCache.get(CACHE_KEYS.admin);
+  if (cached) return res.json(cached);
+
   try {
     const users = await prisma.user.findMany({
       where: { deleted_at: null },
@@ -16,6 +28,7 @@ const getUsers = async (req, res) => {
       created_at: u.created_at,
     }));
 
+    userCache.set(CACHE_KEYS.admin, data);
     res.json(data);
   } catch (err) {
     console.error(err);
@@ -23,4 +36,4 @@ const getUsers = async (req, res) => {
   }
 };
 
-module.exports = { getUsers };
+module.exports = { getUsers, invalidateUserCache };
