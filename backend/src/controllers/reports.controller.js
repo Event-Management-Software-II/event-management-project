@@ -16,7 +16,7 @@ const getInterestReport = async (req, res) => {
   if (cached) return res.json(cached);
 
   try {
-    const grouped = await prisma.interest.groupBy({
+    const grouped = await prisma.userEvent.groupBy({
       by: ['id_event'],
       _count: { id_event: true },
       orderBy: { _count: { id_event: 'desc' } },
@@ -43,14 +43,8 @@ const getInterestReport = async (req, res) => {
     const report = grouped.map(g => {
       const event = eventMap[g.id_event];
       return {
-        id_event:        g.id_event,
-        // ✅ CORREGIDO: eventName en lugar de NameEvent
-        eventName:       event?.eventName ?? null,
-        // ✅ CORREGIDO: categoryName en lugar de nameCategory
-        categoryName:    event?.category?.categoryName ?? null,
-        location:        event?.location ?? null,
-        date_time:       event?.date_time ?? null,
-        total_interests: g._count.id_event,
+        'Event Name':          event?.eventName ?? null,
+        'Number of Interests': g._count.id_event,
       };
     });
 

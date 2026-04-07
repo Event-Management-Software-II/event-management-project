@@ -80,8 +80,7 @@ const getFavorites = async (req, res) => {
       price:       f.event.price,
       location:    f.event.location,
       dateTime:    f.event.date_time,
-      // ✅ CORREGIDO: categoryName en lugar de nameCategory
-      category:    f.event.category.categoryName,
+      categoryName: f.event.category.categoryName,
       // ✅ CORREGIDO: image_url en lugar de imageUrl
       imageUrl:    f.event.images[0]?.image_url ?? null,
       favoritedAt: f.created_at,

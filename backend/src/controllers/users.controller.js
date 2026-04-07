@@ -21,10 +21,8 @@ const getUsers = async (req, res) => {
 
     const data = users.map(u => ({
       id:         u.id_user,
-      // ✅ CORREGIDO: full_name en lugar de fullName
       name:       u.full_name,
       email:      u.email,
-      // ✅ CORREGIDO: roleName en lugar de nameRole
       role:       u.role.roleName,
       created_at: u.created_at,
     }));
