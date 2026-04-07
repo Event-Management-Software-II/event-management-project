@@ -66,28 +66,88 @@
             </div>
 
             <div v-else class="pub-grid">
-                <EventCard v-for="e in favoriteEvents" :key="e.id_event" :event="e" />
+                <NuxtLink
+                    v-for="e in favoriteEvents"
+                    :key="e.id_event"
+                    :to="`/public?event=${e.id_event}`"
+                    class="fav-card"
+                >
+                    <div class="fav-card-img">
+                        <img v-if="e.imageUrl" :src="e.imageUrl" :alt="e.NameEvent" />
+                        <div v-else class="fav-card-placeholder"></div>
+                        <span class="fav-card-category">{{ e.nameCategory }}</span>
+                    </div>
+                    <div class="fav-card-body">
+                        <p class="fav-card-meta">
+                            <span>📅 {{ formatDate(e.date_time) }}</span>
+                            <span>📍 {{ e.location }}</span>
+                        </p>
+                        <h3 class="fav-card-title">{{ e.NameEvent }}</h3>
+                        <p class="fav-card-price">{{ e.value === 0 ? 'Gratis' : `Desde $${Number(e.value).toLocaleString('es-CO')}` }}</p>
+                    </div>
+                </NuxtLink>
             </div>
         </main>
     </div>
 </template>
 
 <script setup lang="ts">
-import EventCard from '~/components/public/EventCard.vue'
+
 
 definePageMeta({ layout: false })
 
-const { user, logout } = useAuth()
-const { visibleEvents, loading, fetchEvents } = useEvents()
+// Evita SSR para esta página — depende de localStorage para el token
+if (import.meta.server) {
+  await navigateTo('/login')
+}
+
+const { user, logout, authHeaders } = useAuth()
 const dropdownOpen = ref(false)
 
-onMounted(() => fetchEvents())
+const favoriteEvents = ref<any[]>([])
+const loading = ref(false)
 
-// Solo eventos que el usuario marcó como favorito
-// Esto se actualizará cuando el backend devuelva el estado de interés por usuario
-const favoriteEvents = computed(() => visibleEvents.value.filter(e => e.interested))
+onMounted(async () => {
+  console.log('montado, fetching favorites...')
+  loading.value = true
+  try {
+    const res = await fetch('http://localhost:3001/api/favorites', {
+      headers: authHeaders(),
+    })
+    console.log('status:', res.status)
+    const json = await res.json()
+    console.log('response:', json)
+    if (json.ok) {
+      // El backend devuelve idEvent, dateTime, favoritedAt — normalizamos al shape que espera EventCard
+      favoriteEvents.value = json.data.map((f: any) => ({
+        id_event:     f.idEvent,
+        NameEvent:    f.name,
+        value:        f.value,
+        location:     f.location,
+        date_time:    f.dateTime,
+        nameCategory: f.category,
+        imageUrl:     f.imageUrl,
+        description:  '',
+        deleted_at:   null,
+        Id_category:  0,
+        images:       f.imageUrl ? [{ imageUrl: f.imageUrl, type: 'poster' }] : [],
+        category:     { nameCategory: f.category },
+      }))
+    }
+  } catch (e) {
+    console.error('Error fetching favorites:', e)
+  } finally {
+    loading.value = false
+  }
+})
 
 function closeDropdown() { dropdownOpen.value = false }
+
+function formatDate(d: string | null) {
+  if (!d) return 'Fecha por confirmar'
+  try { return new Date(d).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' }) }
+  catch { return d }
+}
 
 async function handleLogout() {
     closeDropdown()
@@ -95,12 +155,16 @@ async function handleLogout() {
     await navigateTo('/login')
 }
 
+type ClickOutsideEl = HTMLElement & { _clickOutside?: (e: MouseEvent) => void }
+
 const vClickOutside = {
-    mounted(el: HTMLElement, binding: any) {
+    mounted(el: ClickOutsideEl, binding: any) {
         el._clickOutside = (e: MouseEvent) => { if (!el.contains(e.target as Node)) binding.value() }
         document.addEventListener('click', el._clickOutside)
     },
-    unmounted(el: HTMLElement) { document.removeEventListener('click', el._clickOutside) },
+    unmounted(el: ClickOutsideEl) {
+        if (el._clickOutside) document.removeEventListener('click', el._clickOutside)
+    },
 }
 </script>
 
@@ -310,5 +374,61 @@ const vClickOutside = {
     .pub-grid {
         grid-template-columns: 1fr;
     }
+}
+
+/* Tarjeta de favorito */
+.fav-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    text-decoration: none;
+    transition: box-shadow 0.2s, transform 0.2s;
+    cursor: pointer;
+}
+.fav-card:hover {
+    box-shadow: 0 8px 32px rgba(0,0,0,.10);
+    transform: translateY(-2px);
+}
+.fav-card-img {
+    position: relative;
+    aspect-ratio: 16/9;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+.fav-card-img img {
+    width: 100%; height: 100%; object-fit: cover;
+}
+.fav-card-placeholder {
+    width: 100%; height: 100%;
+    background: linear-gradient(135deg, #6366f1, #a78bfa);
+}
+.fav-card-category {
+    position: absolute; top: 12px; left: 12px;
+    background: rgba(255,255,255,.95); color: #1a2332;
+    padding: 4px 12px; border-radius: 999px;
+    font-size: .72rem; font-weight: 700;
+    box-shadow: 0 2px 8px rgba(0,0,0,.08);
+}
+.fav-card-body {
+    padding: 14px 16px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.fav-card-meta {
+    font-size: .76rem; color: var(--text-muted);
+    display: flex; flex-direction: column; gap: 2px;
+}
+.fav-card-title {
+    font-size: 1rem; font-weight: 800;
+    color: var(--text-primary); line-height: 1.3;
+}
+.fav-card-price {
+    font-size: .84rem; font-weight: 700; color: #34656d;
+    margin-top: auto;
 }
 </style>
