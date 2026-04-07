@@ -2,9 +2,20 @@ const bcrypt = require('bcryptjs');
 const jwt    = require('jsonwebtoken');
 const { Prisma } = require('@prisma/client');
 const prisma = require('../prisma/prisma');
+const NodeCache = require('node-cache');
 
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) throw new Error('JWT_SECRET is not defined in environment variables');
+
+const userCache = new NodeCache({ stdTTL: 300 });
+const CACHE_KEYS = {
+  currentUser: (id) => `auth:user:${id}`,
+};
+
+const invalidateUserCache = (userId) => {
+  if (!userId) return;
+  userCache.del(CACHE_KEYS.currentUser(userId));
+};
 
 const register = async (req, res) => {
   const { email, password, full_name } = req.body;
@@ -42,16 +53,20 @@ const register = async (req, res) => {
       { expiresIn: '24h' }
     );
 
+    const userResponse = {
+      id:        user.id_user,
+      email:     user.email,
+      full_name: user.full_name,
+      roleId:    user.id_role,
+      role:      role.name,
+    };
+
+    userCache.set(CACHE_KEYS.currentUser(user.id_user), userResponse);
+
     res.status(201).json({
       message: 'User registered successfully',
       token,
-      user: {
-        id:        user.id_user,
-        email:     user.email,
-        full_name: user.full_name,
-        roleId:    user.id_role,
-        role:      role.name,
-      },
+      user: userResponse,
     });
   } catch (err) {
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002')
@@ -88,16 +103,20 @@ const login = async (req, res) => {
       { expiresIn: '24h' }
     );
 
+    const userResponse = {
+      id:        user.id_user,
+      email:     user.email,
+      full_name: user.full_name,
+      roleId:    user.id_role,
+      role:      user.role.name,
+    };
+
+    userCache.set(CACHE_KEYS.currentUser(user.id_user), userResponse);
+
     res.json({
       message: 'Login successful',
       token,
-      user: {
-        id:        user.id_user,
-        email:     user.email,
-        full_name: user.full_name,
-        roleId:    user.id_role,
-        role:      user.role.name,
-      },
+      user: userResponse,
     });
   } catch (err) {
     console.error('Login error:', err);
@@ -110,6 +129,10 @@ const logout = async (req, res) => {
 };
 
 const getCurrentUser = async (req, res) => {
+  const cacheKey = CACHE_KEYS.currentUser(req.userId);
+  const cachedUser = userCache.get(cacheKey);
+  if (cachedUser) return res.json(cachedUser);
+
   try {
     const user = await prisma.user.findFirst({
       where:   { id_user: req.userId, deleted_at: null },
@@ -119,17 +142,20 @@ const getCurrentUser = async (req, res) => {
     if (!user)
       return res.status(404).json({ error: 'User not found' });
 
-    res.json({
+    const userResponse = {
       id:        user.id_user,
       email:     user.email,
       full_name: user.full_name,
       roleId:    user.id_role,
       role:      user.role.name,
-    });
+    };
+
+    userCache.set(cacheKey, userResponse);
+    res.json(userResponse);
   } catch (err) {
     console.error('Get user error:', err);
     res.status(500).json({ error: 'Failed to fetch user data' });
   }
 };
 
-module.exports = { register, login, logout, getCurrentUser };
+module.exports = { register, login, logout, getCurrentUser, invalidateUserCache };
