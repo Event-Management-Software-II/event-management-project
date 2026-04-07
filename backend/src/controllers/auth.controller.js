@@ -52,7 +52,7 @@ const register = async (req, res) => {
       // ✅ CORREGIDO: role.roleName en lugar de role.name
       { id: user.id_user, email: user.email, roleId: user.id_role, role: role.roleName },
       JWT_SECRET,
-      { expiresIn: '24h' }
+      { expiresIn: '5m' }
     );
 
     const userResponse = {
