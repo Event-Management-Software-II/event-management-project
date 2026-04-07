@@ -1,5 +1,6 @@
 // composables/useTickets.ts
 // Backend aún no implementado — toda la lógica vive en localStorage + caché en memoria
+import { ref, onMounted } from 'vue'
 
 export interface TicketType {
   id: string
@@ -41,122 +42,92 @@ function rebuildSalesCache(tickets: Ticket[]) {
 
 // Top 3 eventos activos más vendidos — sin tocar la BD
 export function useTopEvents(activeEventIds: number[]) {
-  return computed(() => {
-    return [...activeEventIds]
-      .map(id => ({ id, sales: salesCache.value[id] ?? 0 }))
-      .sort((a, b) => b.sales - a.sales)
+  const topEventIds = ref<number[]>([])
+
+  function updateTop() {
+    const sorted = Object.entries(salesCache.value)
+      .map(([idStr, count]) => ({ id: Number(idStr), count }))
+      .filter(item => activeEventIds.includes(item.id))
+      .sort((a, b) => b.count - a.count)
       .slice(0, 3)
-  })
+    topEventIds.value = sorted.map(s => s.id)
+  }
+
+  return { topEventIds, updateTop }
 }
+// ────────────────────────────────────────────────────────────────────────────
 
-// ─── Tipos de entrada mock por evento ───────────────────────────────────────
-// Mientras el backend no exista, los tipos se guardan en localStorage
-const TYPES_KEY = 'ticket_types'
-
-function loadAllTypes(): Record<number, TicketType[]> {
-  if (!import.meta.client) return {}
-  try { return JSON.parse(localStorage.getItem(TYPES_KEY) ?? '{}') } catch { return {} }
-}
-
-function saveAllTypes(all: Record<number, TicketType[]>) {
-  if (!import.meta.client) return
-  localStorage.setItem(TYPES_KEY, JSON.stringify(all))
-}
-
-// ─── Tickets comprados ───────────────────────────────────────────────────────
-const TICKETS_KEY = 'purchased_tickets'
-
-function loadTickets(): Ticket[] {
-  if (!import.meta.client) return []
-  try { return JSON.parse(localStorage.getItem(TICKETS_KEY) ?? '[]') } catch { return [] }
-}
-
-function saveTickets(tickets: Ticket[]) {
-  if (!import.meta.client) return
-  localStorage.setItem(TICKETS_KEY, JSON.stringify(tickets))
-  rebuildSalesCache(tickets)
-}
-
-// ─── Helpers ────────────────────────────────────────────────────────────────
-function generateId(): string {
-  return Math.random().toString(36).substring(2, 10).toUpperCase()
-}
-
-function generateQr(eventId: number, type: string, idx: number): string {
-  // Código único legible — en producción esto vendría del backend
-  return `EVT-${eventId}-${type.toUpperCase().replace(/\s/g, '')}-${generateId()}-${idx}`
-}
-
-export function isEventActive(dateTime: string | null): boolean {
-  if (!dateTime) return true // sin fecha = activo
-  const eventEnd = new Date(dateTime)
-  eventEnd.setDate(eventEnd.getDate() + 1) // +1 día
-  return eventEnd > new Date()
-}
-
-// ─── Composable principal ────────────────────────────────────────────────────
 export function useTickets() {
   const allTickets = ref<Ticket[]>([])
-  const loading = ref(false)
 
-  function init() {
+  function loadTickets() {
     if (!import.meta.client) return
-    allTickets.value = loadTickets()
-    rebuildSalesCache(allTickets.value)
-  }
-
-  // Tipos de entrada para un evento
-  function getTypesForEvent(eventId: number): TicketType[] {
-    const all = loadAllTypes()
-    return all[eventId] ?? []
-  }
-
-  // Admin: registrar / actualizar tipos de un evento
-  function setTypesForEvent(eventId: number, types: TicketType[]) {
-    const all = loadAllTypes()
-    all[eventId] = types
-    saveAllTypes(all)
-  }
-
-  // Tickets comprados del usuario actual para un evento
-  function getTicketsForEvent(eventId: number): Ticket[] {
-    return allTickets.value.filter(t => t.eventId === eventId)
-  }
-
-  // Todos los tickets del usuario (histórico completo)
-  function getUserTickets(): Ticket[] {
-    return [...allTickets.value].sort(
-      (a, b) => new Date(b.purchasedAt).getTime() - new Date(a.purchasedAt).getTime()
-    )
-  }
-
-  // Cupos disponibles reales (descontando vendidos)
-  function getAvailability(eventId: number): Record<string, number> {
-    const types = getTypesForEvent(eventId)
-    const soldMap: Record<string, number> = {}
-    for (const t of allTickets.value.filter(t => t.eventId === eventId)) {
-      soldMap[t.type] = (soldMap[t.type] ?? 0) + 1
+    const stored = localStorage.getItem('app_tickets')
+    if (stored) {
+      allTickets.value = JSON.parse(stored)
+      rebuildSalesCache(allTickets.value)
     }
-    const result: Record<string, number> = {}
-    for (const tp of types) {
-      result[tp.id] = Math.max(0, tp.available - (soldMap[tp.name] ?? 0))
-    }
-    return result
   }
 
-  // Comprar tickets
-  function purchaseTickets(
-    event: { id_event: number; NameEvent: string; date_time: string | null; location: string },
+  function saveTickets(tickets: Ticket[]) {
+    if (!import.meta.client) return
+    localStorage.setItem('app_tickets', JSON.stringify(tickets))
+    rebuildSalesCache(tickets)
+  }
+
+  // Generadores dummy
+  const generateId = () => Math.random().toString(36).substring(2, 10)
+  const generateQr = (eventId: number, typeName: string, seq: number) =>
+    `QR-${eventId}-${typeName.toUpperCase()}-${seq}-${Date.now()}`
+
+  // Retorna entradas predeterminadas para un evento basándose en su capacidad/precio
+  async function getTicketTypes(event: any): Promise<TicketType[]> {
+    loadTickets()
+    const soldForEvent = allTickets.value.filter(t => t.eventId === event.id_event)
+
+    const soldGeneral = soldForEvent.filter(t => t.type === 'General').length
+    const soldVIP     = soldForEvent.filter(t => t.type === 'VIP').length
+
+    const basePrice = Number(event.value) || 0
+    const cap       = Number(event.capacity) || 100 // default si no hay capacidad definida
+
+    // Distribución inventada: 80% General, 20% VIP
+    const capGeneral = Math.floor(cap * 0.8)
+    const capVIP     = cap - capGeneral
+
+    return [
+      {
+        id: 't_gen',
+        name: 'General',
+        price: basePrice,
+        available: Math.max(0, capGeneral - soldGeneral),
+        sold: soldGeneral,
+      },
+      {
+        id: 't_vip',
+        name: 'VIP',
+        price: basePrice * 1.5,
+        available: Math.max(0, capVIP - soldVIP),
+        sold: soldVIP,
+      },
+    ]
+  }
+
+  async function buyTickets(
+    event: any,
+    types: TicketType[],
     form: PurchaseForm
-  ): { success: boolean; tickets?: Ticket[]; error?: string } {
-
-    if (!isEventActive(event.date_time)) {
-      return { success: false, error: 'Este evento ya no está activo.' }
-    }
-
-    const types = getTypesForEvent(event.id_event)
-    const availability = getAvailability(event.id_event)
+  ): Promise<{ success: boolean; tickets?: Ticket[]; error?: string }> {
+    loadTickets()
     const newTickets: Ticket[] = []
+
+    // Verificar disponibilidad actual en todo el sistema (solo en memoria)
+    const availability: Record<string, number> = {}
+    for (const t of types) {
+      const sold = allTickets.value.filter(tx => tx.eventId === event.id_event && tx.type === t.name).length
+      const totalCap = t.available + t.sold
+      availability[t.id] = totalCap - sold
+    }
 
     for (const item of form.types) {
       if (!item.quantity || item.quantity <= 0) continue
@@ -170,7 +141,8 @@ export function useTickets() {
         newTickets.push({
           id: generateId(),
           eventId: event.id_event,
-          eventName: event.NameEvent,
+          // MAPEO: Corregido NameEvent (que no existía) a eventName o name
+          eventName: event.eventName || event.name,
           eventDate: event.date_time,
           eventLocation: event.location,
           type: tp.name,
@@ -192,17 +164,21 @@ export function useTickets() {
     return { success: true, tickets: newTickets }
   }
 
+  function getUserTickets(emailOrName: string) {
+    loadTickets()
+    // Simplificación: busca por holderName exacto (en app real buscaría por id_user)
+    return allTickets.value.filter(
+      t => t.holderName.toLowerCase() === emailOrName.toLowerCase()
+    ).sort((a, b) => new Date(b.purchasedAt).getTime() - new Date(a.purchasedAt).getTime())
+  }
+
+  onMounted(() => {
+    loadTickets()
+  })
+
   return {
-    allTickets: readonly(allTickets),
-    salesCache: readonly(salesCache),
-    loading: readonly(loading),
-    init,
-    getTypesForEvent,
-    setTypesForEvent,
-    getTicketsForEvent,
+    getTicketTypes,
+    buyTickets,
     getUserTickets,
-    getAvailability,
-    purchaseTickets,
-    isEventActive,
   }
 }

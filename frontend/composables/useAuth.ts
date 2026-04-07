@@ -1,4 +1,6 @@
 // composables/useAuth.ts
+import { ref, computed, readonly } from 'vue'
+
 const API = 'http://localhost:3001/api'
 
 export type UserRole = 'admin' | 'external' | 'guest'
@@ -48,64 +50,47 @@ function validateLogin(form: LoginForm): AuthFormErrors {
   return errors
 }
 
-function mapUser(raw: any): AuthUser {
+// MAPEO: Capturamos roleName o full_name del backend para armar el AuthUser
+function mapUser(u: any): AuthUser {
   return {
-    id:    raw.id,
-    name:  raw.fullName ?? raw.name ?? '',
-    email: raw.email,
-    role:  mapRole(raw.role ?? raw.nameRole ?? ''),
+    id: u.id_user || u.id,
+    name: u.full_name || u.name,
+    email: u.email,
+    role: u.role?.roleName || u.role?.name || u.role || 'guest',
   }
 }
 
-function mapRole(r: string): UserRole {
-  if (r === 'admin') return 'admin'
-  if (r === 'user')  return 'external'
-  return 'guest'
-}
+const token   = ref<string | null>(import.meta.client ? localStorage.getItem('auth_token') : null)
+const user    = ref<AuthUser | null>(
+  import.meta.client && localStorage.getItem('auth_user')
+    ? JSON.parse(localStorage.getItem('auth_user')!)
+    : null
+)
+const loading = ref(false)
 
 export function useAuth() {
-  // useState is SSR-safe and shared across the app
-  const user    = useState<AuthUser | null>('auth_user', () => null)
-  const token   = useState<string | null>('auth_token', () => null)
-  const loading = useState<boolean>('auth_loading', () => false)
-
-  const isAuthenticated = computed(() => !!user.value)
-  const role            = computed<UserRole>(() => user.value?.role ?? 'guest')
+  const isAuthenticated = computed(() => !!token.value)
+  
+  // RESTAURADO: Variable role para el middleware
+  const role            = computed(() => user.value?.role || 'guest')
+  
   const isAdmin         = computed(() => role.value === 'admin')
   const isExternal      = computed(() => role.value === 'external')
-  const isGuest         = computed(() => role.value === 'guest')
 
-  // Restore session from localStorage (client only)
+  // RESTAURADO: Función restoreSession para el middleware
   function restoreSession() {
-    if (!import.meta.client) return
-    if (token.value) return
-    const savedToken = localStorage.getItem('auth_token')
-    const savedUser  = localStorage.getItem('auth_user')
-    if (savedToken && savedUser) {
-      try {
-        token.value = savedToken
-        user.value  = JSON.parse(savedUser)
-      } catch {
-        localStorage.removeItem('auth_token')
-        localStorage.removeItem('auth_user')
+    if (import.meta.client) {
+      token.value = localStorage.getItem('auth_token')
+      const storedUser = localStorage.getItem('auth_user')
+      if (storedUser) {
+        try {
+          user.value = JSON.parse(storedUser)
+        } catch {
+          user.value = null
+        }
       }
     }
   }
-
-function saveSession(t: string, u: any) {
-  const mapped: AuthUser = {
-    id:    u.id,
-    name:  u.fullName,       // backend devuelve fullName
-    email: u.email,
-    role:  mapRole(u.role),  // backend devuelve 'user', frontend espera 'external'
-  }
-  token.value = t
-  user.value  = mapped
-  if (import.meta.client) {
-    localStorage.setItem('auth_token', t)
-    localStorage.setItem('auth_user', JSON.stringify(mapped))
-  }
-}
 
   function clearSession() {
     token.value = null
@@ -116,54 +101,61 @@ function saveSession(t: string, u: any) {
     }
   }
 
-  function authHeaders(): Record<string, string> {
+  function authHeaders(): HeadersInit {
     return token.value ? { Authorization: `Bearer ${token.value}` } : {}
   }
 
-  async function login(form: LoginForm): Promise<{ success: boolean; errors?: AuthFormErrors }> {
-    const errors = validateLogin(form)
-    if (Object.keys(errors).length) return { success: false, errors }
+  async function login(form: LoginForm): Promise<{ success: boolean; message?: string }> {
     loading.value = true
     try {
       const res  = await fetch(`${API}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: form.email, password: form.password }),
+        body: JSON.stringify(form),
       })
       const data = await res.json()
-      if (!res.ok) return { success: false, errors: { _global: data.error ?? 'Credenciales incorrectas.' } }
-      saveSession(data.token, data.user)
+      if (!res.ok) return { success: false, message: data.error ?? 'Credenciales inválidas.' }
+
+      token.value = data.token
+      user.value  = mapUser(data.user)
+
+      if (import.meta.client) {
+        localStorage.setItem('auth_token', data.token)
+        localStorage.setItem('auth_user', JSON.stringify(user.value))
+      }
       return { success: true }
     } catch {
-      return { success: false, errors: { _global: 'Error de conexión.' } }
+      return { success: false, message: 'Error de conexión al iniciar sesión.' }
     } finally {
       loading.value = false
     }
   }
 
-  async function register(form: RegisterForm): Promise<{ success: boolean; errors?: AuthFormErrors }> {
-    const errors = validateRegister(form)
-    if (Object.keys(errors).length) return { success: false, errors }
+  async function register(form: RegisterForm): Promise<{ success: boolean; message?: string }> {
     loading.value = true
     try {
       const res  = await fetch(`${API}/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fullName: form.name, email: form.email, password: form.password }),
+        body: JSON.stringify({
+          full_name: form.name,
+          email: form.email,
+          password: form.password,
+          roleName: 'user'
+        }),
       })
       const data = await res.json()
-      if (!res.ok) return { success: false, errors: { _global: data.error ?? 'Error al registrarse.' } }
-      saveSession(data.token, data.user)
+      if (!res.ok) return { success: false, message: data.error ?? 'Error al registrarse.' }
+      
       return { success: true }
     } catch {
-      return { success: false, errors: { _global: 'Error de conexión.' } }
+      return { success: false, message: 'Error de conexión.' }
     } finally {
       loading.value = false
     }
   }
 
   async function forgotPassword(email: string): Promise<{ success: boolean; message?: string }> {
-    if (!email.trim()) return { success: false, message: 'El correo es obligatorio.' }
     loading.value = true
     try {
       const res  = await fetch(`${API}/auth/forgot-password`, {
@@ -206,20 +198,21 @@ function saveSession(t: string, u: any) {
   }
 
   return {
-    user,
-    token,
-    loading,
-    isAuthenticated,
+    user: readonly(user),
+    token: readonly(token),
     role,
+    loading: readonly(loading),
+    isAuthenticated,
     isAdmin,
     isExternal,
-    isGuest,
-    authHeaders,
-    restoreSession,
     login,
     register,
-    forgotPassword,
     logout,
+    forgotPassword,
     fetchCurrentUser,
+    authHeaders,
+    validateLogin,
+    validateRegister,
+    restoreSession, // RESTAURADO
   }
 }

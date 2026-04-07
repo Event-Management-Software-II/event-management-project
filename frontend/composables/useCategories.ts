@@ -1,23 +1,23 @@
-// composables/useCategories.ts
 import { ref, computed, readonly } from 'vue'
 
 const API = 'http://localhost:3001/api'
 
 export interface Category {
   id_category: number
-  name: string
+  categoryName: string      // Cambiado de name/nameCategory
   created_at: string
+  updated_at?: string
   deleted_at?: string | null
 }
 
 export interface CategoryFormErrors {
-  name?: string
+  categoryName?: string
 }
 
-function validateForm(name: string): CategoryFormErrors {
+function validateForm(categoryName: string): CategoryFormErrors {
   const errors: CategoryFormErrors = {}
-  if (!name.trim()) errors.name = 'El nombre es obligatorio.'
-  else if (name.trim().length < 2) errors.name = 'Mínimo 2 caracteres.'
+  if (!categoryName.trim()) errors.categoryName = 'El nombre es obligatorio.'
+  else if (categoryName.trim().length < 2) errors.categoryName = 'Mínimo 2 caracteres.'
   return errors
 }
 
@@ -33,11 +33,11 @@ export function useCategories() {
   )
 
   const sortedCategories = computed(() =>
-    [...categories.value].sort((a, b) => a.name.localeCompare(b.name, 'es'))
+    [...categories.value].sort((a, b) => a.categoryName.localeCompare(b.categoryName, 'es'))
   )
 
   const sortedActiveCategories = computed(() =>
-    [...activeCategories.value].sort((a, b) => a.name.localeCompare(b.name, 'es'))
+    [...activeCategories.value].sort((a, b) => a.categoryName.localeCompare(b.categoryName, 'es'))
   )
 
   async function fetchCategories(order?: 'asc') {
@@ -63,33 +63,33 @@ export function useCategories() {
     finally { loading.value = false }
   }
 
-  async function createCategory(name: string): Promise<{ success: boolean; errors?: CategoryFormErrors; message?: string }> {
-    const errors = validateForm(name)
+  async function createCategory(categoryName: string): Promise<{ success: boolean; errors?: CategoryFormErrors; message?: string }> {
+    const errors = validateForm(categoryName)
     if (Object.keys(errors).length) return { success: false, errors }
     try {
       const res = await fetch(`${API}/categories/admin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...authHeaders() },
-        body: JSON.stringify({ name: name }),
+        body: JSON.stringify({ categoryName }),  // El controller espera 'name' pero guarda como categoryName
       })
       const data = await res.json()
-      if (!res.ok) return res.status === 409 ? { success: false, errors: { name: data.error } } : { success: false, message: data.error }
+      if (!res.ok) return res.status === 409 ? { success: false, errors: { categoryName: data.error } } : { success: false, message: data.error }
       await fetchCategoriesAdmin()
       return { success: true }
     } catch { return { success: false, message: 'Error de conexión.' } }
   }
 
-  async function updateCategory(id: number, name: string): Promise<{ success: boolean; errors?: CategoryFormErrors; message?: string }> {
-    const errors = validateForm(name)
+  async function updateCategory(id: number, categoryName: string): Promise<{ success: boolean; errors?: CategoryFormErrors; message?: string }> {
+    const errors = validateForm(categoryName)
     if (Object.keys(errors).length) return { success: false, errors }
     try {
       const res = await fetch(`${API}/categories/admin/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', ...authHeaders() },
-        body: JSON.stringify({ name: name }),
+        body: JSON.stringify({ categoryName }),
       })
       const data = await res.json()
-      if (!res.ok) return res.status === 409 ? { success: false, errors: { name: data.error } } : { success: false, message: data.error }
+      if (!res.ok) return res.status === 409 ? { success: false, errors: { categoryName: data.error } } : { success: false, message: data.error }
       await fetchCategoriesAdmin()
       return { success: true }
     } catch { return { success: false, message: 'Error de conexión.' } }

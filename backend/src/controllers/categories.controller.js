@@ -2,7 +2,6 @@ const { Prisma } = require('@prisma/client');
 const prisma = require('../prisma/prisma');
 const NodeCache = require('node-cache');
 
-// TTL de 5 minutos — las categorías cambian con poca frecuencia
 const catCache = new NodeCache({ stdTTL: 300 });
 
 const CACHE_KEYS = {
@@ -10,7 +9,6 @@ const CACHE_KEYS = {
   admin:  'categories:admin',
 };
 
-// Invalida ambos cachés al modificar cualquier categoría
 const invalidateCatCache = () => {
   catCache.del(CACHE_KEYS.public);
   catCache.del(CACHE_KEYS.admin);
@@ -18,7 +16,6 @@ const invalidateCatCache = () => {
 
 const getCategories = async (req, res) => {
   const { order } = req.query;
-  // La clave incluye el orden para no mezclar resultados
   const cacheKey = `${CACHE_KEYS.public}:${order ?? 'default'}`;
 
   const cached = catCache.get(cacheKey);
@@ -29,10 +26,10 @@ const getCategories = async (req, res) => {
       where: { deleted_at: null },
       select: {
         id_category:  true,
-        name: true,
+        categoryName: true,  // Cambiado de name a categoryName
       },
       orderBy: order === 'asc'
-        ? { name: 'asc' }
+        ? { categoryName: 'asc' }  // Cambiado
         : { id_category: 'asc' },
     });
 
@@ -51,7 +48,7 @@ const getCategoriesAdmin = async (req, res) => {
   try {
     const categories = await prisma.category.findMany({
       where: { deleted_at: null },
-      orderBy: { name: 'asc' },
+      orderBy: { categoryName: 'asc' },  // Cambiado
     });
 
     catCache.set(CACHE_KEYS.admin, categories);
@@ -63,14 +60,14 @@ const getCategoriesAdmin = async (req, res) => {
 };
 
 const createCategory = async (req, res) => {
-  const { name } = req.body;
+  const { categoryName } = req.body;  // Cambiado de name a categoryName
 
-  if (!name || name.trim() === '')
+  if (!categoryName || categoryName.trim() === '')  // Cambiado
     return res.status(400).json({ error: 'Category name is required' });
 
   try {
     const category = await prisma.category.create({
-      data: { name: name.trim() },
+      data: { categoryName: categoryName.trim() },  // Cambiado
     });
 
     invalidateCatCache();
@@ -85,16 +82,16 @@ const createCategory = async (req, res) => {
 
 const updateCategory = async (req, res) => {
   const id = Number(req.params.id);
-  const { name } = req.body;
+  const { categoryName } = req.body;  // Cambiado
 
-  if (!name || name.trim() === '')
+  if (!categoryName || categoryName.trim() === '')  // Cambiado
     return res.status(400).json({ error: 'Category name cannot be empty' });
 
   try {
     const result = await prisma.category.updateMany({
       where: { id_category: id, deleted_at: null },
       data: {
-        name: name.trim(),
+        categoryName: categoryName.trim(),  // Cambiado
         updated_at: new Date(),
       },
     });
@@ -106,7 +103,7 @@ const updateCategory = async (req, res) => {
       where: { id_category: id },
       select: {
         id_category:  true,
-        name: true,
+        categoryName: true,  // Cambiado
         updated_at:   true,
       },
     });
