@@ -94,9 +94,10 @@ import EventDetailModal from '~/components/public/EventDetailModal.vue'
 const props = defineProps<{ event: Event }>()
 
 // Composables
-const { registerInterest, removeInterest, getInterestStatus } = useEvents()
-const { isGuest } = useAuth()
+const { isGuest, authHeaders } = useAuth()
 const { getTypesForEvent, getAvailability, init } = useTickets()
+
+const API = 'http://localhost:3001/api'
 
 const showRegisterModal = ref(false)
 const showDetail = ref(false)
@@ -106,23 +107,36 @@ const isActive = computed(() => isEventActive(props.event.date_time))
 const ticketTypes = computed(() => getTypesForEvent(props.event.id_event))
 const availability = computed(() => getAvailability(props.event.id_event))
 const liked = ref(false)
-const likeCount = ref(0)
 
 onMounted(async () => {
   init()
-  const status = await getInterestStatus(props.event.id_event)
-  liked.value = status.interested
-  likeCount.value = status.total_interests
+  if (!isGuest.value) {
+    try {
+      const res = await fetch(`${API}/favorites/${props.event.id_event}/status`, {
+        headers: authHeaders(),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        liked.value = data.favorited
+      }
+    } catch {}
+  }
 })
 
 async function toggleLike() {
   if (isGuest.value) { showRegisterModal.value = true; return }
   if (liked.value) {
-    const r = await removeInterest(props.event.id_event)
-    if (r.success) { liked.value = false; likeCount.value = r.total_interests ?? likeCount.value - 1 }
+    const res = await fetch(`${API}/favorites/${props.event.id_event}`, {
+      method: 'DELETE',
+      headers: authHeaders(),
+    })
+    if (res.ok) liked.value = false
   } else {
-    const r = await registerInterest(props.event.id_event)
-    if (r.success) { liked.value = true; likeCount.value = r.total_interests ?? likeCount.value + 1 }
+    const res = await fetch(`${API}/favorites/${props.event.id_event}`, {
+      method: 'POST',
+      headers: authHeaders(),
+    })
+    if (res.ok) liked.value = true
   }
 }
 
