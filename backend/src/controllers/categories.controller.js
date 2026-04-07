@@ -29,7 +29,7 @@ const getCategories = async (req, res) => {
       where: { deleted_at: null },
       select: {
         id_category:  true,
-        nameCategory: true,
+        name: true,
       },
       orderBy: order === 'asc'
         ? { name: 'asc' }
@@ -106,7 +106,7 @@ const updateCategory = async (req, res) => {
       where: { id_category: id },
       select: {
         id_category:  true,
-        nameCategory: true,
+        name: true,
         updated_at:   true,
       },
     });
