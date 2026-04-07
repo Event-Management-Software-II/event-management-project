@@ -75,8 +75,8 @@ const getFavorites = async (req, res) => {
 
     const data = favorites.map(f => ({
       idEvent:     f.event.id_event,
-      name:        f.event.NameEvent,
-      value:       f.event.value,
+      name:        f.event.name,
+      value:       f.event.price,
       location:    f.event.location,
       dateTime:    f.event.date_time,
       category:    f.event.category.nameCategory,
