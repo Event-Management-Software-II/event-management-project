@@ -14,6 +14,8 @@
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue'
+
 const props = defineProps<{ categories: any[] }>()
 const emit  = defineEmits(['update:category'])
 

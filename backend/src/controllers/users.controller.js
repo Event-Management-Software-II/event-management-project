@@ -1,7 +1,6 @@
 const prisma = require('../prisma/prisma');
 const NodeCache = require('node-cache');
 
-// TTL de 5 minutos — la lista de usuarios es de consulta frecuente en el panel admin
 const userCache = new NodeCache({ stdTTL: 300 });
 const CACHE_KEYS = {
   admin: 'users:admin',
@@ -22,9 +21,11 @@ const getUsers = async (req, res) => {
 
     const data = users.map(u => ({
       id:         u.id_user,
-      name:       u.fullName,
+      // ✅ CORREGIDO: full_name en lugar de fullName
+      name:       u.full_name,
       email:      u.email,
-      role:       u.role.nameRole,
+      // ✅ CORREGIDO: roleName en lugar de nameRole
+      role:       u.role.roleName,
       created_at: u.created_at,
     }));
 

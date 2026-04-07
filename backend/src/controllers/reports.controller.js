@@ -15,7 +15,8 @@ const getInterestReport = async (req, res) => {
         id_event: { in: grouped.map(g => g.id_event) },
       },
       include: {
-        category: { select: { nameCategory: true } },
+        // ✅ CORREGIDO: seleccionar categoryName en lugar de nameCategory
+        category: { select: { categoryName: true } },
       },
     });
 
@@ -24,11 +25,13 @@ const getInterestReport = async (req, res) => {
     const report = grouped.map(g => {
       const event = eventMap[g.id_event];
       return {
-        id_event:      g.id_event,
-        NameEvent:     event?.NameEvent ?? null,
-        nameCategory:  event?.category?.nameCategory ?? null,
-        location:      event?.location ?? null,
-        date_time:     event?.date_time ?? null,
+        id_event:        g.id_event,
+        // ✅ CORREGIDO: eventName en lugar de NameEvent
+        eventName:       event?.eventName ?? null,
+        // ✅ CORREGIDO: categoryName en lugar de nameCategory
+        categoryName:    event?.category?.categoryName ?? null,
+        location:        event?.location ?? null,
+        date_time:       event?.date_time ?? null,
         total_interests: g._count.id_event,
       };
     });

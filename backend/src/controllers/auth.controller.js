@@ -26,7 +26,8 @@ const register = async (req, res) => {
     return res.status(400).json({ error: 'Password must be at least 6 characters' });
 
   try {
-    const role = await prisma.role.findFirst({ where: { name: 'user' } });
+    // ✅ CORREGIDO: campo es roleName, no name
+    const role = await prisma.role.findFirst({ where: { roleName: 'user' } });
     if (!role)
       return res.status(500).json({ error: 'Default user role not found' });
 
@@ -48,7 +49,8 @@ const register = async (req, res) => {
     });
 
     const token = jwt.sign(
-      { id: user.id_user, email: user.email, roleId: user.id_role, role: role.name },
+      // ✅ CORREGIDO: role.roleName en lugar de role.name
+      { id: user.id_user, email: user.email, roleId: user.id_role, role: role.roleName },
       JWT_SECRET,
       { expiresIn: '24h' }
     );
@@ -58,7 +60,8 @@ const register = async (req, res) => {
       email:     user.email,
       full_name: user.full_name,
       roleId:    user.id_role,
-      role:      role.name,
+      // ✅ CORREGIDO: role.roleName en lugar de role.name
+      role:      role.roleName,
     };
 
     userCache.set(CACHE_KEYS.currentUser(user.id_user), userResponse);
@@ -91,14 +94,14 @@ const login = async (req, res) => {
     if (!user)
       return res.status(401).json({ error: 'Invalid email or password' });
 
-    // Compatibilidad con hashes $2y$ generados por PHP/Laravel
     const normalizedHash = user.password.replace(/^\$2y\$/, '$2b$');
     const isPasswordValid = await bcrypt.compare(password, normalizedHash);
     if (!isPasswordValid)
       return res.status(401).json({ error: 'Invalid email or password' });
 
     const token = jwt.sign(
-      { id: user.id_user, email: user.email, roleId: user.id_role, role: user.role.name },
+      // ✅ CORREGIDO: user.role.roleName en lugar de user.role.name
+      { id: user.id_user, email: user.email, roleId: user.id_role, role: user.role.roleName },
       JWT_SECRET,
       { expiresIn: '24h' }
     );
@@ -108,7 +111,8 @@ const login = async (req, res) => {
       email:     user.email,
       full_name: user.full_name,
       roleId:    user.id_role,
-      role:      user.role.name,
+      // ✅ CORREGIDO: user.role.roleName en lugar de user.role.name
+      role:      user.role.roleName,
     };
 
     userCache.set(CACHE_KEYS.currentUser(user.id_user), userResponse);
@@ -147,7 +151,8 @@ const getCurrentUser = async (req, res) => {
       email:     user.email,
       full_name: user.full_name,
       roleId:    user.id_role,
-      role:      user.role.name,
+      // ✅ CORREGIDO: user.role.roleName en lugar de user.role.name
+      role:      user.role.roleName,
     };
 
     userCache.set(cacheKey, userResponse);

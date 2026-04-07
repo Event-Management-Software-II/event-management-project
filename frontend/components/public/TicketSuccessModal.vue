@@ -43,7 +43,7 @@
 </template>
 
 <script setup lang="ts">
-import { defineComponent, h } from 'vue'
+import { defineComponent, h, ref, nextTick } from 'vue'
 import type { Ticket } from '~/composables/useTickets'
 
 defineProps<{ tickets: Ticket[] }>()

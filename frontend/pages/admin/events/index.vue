@@ -23,7 +23,7 @@
       <select v-model="filterCategory" class="filter-select">
         <option value="">Todas las categorías</option>
         <option v-for="c in sortedActiveCategories" :key="c.id_category" :value="c.id_category">
-          {{ c.nameCategory }}
+          {{ c.categoryName }}
         </option>
       </select>
     </div>
@@ -35,7 +35,7 @@
             <tr>
               <th>Nombre</th>
               <th>Categoría</th>
-              <th>Valor</th>
+              <th>Precio</th>
               <th>Ubicación</th>
               <th>Estado</th>
               <th>Acciones</th>
@@ -54,9 +54,9 @@
               </td>
             </tr>
             <tr v-for="ev in filteredEvents" :key="ev.id_event" :class="{ 'row-deleted': ev.deleted_at }">
-              <td class="td-name">{{ ev.NameEvent }}</td>
-              <td class="td-secondary">{{ ev.nameCategory }}</td>
-              <td class="td-secondary">{{ ev.value === 0 ? 'Gratis' : `$${ev.value.toLocaleString('es-CO')}` }}</td>
+              <td class="td-name">{{ ev.eventName }}</td>
+              <td class="td-secondary">{{ ev.categoryName }}</td>
+              <td class="td-secondary">{{ ev.price === 0 ? 'Gratis' : `$${ev.price.toLocaleString('es-CO')}` }}</td>
               <td class="td-secondary">{{ ev.location }}</td>
               <td>
                 <span :class="['badge', ev.deleted_at ? 'badge--hidden' : 'badge--visible']">
@@ -65,7 +65,7 @@
               </td>
               <td>
                 <div class="actions">
-                  <AppButtonAdmin variant="ghost" size="sm" icon-only @click="openModal('edit', ev)" title="Editar">
+                  <AppButtonAdmin variant="ghost" size="sm" icon-only @click="openModal('edit', { ...ev, images: ev.images ? [...ev.images] : undefined })" title="Editar">
                     <template #icon>
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
                         <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
@@ -73,7 +73,7 @@
                       </svg>
                     </template>
                   </AppButtonAdmin>
-                  <AppButtonAdmin v-if="!ev.deleted_at" variant="danger" size="sm" icon-only @click="confirmDelete(ev)" title="Eliminar">
+                  <AppButtonAdmin v-if="!ev.deleted_at" variant="danger" size="sm" icon-only @click="confirmDelete({ ...ev, images: ev.images ? [...ev.images] : undefined })" title="Eliminar">
                     <template #icon>
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
                         <polyline points="3 6 5 6 21 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
@@ -108,18 +108,18 @@
               <button class="modal-close" @click="closeModal">✕</button>
             </div>
             <div class="modal-body">
-              <AppInputAdmin v-model="form.NameEvent"    label="Nombre"      placeholder="Nombre del evento"   :error="formErrors.NameEvent"   required />
-              <AppInputAdmin v-model="form.Id_category"  label="Categoría"   as="select"                       :error="formErrors.Id_category" required>
+              <AppInputAdmin v-model="form.eventName"    label="Nombre"      placeholder="Nombre del evento"   :error="formErrors.eventName"   required />
+              <AppInputAdmin v-model="form.id_category"  label="Categoría"   as="select"                       :error="formErrors.id_category" required>
                 <option value="" disabled>Selecciona una categoría</option>
                 <option v-for="c in sortedActiveCategories" :key="c.id_category" :value="String(c.id_category)">
-                  {{ c.nameCategory }}
+                  {{ c.categoryName }}
                 </option>
               </AppInputAdmin>
-              <AppInputAdmin v-model="form.value"        label="Valor (COP)" placeholder="0"   type="number" :min="0" :error="formErrors.value" required />
+              <AppInputAdmin v-model="form.price"        label="Precio (COP)" placeholder="0"   type="number" :min="0" :error="formErrors.price" required />
               <AppInputAdmin v-model="form.description"  label="Descripción" as="textarea"     placeholder="Descripción del evento (mín. 20 caracteres)" :error="formErrors.description" required />
               <AppInputAdmin v-model="form.location"     label="Ubicación"   placeholder="Ciudad, lugar"       :error="formErrors.location"    required />
               <AppInputAdmin v-model="form.date_time"    label="Fecha y hora (opcional)" type="datetime-local" />
-              <AppInputAdmin v-model="form.imageUrl"     label="URL imagen (opcional)"   placeholder="https://..." />
+              <AppInputAdmin v-model="form.image_url"     label="URL imagen (opcional)"   placeholder="https://..." />
             </div>
             <div class="modal-footer">
               <AppButtonAdmin variant="secondary" @click="closeModal">Cancelar</AppButtonAdmin>
@@ -143,7 +143,7 @@
             </div>
             <div class="modal-body">
               <p style="font-size:.88rem;color:var(--text-secondary)">
-                ¿Seguro que quieres eliminar <strong>{{ deletingEvent?.NameEvent }}</strong>? El evento quedará inactivo.
+                ¿Seguro que quieres eliminar <strong>{{ deletingEvent?.eventName }}</strong>? El evento quedará inactivo.
               </p>
             </div>
             <div class="modal-footer">
@@ -176,8 +176,8 @@ const filterCategory = ref<number | ''>('')
 
 const filteredEvents = computed(() => {
   return events.value.filter(ev => {
-    const matchName = !searchQuery.value || ev.NameEvent.toLowerCase().includes(searchQuery.value.toLowerCase())
-    const matchCat  = !filterCategory.value || ev.Id_category === filterCategory.value
+    const matchName = !searchQuery.value || ev.eventName.toLowerCase().includes(searchQuery.value.toLowerCase())
+    const matchCat  = !filterCategory.value || ev.id_category === filterCategory.value
     return matchName && matchCat
   })
 })
@@ -190,7 +190,7 @@ const saving     = ref(false)
 const formErrors = ref<Record<string, string>>({})
 
 const emptyForm = (): EventForm => ({
-  NameEvent: '', Id_category: '', value: '', description: '', location: '', date_time: '', imageUrl: '',
+  eventName: '', id_category: '', price: '', description: '', location: '', date_time: '', image_url: '',
 })
 const form = ref<EventForm>(emptyForm())
 
@@ -199,7 +199,7 @@ function openModal(m: 'create' | 'edit', ev?: Event) {
   editing.value = ev ?? null
   formErrors.value = {}
   form.value = ev
-    ? { NameEvent: ev.NameEvent, Id_category: String(ev.Id_category), value: String(ev.value), description: ev.description, location: ev.location, date_time: ev.date_time ?? '', imageUrl: ev.imageUrl ?? '' }
+    ? { eventName: ev.eventName, id_category: String(ev.id_category), price: String(ev.price), description: ev.description, location: ev.location, date_time: ev.date_time ?? '', image_url: ev.imageUrl ?? '' }
     : emptyForm()
   modalOpen.value = true
 }

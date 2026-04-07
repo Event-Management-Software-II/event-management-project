@@ -118,7 +118,8 @@ import EventCard from '~/components/public/EventCard.vue'
 
 const { visibleEvents, loading, fetchEvents } = useEvents()
 const { sortedActiveCategories, fetchCategories } = useCategories()
-const { user, isGuest, logout } = useAuth()
+const { user, logout } = useAuth()
+const isGuest = computed(() => !user.value)
 const dropdownOpen = ref(false)
 function closeDropdown() { dropdownOpen.value = false }
 async function handleLogout() { closeDropdown(); await logout(); await navigateTo('/login') }
@@ -147,10 +148,10 @@ const activeFilters = ref({ free: false, presencial: false, online: false })
 const filtered = computed(() =>
   visibleEvents.value.filter(e => {
     const matchQuery = !query.value ||
-      e.NameEvent.toLowerCase().includes(query.value.toLowerCase()) ||
+    e.eventName.toLowerCase().includes(query.value.toLowerCase()) ||
       e.location.toLowerCase().includes(query.value.toLowerCase())
-    const matchCategory = !selectedCategory.value || e.Id_category === selectedCategory.value
-    const matchFree = !activeFilters.value.free || e.value === 0
+    const matchCategory = !selectedCategory.value || e.id_category === selectedCategory.value
+    const matchFree = !activeFilters.value.free || e.price === 0
     return matchQuery && matchCategory && matchFree
   })
 )
