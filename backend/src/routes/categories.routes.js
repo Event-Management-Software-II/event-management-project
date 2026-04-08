@@ -8,10 +8,7 @@ const { authenticateAdmin } = require('../middleware/auth.middleware');
 
 const router = Router();
 
-// Public
 router.get('/', getCategories);
-
-// Admin
 router.get('/admin',                authenticateAdmin, getCategoriesAdmin);
 router.post('/admin',               authenticateAdmin, createCategory);
 router.put('/admin/:id',            authenticateAdmin, updateCategory);
