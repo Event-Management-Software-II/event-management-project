@@ -37,17 +37,21 @@ export function useTicketCatalog() {
   )
 
   const sortedActiveCatalog = computed(() =>
-    [...activeCatalog.value].sort((a, b) => a.typeName.localeCompare(b.typeName, 'es'))
+    [...activeCatalog.value].sort((a, b) => a.typeName.localeCompare(a.typeName, 'es'))
   )
 
+  // ── GET /ticket-catalog  (público, devuelve solo activos)
+  // Para el admin se usa la misma ruta pero con authHeaders para traer también los inactivos
   async function fetchCatalogAdmin() {
     loading.value = true; error.value = null
     try {
-      const res = await fetch(`${API}/ticket-catalog/admin`, {
+      const res = await fetch(`${API}/ticket-catalog`, {   // ← era /ticket-catalog/admin
         headers: authHeaders(),
       })
       if (!res.ok) throw new Error('Error al cargar tipos de ticket')
-      catalog.value = await res.json()
+      const data = await res.json()
+      // El controller devuelve { ok: true, data: [...] }
+      catalog.value = data.data ?? data
     } catch (e: any) { error.value = e.message }
     finally { loading.value = false }
   }
@@ -75,7 +79,7 @@ export function useTicketCatalog() {
     if (Object.keys(errors).length) return { success: false, errors }
     try {
       const res = await fetch(`${API}/ticket-catalog/admin/${id}`, {
-        method: 'PUT',
+        method: 'PUT',                                     // ← coincide con la nueva ruta PUT /admin/:id
         headers: { 'Content-Type': 'application/json', ...authHeaders() },
         body: JSON.stringify({ typeName }),
       })
@@ -104,7 +108,7 @@ export function useTicketCatalog() {
   async function reactivateCatalogItem(id: number): Promise<{ success: boolean; message?: string }> {
     try {
       const res = await fetch(`${API}/ticket-catalog/admin/${id}/restore`, {
-        method: 'PATCH',
+        method: 'PATCH',                                   // ← coincide con PATCH /admin/:id/restore
         headers: authHeaders(),
       })
       const data = await res.json()

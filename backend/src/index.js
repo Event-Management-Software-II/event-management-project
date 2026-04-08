@@ -9,6 +9,7 @@ const reportsRoutes    = require('./routes/reports.routes');
 const favoritesRoutes  = require('./routes/favorites.routes');
 const usersRoutes = require('./routes/users.routes');
 const purchasesRouter = require('./routes/purchases.routes');
+const ticketCatalogRoutes    = require('./routes/ticketCatalog.routes');
 
 const app  = express();
 const PORT = process.env.PORT || 3001;
@@ -29,6 +30,7 @@ app.use('/api/events',        eventsRoutes);
 app.use('/api/admin/reports', reportsRoutes);
 app.use('/api/favorites',     favoritesRoutes);
 app.use('/api/admin/users', usersRoutes);
+app.use('/api/ticket-catalog',      ticketCatalogRoutes);
 
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
@@ -44,4 +46,3 @@ app.use((err, _req, res, _next) => {
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
 });
-
