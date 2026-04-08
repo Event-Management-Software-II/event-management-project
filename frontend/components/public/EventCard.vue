@@ -54,7 +54,13 @@
 
       <template v-else>
         <div class="footer-no-types">
-          <span class="price-tag">{{ event.price === 0 ? 'Gratis' : `Desde $${event.price.toLocaleString('es-CO')}` }}</span>
+          <span class="price-tag">
+            {{
+              event.min_price == null || event.min_price === 0
+                ? 'Gratis'
+                : `Desde $${event.min_price.toLocaleString('es-CO')}`
+            }}
+          </span>
           <button class="btn-detail-ghost" @click="openDetail">Ver evento</button>
         </div>
       </template>

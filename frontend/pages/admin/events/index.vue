@@ -293,19 +293,10 @@ definePageMeta({ layout: 'admin' })
 
 const { events, loading, fetchEventsAdmin, createEvent, updateEvent, deleteEvent, restoreEvent } = useEvents()
 const { sortedActiveCategories, fetchCategoriesAdmin } = useCategories()
-
-// Catálogo de tipos de tickets desde la API
-const ticketCatalog = ref<{ id_catalog: number; typeName: string }[]>([])
+const { sortedActiveCatalog: ticketCatalog, fetchCatalogAdmin } = useTicketCatalog()
 
 onMounted(async () => {
-  await Promise.all([fetchEventsAdmin(), fetchCategoriesAdmin()])
-  // Cargar catálogo de tipos de tickets
-  try {
-    const res = await $fetch<{ ok: boolean; data: { id_catalog: number; typeName: string }[] }>('/api/ticket-catalog')
-    if (res.ok) ticketCatalog.value = res.data
-  } catch (e) {
-    console.error('Error cargando catálogo de tickets:', e)
-  }
+  await Promise.all([fetchEventsAdmin(), fetchCategoriesAdmin(), fetchCatalogAdmin()])
 })
 
 // ── Helpers de precio ──
