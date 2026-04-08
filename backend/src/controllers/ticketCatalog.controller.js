@@ -132,9 +132,52 @@ const restoreCatalogItem = async (req, res) => {
   }
 };
 
+const updateCatalogItem = async (req, res) => {
+  const { id } = req.params;
+  const { typeName } = req.body;
+
+  if (!typeName?.trim()) return res.status(400).json({ error: 'Type name is required' });
+  if (!/^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s]+$/.test(typeName))
+    return res.status(400).json({ error: 'Invalid type name' });
+
+  try {
+    const result = await prisma.ticketTypeCatalog.updateMany({
+      where: { id_catalog: Number(id), deleted_at: null },
+      data: { typeName: typeName.trim() },
+    });
+    if (result.count === 0) return res.status(404).json({ error: 'Ticket type not found' });
+    invalidateCatalogCache();
+    res.json({ message: 'Ticket type updated successfully' });
+  } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002')
+      return res.status(409).json({ error: 'A ticket type with that name already exists' });
+    res.status(500).json({ error: 'Failed to update ticket type' });
+  }
+};
+
+const getCatalogAdmin = async (req, res) => {
+  try {
+    const catalog = await prisma.ticketTypeCatalog.findMany({
+      orderBy: { typeName: 'asc' },
+      select: {
+        id_catalog: true,
+        typeName: true,
+        created_at: true,
+        deleted_at: true,
+      },
+    });
+    res.json({ ok: true, data: catalog });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to fetch catalog' });
+  }
+};
+
 module.exports = {
   getCatalog,
   createCatalogItem,
   softDeleteCatalogItem,
   restoreCatalogItem,
+  updateCatalogItem,
+  getCatalogAdmin,
 };
