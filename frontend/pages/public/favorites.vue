@@ -66,16 +66,23 @@
             </div>
 
             <div v-else class="pub-grid">
-                <NuxtLink
+                <div
                     v-for="e in favoriteEvents"
                     :key="e.id_event"
-                    :to="`/public?event=${e.id_event}`"
                     class="fav-card"
+                    @click="openEvent(e.id_event)"
                 >
                     <div class="fav-card-img">
                         <img v-if="e.imageUrl" :src="e.imageUrl" :alt="e.NameEvent" />
                         <div v-else class="fav-card-placeholder"></div>
                         <span class="fav-card-category">{{ e.nameCategory }}</span>
+                        <button class="btn-like active" @click.stop="removeFavorite(e.id_event)" title="Ya no me interesa">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                                <path
+                                    d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"
+                                    fill="#e74c3c" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+                            </svg>
+                        </button>
                     </div>
                     <div class="fav-card-body">
                         <p class="fav-card-meta">
@@ -83,16 +90,25 @@
                             <span>📍 {{ e.location }}</span>
                         </p>
                         <h3 class="fav-card-title">{{ e.NameEvent }}</h3>
-                        <p class="fav-card-price">{{ e.value === 0 ? 'Gratis' : `Desde $${Number(e.value).toLocaleString('es-CO')}` }}</p>
+                        <p class="fav-card-price">{{ !e.minPrice || e.minPrice === 0 ? 'Gratis' : `Desde $${Number(e.minPrice).toLocaleString('es-CO')}` }}</p>
                     </div>
-                </NuxtLink>
+                </div>
             </div>
+
+            <!-- Modal de detalle -->
+            <Teleport to="body">
+                <EventDetailModal
+                    v-if="selectedEvent"
+                    :event="selectedEvent"
+                    @close="selectedEvent = null"
+                />
+            </Teleport>
         </main>
     </div>
 </template>
 
 <script setup lang="ts">
-
+import EventDetailModal from '~/components/public/EventDetailModal.vue'
 
 definePageMeta({ layout: false })
 
@@ -106,6 +122,40 @@ const dropdownOpen = ref(false)
 
 const favoriteEvents = ref<any[]>([])
 const loading = ref(false)
+
+const selectedEvent = ref<any | null>(null)
+
+async function removeFavorite(idEvent: number) {
+  try {
+    const res = await fetch(`http://localhost:3001/api/favorites/${idEvent}`, {
+      method: 'DELETE',
+      headers: authHeaders(),
+    })
+    if (res.ok) {
+      favoriteEvents.value = favoriteEvents.value.filter(e => e.id_event !== idEvent)
+    }
+  } catch (e) {
+    console.error('Error removing favorite:', e)
+  }
+}
+
+async function openEvent(idEvent: number) {
+  try {
+    const res = await fetch(`http://localhost:3001/api/events/${idEvent}`)
+    const data = await res.json()
+    if (data && data.id_event) {
+      // Normalizar al mismo shape que usa EventDetailModal
+      selectedEvent.value = {
+        ...data,
+        NameEvent:    data.eventName,
+        nameCategory: data.category?.categoryName ?? '',
+        imageUrl:     data.images?.[0]?.image_url ?? null,
+      }
+    }
+  } catch (e) {
+    console.error('Error fetching event detail:', e)
+  }
+}
 
 onMounted(async () => {
   console.log('montado, fetching favorites...')
@@ -121,17 +171,14 @@ onMounted(async () => {
       // El backend devuelve idEvent, dateTime, favoritedAt — normalizamos al shape que espera EventCard
       favoriteEvents.value = json.data.map((f: any) => ({
         id_event:     f.idEvent,
-        NameEvent:    f.name,
-        value:        f.value,
+        NameEvent:    f.eventName,
+        eventName:    f.eventName,
+        minPrice:     f.minPrice,
         location:     f.location,
         date_time:    f.dateTime,
-        nameCategory: f.category,
+        nameCategory: f.categoryName,
         imageUrl:     f.imageUrl,
         description:  '',
-        deleted_at:   null,
-        Id_category:  0,
-        images:       f.imageUrl ? [{ imageUrl: f.imageUrl, type: 'poster' }] : [],
-        category:     { nameCategory: f.category },
       }))
     }
   } catch (e) {
@@ -431,4 +478,15 @@ const vClickOutside = {
     font-size: .84rem; font-weight: 700; color: #34656d;
     margin-top: auto;
 }
+.btn-like {
+    position: absolute; top: 10px; right: 10px;
+    display: flex; align-items: center; gap: 4px;
+    background: rgba(255,255,255,.92); border: none; border-radius: 20px;
+    padding: 5px 10px; cursor: pointer; font-size: .78rem; font-weight: 700;
+    color: #4a5568; transition: background .15s, transform .15s;
+    box-shadow: 0 2px 8px rgba(0,0,0,.10);
+    z-index: 2;
+}
+.btn-like:hover { background: #fff; transform: scale(1.08); }
+.btn-like.active { color: #e74c3c; }
 </style>

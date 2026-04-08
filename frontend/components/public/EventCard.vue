@@ -117,7 +117,7 @@ const liked = ref(false)
 
 onMounted(async () => {
   init()
-  ensureTypesForEvent(props.event)
+  await ensureTypesForEvent(props.event)
   // FIX 1: condición corregida — solo consultar el status si el usuario ESTÁ autenticado
   if (isAuthenticated.value) {
     try {

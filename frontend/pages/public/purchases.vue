@@ -116,6 +116,22 @@
                         </div>
 
                         <p class="purchase-card-date">Comprado el {{ formatDate(p.created_at) }}</p>
+
+                        <!-- Tickets con QR -->
+                        <div v-if="p.tickets?.length" class="tickets-section">
+                            <button class="tickets-toggle" @click="toggleOpen(p.id_purchase)">
+                                {{ openIds.has(p.id_purchase) ? '▲ Ocultar boletas' : '▼ Ver boletas (' + p.tickets.length + ')' }}
+                            </button>
+                            <div v-if="openIds.has(p.id_purchase)" class="tickets-list">
+                                <div v-for="t in p.tickets" :key="t.idTicket" class="ticket-row">
+                                    <div class="ticket-row-info">
+                                        <span class="ticket-number">{{ t.ticketNumber }}</span>
+                                        <span class="ticket-type-tag">{{ p.ticketType }}</span>
+                                    </div>
+                                    <QrCode :value="t.qrCode" :size="80" />
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -135,20 +151,67 @@ const dropdownOpen = ref(false)
 
 const purchases = ref<any[]>([])
 const loading = ref(false)
+const openIds = ref<Set<number>>(new Set())
+
+function toggleOpen(id: number) {
+  const s = new Set(openIds.value)
+  s.has(id) ? s.delete(id) : s.add(id)
+  openIds.value = s
+}
+
+// ── QR Code (mismo que TicketSuccessModal) ────────────────────────────────────
+import { defineComponent, h } from 'vue'
+const QrCode = defineComponent({
+  props: { value: { type: String, required: true }, size: { type: Number, default: 80 } },
+  setup(props) {
+    return () => {
+      const s = props.size
+      const cells = 10
+      const cell = s / cells
+      let hash = 5381
+      for (let i = 0; i < props.value.length; i++) {
+        hash = ((hash << 5) + hash) ^ props.value.charCodeAt(i)
+        hash = hash >>> 0
+      }
+      const rects: any[] = []
+      for (let row = 0; row < cells; row++) {
+        for (let col = 0; col < cells; col++) {
+          const seed = hash ^ (row * 2654435761) ^ (col * 1013904223)
+          if ((seed >>> 0) % 3 === 0)
+            rects.push(h('rect', { x: col * cell, y: row * cell, width: cell - 0.5, height: cell - 0.5, fill: '#1a2332', rx: 0.5 }))
+        }
+      }
+      const corner = (cx: number, cy: number) => [
+        h('rect', { x: cx, y: cy, width: cell * 3, height: cell * 3, fill: '#1a2332', rx: 2 }),
+        h('rect', { x: cx + cell * 0.8, y: cy + cell * 0.8, width: cell * 1.4, height: cell * 1.4, fill: 'white', rx: 1 }),
+        h('rect', { x: cx + cell * 1.1, y: cy + cell * 1.1, width: cell * 0.8, height: cell * 0.8, fill: '#1a2332', rx: 0.5 }),
+      ]
+      return h('svg', { width: s, height: s, viewBox: `0 0 ${s} ${s}`, style: 'display:block' }, [
+        h('rect', { width: s, height: s, fill: 'white', rx: 4 }),
+        ...rects,
+        ...corner(0, 0),
+        ...corner(s - cell * 3, 0),
+        ...corner(0, s - cell * 3),
+      ])
+    }
+  }
+})
 
 onMounted(async () => {
     loading.value = true
     try {
         const res = await fetch('http://localhost:3001/api/purchases', {
-            headers: authHeaders(),
+            headers: { ...authHeaders(), 'Cache-Control': 'no-cache' },
         })
         const json = await res.json()
-        if (json.ok) {
+        console.log('[purchases] raw response:', json)
+        if (json.ok && Array.isArray(json.data)) {
             purchases.value = json.data.map((p: any) => ({
                 id_purchase:  p.idPurchase,
                 id_event:     p.idEvent,
-                NameEvent:    p.name,
+                NameEvent:    p.eventName,
                 nameCategory: p.category,
+                ticketType:   p.ticketType,
                 location:     p.location,
                 date_time:    p.dateTime,
                 imageUrl:     p.imageUrl,
@@ -157,7 +220,12 @@ onMounted(async () => {
                 total_price:  p.totalPrice,
                 status:       p.status,
                 created_at:   p.createdAt,
+                tickets:      p.tickets ?? [],
             }))
+            console.log('[purchases] mapped:', purchases.value)
+        console.log('[purchases] tickets ejemplo:', purchases.value[0]?.tickets)
+        } else {
+            console.warn('[purchases] respuesta inesperada:', json)
         }
     } catch (e) {
         console.error('Error fetching purchases:', e)
@@ -496,10 +564,29 @@ const vClickOutside = {
     .purchase-card {
         flex-direction: column;
     }
-
     .purchase-card-img {
         width: 100%;
         height: 160px;
     }
+}
+
+/* Tickets QR */
+.tickets-section { margin-top: 8px; border-top: 1px solid var(--border); padding-top: 8px; }
+.tickets-toggle {
+    background: none; border: 1px solid var(--border); border-radius: 8px;
+    padding: 5px 12px; font-size: .78rem; font-weight: 700; color: #34656d;
+    cursor: pointer; transition: background .15s;
+}
+.tickets-toggle:hover { background: #e8f4f5; }
+.tickets-list { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+.ticket-row {
+    display: flex; justify-content: space-between; align-items: center;
+    background: var(--bg-elevated); border-radius: 10px; padding: 10px 14px; gap: 12px;
+}
+.ticket-row-info { display: flex; flex-direction: column; gap: 4px; flex: 1; }
+.ticket-number { font-size: .78rem; font-weight: 700; color: #1a2332; font-family: monospace; }
+.ticket-type-tag {
+    display: inline-block; background: #e8f4f5; color: #34656d;
+    border-radius: 20px; padding: 2px 8px; font-size: .68rem; font-weight: 700;
 }
 </style>

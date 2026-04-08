@@ -132,46 +132,34 @@ export function useTickets() {
     return typesCache.value[eventId] ?? []
   }
 
-  // Inicializa los tipos de un evento concreto (necesario antes de mostrar la card/modal).
-  // Los componentes pueden llamarlo opcionalmente; si no existe en caché se genera.
-  function ensureTypesForEvent(event: any): TicketType[] {
+  // Carga los tipos reales desde la API y los almacena en caché.
+  // Usa los id_event_ticket reales de la BD como id del TicketType.
+  async function ensureTypesForEvent(event: any): Promise<TicketType[]> {
     if (typesCache.value[event.id_event]) return typesCache.value[event.id_event]
 
-    const basePrice = Number(event.price) || 0
-    const cap = Number(event.capacity) || 100
-    const capGeneral = Math.floor(cap * 0.8)
-    const capVIP = cap - capGeneral
+    const API = 'http://localhost:3001/api'
+    try {
+      const res = await fetch(`${API}/events/${event.id_event}/ticket-types`)
+      const json = await res.json()
+      if (!json.ok || !Array.isArray(json.data)) return []
 
-    const soldForEvent = allTickets.value.filter(t => t.eventId === event.id_event)
-    const soldGeneral = soldForEvent.filter(t => t.type === 'General').length
-    const soldVIP = soldForEvent.filter(t => t.type === 'VIP').length
+      const types: TicketType[] = json.data.map((tt: any) => ({
+        id: String(tt.id_event_ticket),   // ID numérico real de la BD
+        name: tt.typeName,
+        price: tt.price,
+        available: tt.tickets_remaining,
+        sold: tt.tickets_sold,
+      }))
 
-    const types: TicketType[] = [
-      {
-        id: `t_gen_${event.id_event}`,
-        name: 'General',
-        price: basePrice,
-        available: Math.max(0, capGeneral - soldGeneral),
-        sold: soldGeneral,
-      },
-      {
-        id: `t_vip_${event.id_event}`,
-        name: 'VIP',
-        price: Math.round(basePrice * 1.5),
-        available: Math.max(0, capVIP - soldVIP),
-        sold: soldVIP,
-      },
-    ]
-
-    typesCache.value[event.id_event] = types
-
-    // Inicializa availability para este evento
-    availabilityCache.value[event.id_event] = {}
-    for (const tp of types) {
-      availabilityCache.value[event.id_event][tp.id] = tp.available
+      typesCache.value[event.id_event] = types
+      availabilityCache.value[event.id_event] = {}
+      for (const tp of types) {
+        availabilityCache.value[event.id_event][tp.id] = tp.available
+      }
+      return types
+    } catch {
+      return []
     }
-
-    return types
   }
 
   // ── getAvailability ──────────────────────────────────────────────────────────
@@ -182,62 +170,71 @@ export function useTickets() {
   }
 
   // ── purchaseTickets ──────────────────────────────────────────────────────────
-  // Firma esperada por EventDetailModal:
-  //   purchaseTickets(eventInfo, form) → { success, tickets?, error? }
+  // Llama al backend (POST /api/purchases) por cada tipo en el carrito.
 
-  function purchaseTickets(
+  async function purchaseTickets(
     eventInfo: { id_event: number; NameEvent: string; date_time: string | null; location: string },
     form: PurchaseForm
-  ): { success: boolean; tickets?: Ticket[]; error?: string } {
-    loadTickets()
-
-    const types = typesCache.value[eventInfo.id_event] ?? []
-    const avail = availabilityCache.value[eventInfo.id_event] ?? {}
+  ): Promise<{ success: boolean; tickets?: Ticket[]; error?: string }> {
+    const { authHeaders } = useAuth()
+    const API = 'http://localhost:3001/api'
     const newTickets: Ticket[] = []
 
     for (const item of form.types) {
       if (!item.quantity || item.quantity <= 0) continue
 
+      const types = typesCache.value[eventInfo.id_event] ?? []
       const tp = types.find(t => t.id === item.typeId)
       if (!tp) return { success: false, error: 'Tipo de entrada no encontrado.' }
 
-      const available = avail[item.typeId] ?? 0
-      if (item.quantity > available) {
-        return { success: false, error: `Solo quedan ${available} entradas de tipo "${tp.name}".` }
-      }
-
-      for (let i = 0; i < item.quantity; i++) {
-        newTickets.push({
-          id: generateId(),
-          eventId: eventInfo.id_event,
-          eventName: eventInfo.NameEvent,
-          eventDate: eventInfo.date_time,
-          eventLocation: eventInfo.location,
-          type: tp.name,
-          price: tp.price,
-          qrCode: generateQr(eventInfo.id_event, tp.name, i + 1),
-          purchasedAt: new Date().toISOString(),
-          holderName: form.holderName,
+      try {
+        const res = await fetch(`${API}/purchases`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...authHeaders() },
+          body: JSON.stringify({
+            id_event_ticket: Number(item.typeId),
+            quantity: item.quantity,
+          }),
         })
-      }
 
-      // Descuenta del caché de disponibilidad inmediatamente
-      availabilityCache.value[eventInfo.id_event][item.typeId] = Math.max(
-        0,
-        available - item.quantity
-      )
+        const data = await res.json()
+        if (!res.ok) {
+          return { success: false, error: data.error ?? 'Error al procesar la compra.' }
+        }
+
+        for (let i = 0; i < item.quantity; i++) {
+          newTickets.push({
+            id: String(data.purchaseId),
+            eventId: eventInfo.id_event,
+            eventName: eventInfo.NameEvent,
+            eventDate: eventInfo.date_time,
+            eventLocation: eventInfo.location,
+            type: tp.name,
+            price: tp.price,
+            qrCode: generateQr(eventInfo.id_event, tp.name, i + 1),
+            purchasedAt: new Date().toISOString(),
+            holderName: form.holderName,
+          })
+        }
+
+        // Actualizar disponibilidad local
+        const avail = availabilityCache.value[eventInfo.id_event] ?? {}
+        availabilityCache.value[eventInfo.id_event] = {
+          ...avail,
+          [item.typeId]: Math.max(0, (avail[item.typeId] ?? 0) - item.quantity),
+        }
+      } catch {
+        return { success: false, error: 'No se pudo conectar con el servidor.' }
+      }
     }
 
     if (newTickets.length === 0) {
       return { success: false, error: 'Selecciona al menos una entrada.' }
     }
 
-    const updated = [...allTickets.value, ...newTickets]
-    allTickets.value = updated
-    saveTickets(updated)
-
     return { success: true, tickets: newTickets }
   }
+
 
   // ── getUserTickets ───────────────────────────────────────────────────────────
 
@@ -252,7 +249,6 @@ export function useTickets() {
   // Mantenidas para compatibilidad con cualquier otro componente que las use.
 
   async function getTicketTypes(event: any): Promise<TicketType[]> {
-    loadTickets()
     return ensureTypesForEvent(event)
   }
 
@@ -263,7 +259,7 @@ export function useTickets() {
   ): Promise<{ success: boolean; tickets?: Ticket[]; error?: string }> {
     // Sincroniza tipos al caché antes de comprar
     if (!typesCache.value[event.id_event]) {
-      typesCache.value[event.id_event] = types
+      await ensureTypesForEvent(event)
     }
     return purchaseTickets(
       {
