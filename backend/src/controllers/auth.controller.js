@@ -50,7 +50,7 @@ const register = async (req, res) => {
     const token = jwt.sign(
       { id: user.id_user, email: user.email, roleId: user.id_role, role: role.roleName },
       JWT_SECRET,
-      { expiresIn: '5m' }
+      { expiresIn: '10m' }
     );
 
     const userResponse = {
@@ -99,7 +99,7 @@ const login = async (req, res) => {
     const token = jwt.sign(
       { id: user.id_user, email: user.email, roleId: user.id_role, role: user.role.roleName },
       JWT_SECRET,
-      { expiresIn: '24h' }
+      { expiresIn: '10m' }
     );
 
     const userResponse = {
