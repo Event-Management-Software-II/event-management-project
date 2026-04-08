@@ -16,7 +16,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [18.x, 20.x]
+        node-version: [20.19.0, 22.12.0]  # versiones minimas que requiere Prisma 7
 
     steps:
       - name: Checkout del código
@@ -31,8 +31,8 @@ jobs:
       - name: Instalar dependencias
         run: npm ci
 
-      - name: Verificar sintaxis (node --check)
-        run: node --check src/index.js
-
       - name: Generar cliente Prisma
         run: npx prisma generate
+
+      - name: Verificar sintaxis
+        run: node --check src/index.js
