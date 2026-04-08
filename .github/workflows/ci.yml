@@ -37,7 +37,7 @@ jobs:
         run: npm ci
 
       - name: Generar cliente Prisma
-        run: npx prisma generate
+        run: npx prisma generate --schema src/prisma/schema.prisma
 
       - name: Verificar sintaxis
         run: node --check src/index.js
