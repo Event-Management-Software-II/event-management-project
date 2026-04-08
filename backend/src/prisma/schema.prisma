@@ -5,14 +5,15 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model Role {
   id_role    Int      @id @default(autoincrement())
-  roleName   String   @unique @db.VarChar(100)  // Cambiado de name a roleName
-  created_at DateTime @default(now())
+  roleName   String   @unique @db.VarChar(100)
+  created_at DateTime @default(now()) @db.Timestamp(6)
 
-  users      User[]
+  users User[]
 
   @@map("Role")
 }
@@ -23,50 +24,87 @@ model User {
   password   String    @db.VarChar(255)
   full_name  String    @db.VarChar(255)
   id_role    Int
-  created_at DateTime  @default(now())
-  updated_at DateTime  @default(now()) @updatedAt
-  deleted_at DateTime?
+  created_at DateTime  @default(now()) @db.Timestamp(6)
+  updated_at DateTime  @default(now()) @db.Timestamp(6)
+  deleted_at DateTime? @db.Timestamp(6)
 
-  role       Role       @relation(fields: [id_role], references: [id_role])
-  favorites  UserEvent[]
-  purchases  Purchase[]
+  role      Role        @relation(fields: [id_role], references: [id_role])
+  favorites UserEvent[]
+  purchases Purchase[]
 
+  @@index([id_role])
   @@map("User")
 }
 
 model Category {
   id_category  Int       @id @default(autoincrement())
-  categoryName String    @unique @db.VarChar(255)  // Cambiado de name a categoryName
-  created_at   DateTime  @default(now())
-  updated_at   DateTime  @default(now()) @updatedAt
-  deleted_at   DateTime?
+  categoryName String    @unique @db.VarChar(255)
+  created_at   DateTime  @default(now()) @db.Timestamp(6)
+  updated_at   DateTime  @default(now()) @db.Timestamp(6)
+  deleted_at   DateTime? @db.Timestamp(6)
 
-  events      Event[]
+  events Event[]
 
   @@map("Category")
 }
 
+model TicketTypeCatalog {
+  id_catalog Int       @id @default(autoincrement())
+  typeName   String    @unique @db.VarChar(100)
+  created_at DateTime  @default(now()) @db.Timestamp(6)
+  updated_at DateTime  @default(now()) @db.Timestamp(6)
+  deleted_at DateTime? @db.Timestamp(6)
+
+  eventAssignments EventTicketType[]
+
+  @@map("TicketTypeCatalog")
+}
+
 model Event {
   id_event    Int       @id @default(autoincrement())
-  eventName   String    @unique @db.VarChar(255)  // Cambiado de name a eventName
+  eventName   String    @unique @db.VarChar(255)
   id_category Int
-  price       Float     @default(0)
   description String
   location    String    @db.VarChar(255)
-  date_time   DateTime?
-  capacity    Int?
-  created_at  DateTime  @default(now())
-  updated_at  DateTime  @default(now()) @updatedAt
-  deleted_at  DateTime?
+  date_time   DateTime  @db.Timestamp(6)
+  created_at  DateTime  @default(now()) @db.Timestamp(6)
+  updated_at  DateTime  @default(now()) @db.Timestamp(6)
+  deleted_at  DateTime? @db.Timestamp(6)
 
-  category    Category       @relation(fields: [id_category], references: [id_category])
+  category    Category               @relation(fields: [id_category], references: [id_category])
   images      EventImage[]
   history     EventHistory[]
   interests   Interest[]
   favorites   UserEvent[]
+  ticketTypes EventTicketType[]
   purchases   Purchase[]
 
+  @@index([id_category])
+  @@index([date_time])
+  @@index([deleted_at])
   @@map("Event")
+}
+
+model EventTicketType {
+  id_event_ticket Int       @id @default(autoincrement())
+  id_event        Int
+  id_catalog      Int
+  price           Float     @default(0) @db.DoublePrecision
+  capacity        Int
+  created_at      DateTime  @default(now()) @db.Timestamp(6)
+  updated_at      DateTime  @default(now()) @db.Timestamp(6)
+  deleted_at      DateTime? @db.Timestamp(6)
+
+  event     Event                  @relation(fields: [id_event], references: [id_event], onDelete: Cascade)
+  catalog   TicketTypeCatalog      @relation(fields: [id_catalog], references: [id_catalog])
+  purchases Purchase[]
+  history   EventTicketTypeHistory[]
+
+  @@unique([id_event, id_catalog])
+  @@index([id_event])
+  @@index([id_catalog])
+  @@index([deleted_at])
+  @@map("EventTicketType")
 }
 
 model EventImage {
@@ -75,36 +113,53 @@ model EventImage {
   image_url String @db.VarChar(255)
   type      String @default("poster") @db.VarChar(50)
 
-  event     Event  @relation(fields: [id_event], references: [id_event], onDelete: Cascade)
+  event Event @relation(fields: [id_event], references: [id_event], onDelete: Cascade)
 
+  @@index([id_event])
   @@map("EventImage")
 }
 
 model EventHistory {
   id_history  Int       @id @default(autoincrement())
   id_event    Int
-  eventName   String?   @db.VarChar(255)  // Cambiado de name a eventName
+  eventName   String?   @db.VarChar(255)
   id_category Int?
-  price       Float?
   description String?
   location    String?   @db.VarChar(255)
-  date_time   DateTime?
-  changed_at  DateTime  @default(now())
+  date_time   DateTime? @db.Timestamp(6)
+  changed_at  DateTime  @default(now()) @db.Timestamp(6)
 
-  event       Event     @relation(fields: [id_event], references: [id_event])
+  event Event @relation(fields: [id_event], references: [id_event])
 
+  @@index([id_event])
+  @@index([changed_at])
   @@map("EventHistory")
+}
+
+model EventTicketTypeHistory {
+  id_history      Int       @id @default(autoincrement())
+  id_event_ticket Int
+  id_event        Int
+  id_catalog      Int
+  price           Float?    @db.DoublePrecision
+  capacity        Int?
+  changed_at      DateTime  @default(now()) @db.Timestamp(6)
+
+  @@index([id_event_ticket])
+  @@index([changed_at])
+  @@map("EventTicketTypeHistory")
 }
 
 model Interest {
   id_interest     Int      @id @default(autoincrement())
   id_event        Int
   user_identifier String   @db.VarChar(255)
-  created_at      DateTime @default(now())
+  created_at      DateTime @default(now()) @db.Timestamp(6)
 
-  event           Event    @relation(fields: [id_event], references: [id_event])
+  event Event @relation(fields: [id_event], references: [id_event])
 
   @@unique([id_event, user_identifier])
+  @@index([id_event])
   @@map("Interest")
 }
 
@@ -112,10 +167,10 @@ model UserEvent {
   id_favorite Int      @id @default(autoincrement())
   id_user     Int
   id_event    Int
-  created_at  DateTime @default(now())
+  created_at  DateTime @default(now()) @db.Timestamp(6)
 
-  user        User     @relation(fields: [id_user], references: [id_user], onDelete: Cascade)
-  event       Event    @relation(fields: [id_event], references: [id_event], onDelete: Cascade)
+  user User  @relation(fields: [id_user], references: [id_user], onDelete: Cascade)
+  event Event @relation(fields: [id_event], references: [id_event], onDelete: Cascade)
 
   @@unique([id_user, id_event])
   @@index([id_user])
@@ -124,21 +179,40 @@ model UserEvent {
 }
 
 model Purchase {
-  id_purchase Int      @id @default(autoincrement())
-  id_user     Int
-  id_event    Int
-  quantity    Int
-  unit_price  Float
-  total_price Float?
-  status      String   @default("pending") @db.VarChar(20)
-  created_at  DateTime @default(now())
-  updated_at  DateTime @default(now()) @updatedAt
+  id_purchase     Int      @id @default(autoincrement())
+  id_user         Int
+  id_event        Int
+  id_event_ticket Int
+  quantity        Int
+  unit_price      Float    @db.DoublePrecision
+  total_price     Float?   @db.DoublePrecision // GENERATED ALWAYS en DB, no incluir en inserts
+  qr_code         String?  // TEXT en SQL
+  status          String   @default("pending") @db.VarChar(20)
+  created_at      DateTime @default(now()) @db.Timestamp(6)
+  updated_at      DateTime @default(now()) @db.Timestamp(6)
 
-  user        User     @relation(fields: [id_user], references: [id_user], onDelete: Cascade)
-  event       Event    @relation(fields: [id_event], references: [id_event], onDelete: Cascade)
+  user    User            @relation(fields: [id_user], references: [id_user], onDelete: Cascade)
+  event   Event           @relation(fields: [id_event], references: [id_event], onDelete: Cascade)
+  ticketType EventTicketType @relation(fields: [id_event_ticket], references: [id_event_ticket])
+  tickets Ticket[]
 
   @@index([id_user])
   @@index([id_event])
+  @@index([id_event_ticket])
   @@index([status])
+  @@index([created_at])
   @@map("Purchase")
+}
+
+model Ticket {
+  id_ticket     Int      @id @default(autoincrement())
+  id_purchase   Int
+  ticket_number String   @unique @db.VarChar(50)
+  qr_code       String   // TEXT en SQL
+  created_at    DateTime @default(now()) @db.Timestamp(6)
+
+  purchase Purchase @relation(fields: [id_purchase], references: [id_purchase], onDelete: Cascade)
+
+  @@index([id_purchase])
+  @@map("Ticket")
 }
