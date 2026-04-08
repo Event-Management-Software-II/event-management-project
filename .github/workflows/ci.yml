@@ -38,6 +38,12 @@ jobs:
       - name: Verificar sintaxis
         run: node --check src/index.js
 
+      - name: Ejecutar backend (verificar errores reales)
+        run: |
+          node src/index.js &
+          sleep 5
+          kill $!
+
   frontend:
     name: Verificar Frontend
     runs-on: ubuntu-latest
