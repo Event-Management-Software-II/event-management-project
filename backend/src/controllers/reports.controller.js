@@ -57,7 +57,6 @@ const getInterestReport = async (req, res) => {
 
 const getSalesReport = async (req, res) => {
   try {
-    // Obtener todos los eventos activos con sus tipos de tickets
     const events = await prisma.event.findMany({
       where: { deleted_at: null },
       include: {
@@ -76,28 +75,26 @@ const getSalesReport = async (req, res) => {
       orderBy: { id_event: 'asc' },
     });
 
-    // Construir reporte fila por fila (evento + tipo de ticket)
     const report = [];
 
     for (const event of events) {
       for (const ett of event.ticketTypes) {
         const ticketsSold = ett.purchases.reduce((sum, p) => sum + p.quantity, 0);
-        const revenue = ett.purchases.reduce((sum, p) => sum + (p.total_price || 0), 0);
+        const revenue     = ett.purchases.reduce((sum, p) => sum + (p.total_price || 0), 0);
 
         report.push({
-          id_event: event.id_event,
-          event_name: event.eventName,
-          category_name: event.category.categoryName,
+          id_event:         event.id_event,
+          event_name:       event.eventName,
+          category_name:    event.category.categoryName,
           ticket_type_name: ett.catalog.typeName,
-          capacity: ett.capacity,
-          tickets_sold: ticketsSold,
+          capacity:         ett.capacity,
+          tickets_sold:     ticketsSold,
           tickets_remaining: ett.capacity - ticketsSold,
-          revenue: revenue,
+          revenue,
         });
       }
     }
 
-    // Ordenar por evento, luego por tickets vendidos desc
     report.sort((a, b) => {
       if (a.id_event !== b.id_event) return a.id_event - b.id_event;
       return b.tickets_sold - a.tickets_sold;
@@ -110,4 +107,43 @@ const getSalesReport = async (req, res) => {
   }
 };
 
-module.exports = { getInterestReport, getSalesReport };
+const getAdminHomeStats = async (req, res) => {
+  try {
+    const [totalRevenue, activeEvents, completedEvents, registeredUsers] = await Promise.all([
+      prisma.purchase.aggregate({
+        where: { status: 'completed' },
+        _sum: { total_price: true },
+      }),
+      prisma.event.count({
+        where: { deleted_at: null, date_time: { gt: new Date() } },
+      }),
+      prisma.event.count({
+        where: {
+          deleted_at: null,
+          date_time: { lte: new Date(Date.now() - 86_400_000) },
+        },
+      }),
+      prisma.user.count({
+        where: {
+          deleted_at: null,
+          role: { roleName: { not: 'admin' } },
+        },
+      }),
+    ]);
+
+    res.json({
+      ok: true,
+      data: {
+        total_revenue:    totalRevenue._sum.total_price ?? 0,
+        active_events:    activeEvents,
+        completed_events: completedEvents,
+        registered_users: registeredUsers,
+      },
+    });
+  } catch (err) {
+    console.error('Error fetching admin home stats:', err);
+    res.status(500).json({ error: 'Failed to fetch admin home stats' });
+  }
+};
+
+module.exports = { getInterestReport, getSalesReport, getAdminHomeStats };
