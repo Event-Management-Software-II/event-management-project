@@ -1,7 +1,5 @@
-// composables/useTickets.ts
 import { ref } from 'vue'
 
-// ── Interfaces ────────────────────────────────────────────────────────────────
 
 export interface TicketType {
   id: string
@@ -283,7 +281,6 @@ export function useTickets() {
     getAvailability,
     purchaseTickets,
     ensureTypesForEvent,
-    // API legacy
     getTicketTypes,
     buyTickets,
     getUserTickets,
