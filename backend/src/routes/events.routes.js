@@ -15,23 +15,25 @@ const { authenticateToken, authenticateAdmin } = require('../middleware/auth.mid
 const router = Router();
 
 // Public
-router.get('/',                         getEvents);
-router.get('/admin/all',                authenticateAdmin, getEventsAdmin);
-router.get('/:id',                      getEventById);
-router.get('/:id/interest/status',      authenticateToken, getInterestStatus);
-router.post('/:id/interest',            authenticateToken, registerInterest);
-router.delete('/:id/interest',          authenticateToken, removeInterest);
+router.get('/',                              getEvents);
 
-// NUEVO: Ticket types por evento (Public: GET, Admin: POST/PUT/DELETE)
-router.get('/:id/ticket-types',         getEventTicketTypes);
-router.post('/:id/ticket-types',        authenticateAdmin, createEventTicketType);
-router.put('/:id/ticket-types/:id_ticket', authenticateAdmin, updateEventTicketType);
-router.delete('/:id/ticket-types/:id_ticket', authenticateAdmin, softDeleteEventTicketType);
+// Admin estáticos — DEBEN ir antes de /:id para que Express no los confunda con IDs
+router.get('/admin/all',                     authenticateAdmin, getEventsAdmin);
+router.post('/admin',                        authenticateAdmin, createEvent);
+router.put('/admin/:id',                     authenticateAdmin, updateEvent);
+router.delete('/admin/:id',                  authenticateAdmin, deleteEvent);
+router.patch('/admin/:id/restore',           authenticateAdmin, restoreEvent);
 
-// Admin
-router.post('/admin',                   authenticateAdmin, createEvent);
-router.put('/admin/:id',                authenticateAdmin, updateEvent);
-router.delete('/admin/:id',             authenticateAdmin, deleteEvent);
-router.patch('/admin/:id/restore',      authenticateAdmin, restoreEvent);
+// Rutas dinámicas por :id
+router.get('/:id',                           getEventById);
+router.get('/:id/interest/status',           authenticateToken, getInterestStatus);
+router.post('/:id/interest',                 authenticateToken, registerInterest);
+router.delete('/:id/interest',               authenticateToken, removeInterest);
+
+// Ticket types por evento
+router.get('/:id/ticket-types',              getEventTicketTypes);
+router.post('/:id/ticket-types',             authenticateAdmin, createEventTicketType);
+router.put('/:id/ticket-types/:id_ticket',   authenticateAdmin, updateEventTicketType);
+router.delete('/:id/ticket-types/:id_ticket',authenticateAdmin, softDeleteEventTicketType);
 
 module.exports = router;

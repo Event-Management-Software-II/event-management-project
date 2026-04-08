@@ -6,14 +6,14 @@ export interface Event {
   id_event: number
   eventName: string
   id_category: number
-  price: number
   description: string
   location: string
   date_time: string | null
   capacity?: number | null
   created_at: string
   deleted_at: string | null
-  category?: { 
+  ticketTypes?: any[]
+  category?: {
     id_category: number
     categoryName: string
   }
@@ -25,7 +25,6 @@ export interface Event {
 export interface EventForm {
   eventName: string
   id_category: string
-  price: string
   description: string
   location: string
   date_time?: string
@@ -35,7 +34,6 @@ export interface EventForm {
 export interface EventFormErrors {
   eventName?: string
   id_category?: string
-  price?: string
   description?: string
   location?: string
 }
@@ -58,8 +56,6 @@ function validateForm(form: EventForm): EventFormErrors {
   if (!form.eventName.trim()) errors.eventName = 'El nombre es obligatorio.'
   else if (!alphanum.test(form.eventName)) errors.eventName = 'Solo letras, números y espacios.'
   if (!form.id_category) errors.id_category = 'Debes seleccionar una categoría.'
-  if (form.price === '' || Number.isNaN(Number(form.price)) || Number(form.price) < 0)
-    errors.price = 'Debe ser un número >= 0.'
   if (!form.description.trim()) errors.description = 'La descripción es obligatoria.'
   else if (form.description.trim().length < 20)
     errors.description = `Mínimo 20 caracteres. Faltan ${20 - form.description.trim().length}.`
@@ -95,51 +91,55 @@ export function useEvents() {
       events.value = (await res.json()).map(mapEvent)
     } catch (e: any) { error.value = e.message }
     finally { loading.value = false }
-    }
+  }
 
-  async function createEvent(form: EventForm): Promise<{ success: boolean; errors?: EventFormErrors; message?: string }> {
+  async function createEvent(form: EventForm & { ticketTypes?: any[] }): Promise<{ success: boolean; errors?: EventFormErrors; message?: string }> {
     const errors = validateForm(form)
     if (Object.keys(errors).length) return { success: false, errors }
     try {
       const res = await fetch(`${API}/events/admin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...authHeaders() },
-        body: JSON.stringify({ 
-          eventName: form.eventName,              // CORREGIDO: eventName en lugar de name
-          id_category: Number(form.id_category), 
-          price: Number(form.price),
+        body: JSON.stringify({
+          eventName:   form.eventName,
+          id_category: Number(form.id_category),
           description: form.description,
-          location: form.location,
-          date_time: form.date_time,
-          image_url: form.image_url
+          location:    form.location,
+          date_time:   form.date_time,
+          image_url:   form.image_url,
+          ticketTypes: form.ticketTypes ?? [],
         }),
       })
       const data = await res.json()
-      if (!res.ok) return res.status === 409 ? { success: false, errors: { eventName: data.error } } : { success: false, message: data.error }
+      if (!res.ok) return res.status === 409
+        ? { success: false, errors: { eventName: data.error } }
+        : { success: false, message: data.error }
       await fetchEventsAdmin()
       return { success: true }
     } catch { return { success: false, message: 'Error de conexión.' } }
   }
 
-  async function updateEvent(id: number, form: EventForm): Promise<{ success: boolean; errors?: EventFormErrors; message?: string }> {
+  async function updateEvent(id: number, form: EventForm & { ticketTypes?: any[] }): Promise<{ success: boolean; errors?: EventFormErrors; message?: string }> {
     const errors = validateForm(form)
     if (Object.keys(errors).length) return { success: false, errors }
     try {
       const res = await fetch(`${API}/events/admin/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', ...authHeaders() },
-        body: JSON.stringify({ 
-          eventName: form.eventName,              // CORREGIDO: eventName en lugar de name
-          id_category: Number(form.id_category), 
-          price: Number(form.price),
+        body: JSON.stringify({
+          eventName:   form.eventName,
+          id_category: Number(form.id_category),
           description: form.description,
-          location: form.location,
-          date_time: form.date_time,
-          image_url: form.image_url
+          location:    form.location,
+          date_time:   form.date_time,
+          image_url:   form.image_url,
+          ticketTypes: form.ticketTypes ?? [],
         }),
       })
       const data = await res.json()
-      if (!res.ok) return res.status === 409 ? { success: false, errors: { eventName: data.error } } : { success: false, message: data.error }
+      if (!res.ok) return res.status === 409
+        ? { success: false, errors: { eventName: data.error } }
+        : { success: false, message: data.error }
       await fetchEventsAdmin()
       return { success: true }
     } catch { return { success: false, message: 'Error de conexión.' } }

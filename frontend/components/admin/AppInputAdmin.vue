@@ -70,7 +70,9 @@ const emit = defineEmits<{ 'update:modelValue': [v: string | number] }>()
 const fieldId = `field-${++counter}`
 
 const inputAttrs = computed(() => {
-  const attrs: Record<string, unknown> = { type: props.type }
+  const attrs: Record<string, unknown> = {}
+  // type solo aplica a <input>, no a <select> ni <textarea>
+  if (props.as === 'input') attrs.type = props.type
   if (props.maxlength) attrs.maxlength = props.maxlength
   if (props.min !== undefined) attrs.min = props.min
   if (props.error) { attrs['aria-invalid'] = 'true'; attrs['aria-describedby'] = `${fieldId}-err` }
