@@ -25,14 +25,12 @@ const getEvents = async (req, res) => {
     const events = await prisma.event.findMany({
       where: {
         deleted_at: null,
-        date_time: { gt: new Date() }, // Solo eventos activos (futuros)
         ...(name && { eventName: { contains: name, mode: 'insensitive' } }),
         ...(category_id && { id_category: Number(category_id) }),
       },
       include: {
         category: true,
         images: { where: { type: 'poster' }, take: 1 },
-        // NUEVO: Incluir tipos de tickets disponibles
         ticketTypes: {
           where: { deleted_at: null },
           include: {
@@ -44,13 +42,24 @@ const getEvents = async (req, res) => {
       orderBy: { date_time: 'asc' },
     });
 
-    // Transformar para incluir min/max price y total capacity
-    const eventsWithPricing = events.map(event => ({
-      ...event,
-      min_price: event.ticketTypes.length > 0 ? Math.min(...event.ticketTypes.map(tt => tt.price)) : null,
-      max_price: event.ticketTypes.length > 0 ? Math.max(...event.ticketTypes.map(tt => tt.price)) : null,
-      total_capacity: event.ticketTypes.reduce((sum, tt) => sum + tt.capacity, 0),
-    }));
+    const now = new Date();
+    const completedThreshold = new Date(now);
+    completedThreshold.setDate(completedThreshold.getDate() - 1);
+
+    // Transformar para incluir min/max price, total capacity e is_completed
+    const eventsWithPricing = events
+      .map(event => ({
+        ...event,
+        is_completed: event.date_time <= completedThreshold,
+        min_price: event.ticketTypes.length > 0 ? Math.min(...event.ticketTypes.map(tt => tt.price)) : null,
+        max_price: event.ticketTypes.length > 0 ? Math.max(...event.ticketTypes.map(tt => tt.price)) : null,
+        total_capacity: event.ticketTypes.reduce((sum, tt) => sum + tt.capacity, 0),
+      }))
+      // Activos primero, completados al final; dentro de cada grupo por date_time asc
+      .sort((a, b) => {
+        if (a.is_completed !== b.is_completed) return a.is_completed ? 1 : -1;
+        return new Date(a.date_time).getTime() - new Date(b.date_time).getTime();
+      });
 
     eventCache.set(cacheKey, eventsWithPricing);
     res.json(eventsWithPricing);
@@ -86,9 +95,13 @@ const getEventById = async (req, res) => {
 
     if (!event) return res.status(404).json({ error: 'Event not found' });
 
-    // Agregar metadatos de pricing
+    const completedThreshold = new Date();
+    completedThreshold.setDate(completedThreshold.getDate() - 1);
+
+    // Agregar metadatos de pricing e is_completed
     const eventWithPricing = {
       ...event,
+      is_completed: event.date_time <= completedThreshold,
       min_price: event.ticketTypes.length > 0 ? Math.min(...event.ticketTypes.map(tt => tt.price)) : null,
       max_price: event.ticketTypes.length > 0 ? Math.max(...event.ticketTypes.map(tt => tt.price)) : null,
       total_capacity: event.ticketTypes.reduce((sum, tt) => sum + tt.capacity, 0),
