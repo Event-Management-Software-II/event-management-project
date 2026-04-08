@@ -6,7 +6,7 @@
       <div v-else class="image-placeholder" :style="{ background: categoryGradient }"></div>
       <div class="category-badge">{{ event.categoryName }}</div>
       <span v-if="!isActive" class="past-badge">Finalizado</span>
-      <button class="btn-like" :class="{ active: liked }" @click.stop="toggleLike"
+      <button v-if="isActive" class="btn-like" :class="{ active: liked }" @click.stop="toggleLike"
         :title="liked ? 'Ya no me interesa' : 'Me interesa'">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
           <path
@@ -133,6 +133,7 @@ onMounted(async () => {
 })
 
 async function toggleLike() {
+  if (!isActive.value) return
   if (!isAuthenticated.value) { showRegisterModal.value = true; return }
   if (liked.value) {
     const res = await fetch(`${API}/favorites/${props.event.id_event}`, {

@@ -31,7 +31,9 @@ export interface PurchaseForm {
 
 export function isEventActive(date_time: string | null): boolean {
   if (!date_time) return true
-  return new Date(date_time) > new Date()
+  const eventEnd = new Date(date_time)
+  eventEnd.setDate(eventEnd.getDate() + 1)
+  return eventEnd > new Date()
 }
 
 // ── Caché en memoria (compartida entre instancias) ────────────────────────────

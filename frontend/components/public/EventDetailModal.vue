@@ -53,8 +53,8 @@
                   v-for="(tp, i) in ticketTypes"
                   :key="tp.id"
                   class="venue-zone"
-                  :class="[`zone-color-${i % 6}`, { 'zone--selected': selectedTypeId === tp.id, 'zone--sold': (availability[tp.id] ?? 0) === 0 }]"
-                  @click="selectType(tp.id)"
+                  :class="[`zone-color-${i % 6}`, { 'zone--selected': selectedTypeId === tp.id, 'zone--sold': (availability[tp.id] ?? 0) === 0, 'zone--disabled': !isActive }]"
+                  @click="isActive && selectType(tp.id)"
                 >
                   <span class="zone-name">{{ tp.name }}</span>
                   <span class="zone-seats">{{ (availability[tp.id] ?? 0) === 0 ? 'Agotado' : `${availability[tp.id]} disp.` }}</span>
@@ -426,6 +426,7 @@ function formatDate(d: string | null) {
 .venue-zone:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,.1); }
 .venue-zone--selected { border-color: #1a2332 !important; box-shadow: 0 4px 16px rgba(0,0,0,.15); transform: translateY(-2px); }
 .venue-zone--sold { opacity: .45; cursor: not-allowed; }
+.zone--disabled { cursor: default; pointer-events: none; opacity: .6; }
 .zone-name { font-size: .76rem; font-weight: 700; color: #1a2332; }
 .zone-seats { font-size: .68rem; color: #4a5568; }
 
