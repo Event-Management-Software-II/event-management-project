@@ -11,12 +11,16 @@ on:
 
 jobs:
   build:
-    name: Instalar y Verificar
+    name: Instalar y Verificar Backend
     runs-on: ubuntu-latest
 
     strategy:
       matrix:
-        node-version: [18.x, 20.x]
+        node-version: [20.19.0, 22.12.0]
+
+    defaults:
+      run:
+        working-directory: backend
 
     steps:
       - name: Checkout del código
@@ -27,12 +31,13 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
 
       - name: Instalar dependencias
         run: npm ci
 
-      - name: Verificar sintaxis (node --check)
-        run: node --check src/index.js
-
       - name: Generar cliente Prisma
         run: npx prisma generate
+
+      - name: Verificar sintaxis
+        run: node --check src/index.js
