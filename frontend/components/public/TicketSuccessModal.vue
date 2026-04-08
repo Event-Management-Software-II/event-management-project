@@ -36,7 +36,7 @@
     <!-- Acciones -->
     <div class="success-actions">
       <button class="btn-print" @click="printAll">🖨️ Imprimir todas ({{ tickets.length }})</button>
-      <NuxtLink to="/public/tickets" class="btn-secondary">Ver historial de boletas</NuxtLink>
+      <NuxtLink to="/public/purchases" class="btn-secondary">Ver historial de boletas</NuxtLink>
       <button class="btn-buy-more" @click="$emit('buy-more')">+ Comprar más boletas</button>
     </div>
   </div>

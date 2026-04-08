@@ -18,8 +18,7 @@ const getPurchases = async (req, res) => {
         event: { deleted_at: null },
       },
       include: {
-        // NUEVO: Incluir el tipo de ticket específico con su catálogo y evento
-        eventTicketType: {
+        ticketType: {
           include: {
             catalog: { select: { typeName: true } },
             event: {
@@ -30,7 +29,6 @@ const getPurchases = async (req, res) => {
             },
           },
         },
-        // NUEVO: Incluir tickets individuales generados
         tickets: {
           select: {
             id_ticket: true,
@@ -45,14 +43,14 @@ const getPurchases = async (req, res) => {
 
     const data = purchases.map(p => ({
       idPurchase:   p.id_purchase,
-      idEvent:      p.eventTicketType.event.id_event,
-      eventName:    p.eventTicketType.event.eventName,
-      category:     p.eventTicketType.event.category.categoryName,
-      location:     p.eventTicketType.event.location,
-      dateTime:     p.eventTicketType.event.date_time,
-      imageUrl:     p.eventTicketType.event.images[0]?.image_url ?? null,
+      idEvent:      p.ticketType.event.id_event,
+      eventName:    p.ticketType.event.eventName,
+      category:     p.ticketType.event.category.categoryName,
+      location:     p.ticketType.event.location,
+      dateTime:     p.ticketType.event.date_time,
+      imageUrl:     p.ticketType.event.images[0]?.image_url ?? null,
       // NUEVO: Información del tipo de ticket
-      ticketType:   p.eventTicketType.catalog.typeName,
+      ticketType:   p.ticketType.catalog.typeName,
       idEventTicket: p.id_event_ticket,
       quantity:     p.quantity,
       unitPrice:    p.unit_price,

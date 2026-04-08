@@ -45,7 +45,6 @@
             <h4 class="section-label">Distribución del lugar</h4>
             <div class="venue-map" :class="`venue-map--${venueLayout}`">
               <!-- Escenario -->
-              <div class="venue-stage">🎭 Escenario</div>
 
               <!-- Zonas según tipos de entrada -->
               <div class="venue-zones">
@@ -80,7 +79,7 @@
             <div class="past-notice-icon">📁</div>
             <h3>Evento finalizado</h3>
             <p>Este evento ya concluyó. Puedes revisar tus boletas anteriores en tu historial.</p>
-            <NuxtLink to="/public/tickets" class="btn-primary" @click="$emit('close')">
+            <NuxtLink to="/public/purchases" class="btn-primary" @click="$emit('close')">
               Ver mis boletas
             </NuxtLink>
           </div>
@@ -254,7 +253,7 @@ const props = defineProps<{
 const emit = defineEmits(['close'])
 
 const { isGuest, user } = useAuth()
-const { getTypesForEvent, getAvailability, purchaseTickets, init } = useTickets()
+const { getTypesForEvent, getAvailability, purchaseTickets, init, ensureTypesForEvent } = useTickets()
 
 // ── Estado ───────────────────────────────────────────────────────────────────
 const step = ref<'select' | 'confirm' | 'success'>('select')
@@ -270,7 +269,10 @@ const ticketTypes = computed<TicketType[]>(() => getTypesForEvent(props.event.id
 const availability = computed(() => getAvailability(props.event.id_event))
 const selectedType = computed(() => ticketTypes.value.find(t => t.id === selectedTypeId.value) ?? null)
 
-onMounted(() => { init() })
+onMounted(async () => {
+  init()
+  await ensureTypesForEvent(props.event)
+})
 
 // ── Carrito ──────────────────────────────────────────────────────────────────
 interface CartItem { typeId: string; typeName: string; qty: number; price: number; total: number }
@@ -309,11 +311,11 @@ function addToCart() {
 function removeFromCart(idx: number) { cart.value.splice(idx, 1) }
 
 // ── Compra ───────────────────────────────────────────────────────────────────
-function confirmPurchase() {
+async function confirmPurchase() {
   if (!holderName.value.trim()) { buyError.value = 'El nombre es obligatorio.'; return }
   buyLoading.value = true; buyError.value = ''
-  const result = purchaseTickets(
-    { id_event: props.event.id_event, NameEvent: props.event.NameEvent, date_time: props.event.date_time, location: props.event.location },
+  const result = await purchaseTickets(
+    { id_event: props.event.id_event, NameEvent: props.event.eventName ?? props.event.NameEvent, date_time: props.event.date_time, location: props.event.location },
     { types: cart.value.map(i => ({ typeId: i.typeId, quantity: i.qty })), holderName: holderName.value.trim() }
   )
   buyLoading.value = false
