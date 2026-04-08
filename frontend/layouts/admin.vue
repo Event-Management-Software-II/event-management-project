@@ -42,6 +42,16 @@
           Usuarios
         </NuxtLink>
 
+        <NuxtLink to="/admin/ticket-catalog" class="nav-item" active-class="active" @click="closeMobile">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+            <rect x="2" y="4" width="20" height="16" rx="2" stroke="currentColor" stroke-width="1.8" />
+            <path d="M2 10h20" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+            <circle cx="8" cy="15" r="1.5" fill="currentColor" />
+            <path d="M12 15h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+          </svg>
+          Tipos de ticket
+        </NuxtLink>
+
       </nav>
 
       <div class="sidebar-footer">
@@ -134,21 +144,29 @@ watch(() => route.path, () => {
   dropdownOpen.value = false
 })
 
+
+
 async function handleLogout() {
   closeDropdown()
   await logout()
   await navigateTo('/login')
 }
 
+interface ClickOutsideElement extends HTMLElement {
+  _clickOutside?: (e: MouseEvent) => void
+}
+
 const vClickOutside = {
-  mounted(el: HTMLElement, binding: any) {
+  mounted(el: ClickOutsideElement, binding: any) {
     el._clickOutside = (e: MouseEvent) => {
       if (!el.contains(e.target as Node)) binding.value()
     }
     document.addEventListener('click', el._clickOutside)
   },
-  unmounted(el: HTMLElement) {
-    document.removeEventListener('click', el._clickOutside)
+  unmounted(el: ClickOutsideElement) {
+    if (el._clickOutside) {
+      document.removeEventListener('click', el._clickOutside)
+    }
   },
 }
 </script>
