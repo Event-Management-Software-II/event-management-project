@@ -26,7 +26,6 @@ const register = async (req, res) => {
     return res.status(400).json({ error: 'Password must be at least 6 characters' });
 
   try {
-    // ✅ CORREGIDO: campo es roleName, no name
     const role = await prisma.role.findFirst({ where: { roleName: 'user' } });
     if (!role)
       return res.status(500).json({ error: 'Default user role not found' });
@@ -49,7 +48,6 @@ const register = async (req, res) => {
     });
 
     const token = jwt.sign(
-      // ✅ CORREGIDO: role.roleName en lugar de role.name
       { id: user.id_user, email: user.email, roleId: user.id_role, role: role.roleName },
       JWT_SECRET,
       { expiresIn: '5m' }
@@ -60,7 +58,6 @@ const register = async (req, res) => {
       email:     user.email,
       full_name: user.full_name,
       roleId:    user.id_role,
-      // ✅ CORREGIDO: role.roleName en lugar de role.name
       role:      role.roleName,
     };
 
@@ -100,7 +97,6 @@ const login = async (req, res) => {
       return res.status(401).json({ error: 'Invalid email or password' });
 
     const token = jwt.sign(
-      // ✅ CORREGIDO: user.role.roleName en lugar de user.role.name
       { id: user.id_user, email: user.email, roleId: user.id_role, role: user.role.roleName },
       JWT_SECRET,
       { expiresIn: '24h' }
@@ -111,7 +107,6 @@ const login = async (req, res) => {
       email:     user.email,
       full_name: user.full_name,
       roleId:    user.id_role,
-      // ✅ CORREGIDO: user.role.roleName en lugar de user.role.name
       role:      user.role.roleName,
     };
 
@@ -151,7 +146,6 @@ const getCurrentUser = async (req, res) => {
       email:     user.email,
       full_name: user.full_name,
       roleId:    user.id_role,
-      // ✅ CORREGIDO: user.role.roleName en lugar de user.role.name
       role:      user.role.roleName,
     };
 
