@@ -25,18 +25,35 @@ const getEvents = async (req, res) => {
     const events = await prisma.event.findMany({
       where: {
         deleted_at: null,
+        date_time: { gt: new Date() }, // Solo eventos activos (futuros)
         ...(name && { eventName: { contains: name, mode: 'insensitive' } }),
         ...(category_id && { id_category: Number(category_id) }),
       },
       include: {
         category: true,
         images: { where: { type: 'poster' }, take: 1 },
+        // NUEVO: Incluir tipos de tickets disponibles
+        ticketTypes: {
+          where: { deleted_at: null },
+          include: {
+            catalog: { select: { typeName: true } }
+          },
+          orderBy: { price: 'asc' }
+        }
       },
-      orderBy: { id_event: 'desc' },
+      orderBy: { date_time: 'asc' },
     });
 
-    eventCache.set(cacheKey, events);
-    res.json(events);
+    // Transformar para incluir min/max price y total capacity
+    const eventsWithPricing = events.map(event => ({
+      ...event,
+      min_price: event.ticketTypes.length > 0 ? Math.min(...event.ticketTypes.map(tt => tt.price)) : null,
+      max_price: event.ticketTypes.length > 0 ? Math.max(...event.ticketTypes.map(tt => tt.price)) : null,
+      total_capacity: event.ticketTypes.reduce((sum, tt) => sum + tt.capacity, 0),
+    }));
+
+    eventCache.set(cacheKey, eventsWithPricing);
+    res.json(eventsWithPricing);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to fetch events' });
@@ -56,13 +73,29 @@ const getEventById = async (req, res) => {
       include: {
         category: true,
         images: { where: { type: 'poster' }, take: 1 },
+        // NUEVO: Incluir tipos de tickets con su catálogo
+        ticketTypes: {
+          where: { deleted_at: null },
+          include: {
+            catalog: { select: { typeName: true } }
+          },
+          orderBy: { price: 'asc' }
+        }
       },
     });
 
     if (!event) return res.status(404).json({ error: 'Event not found' });
 
-    eventCache.set(cacheKey, event);
-    res.json(event);
+    // Agregar metadatos de pricing
+    const eventWithPricing = {
+      ...event,
+      min_price: event.ticketTypes.length > 0 ? Math.min(...event.ticketTypes.map(tt => tt.price)) : null,
+      max_price: event.ticketTypes.length > 0 ? Math.max(...event.ticketTypes.map(tt => tt.price)) : null,
+      total_capacity: event.ticketTypes.reduce((sum, tt) => sum + tt.capacity, 0),
+    };
+
+    eventCache.set(cacheKey, eventWithPricing);
+    res.json(eventWithPricing);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to fetch event' });
@@ -78,6 +111,9 @@ const getEventsAdmin = async (req, res) => {
       include: {
         category: true,
         images: { where: { type: 'poster' }, take: 1 },
+        ticketTypes: {
+          include: { catalog: { select: { typeName: true } } }
+        }
       },
       orderBy: { id_event: 'desc' },
     });
@@ -91,32 +127,59 @@ const getEventsAdmin = async (req, res) => {
 };
 
 const createEvent = async (req, res) => {
-  const { eventName, id_category, price, description, location, date_time, image_url } = req.body;
+  // NUEVO: Ya no recibe price individual, ahora recibe ticketTypes array
+  const { eventName, id_category, description, location, date_time, image_url, ticketTypes } = req.body;
 
   if (!eventName || !/^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s]+$/.test(eventName))
     return res.status(400).json({ error: 'Invalid name: only letters, numbers and spaces allowed' });
   if (!id_category)
     return res.status(400).json({ error: 'Category is required' });
-  if (price === undefined || Number.isNaN(Number(price)) || Number(price) < 0)
-    return res.status(400).json({ error: 'Price must be a number >= 0' });
+  if (!date_time)
+    return res.status(400).json({ error: 'Date and time are required' });
   if (!description || description.trim().length < 20)
     return res.status(400).json({ error: 'Description must be at least 20 characters' });
+  if (!ticketTypes || !Array.isArray(ticketTypes) || ticketTypes.length === 0)
+    return res.status(400).json({ error: 'At least one ticket type is required' });
+
+  // Validar estructura de ticketTypes
+  for (const tt of ticketTypes) {
+    if (!tt.id_catalog || tt.price === undefined || !tt.capacity)
+      return res.status(400).json({ error: 'Each ticket type must have id_catalog, price, and capacity' });
+    if (tt.price < 0)
+      return res.status(400).json({ error: 'Ticket price cannot be negative' });
+    if (tt.capacity <= 0)
+      return res.status(400).json({ error: 'Ticket capacity must be greater than 0' });
+  }
 
   try {
-    const event = await prisma.event.create({
-      data: {
-        eventName:   eventName.trim(),
-        id_category: Number(id_category),
-        price:       Number(price),
-        description: description.trim(),
-        location:    location.trim(),
-        date_time:   date_time ? new Date(date_time) : null,
-        ...(image_url?.trim() && {
-          images: {
-            create: { image_url: image_url.trim(), type: 'poster' },
-          },
-        }),
-      },
+    const event = await prisma.$transaction(async (tx) => {
+      // 1. Crear evento
+      const newEvent = await tx.event.create({
+        data: {
+          eventName:   eventName.trim(),
+          id_category: Number(id_category),
+          description: description.trim(),
+          location:    location.trim(),
+          date_time:   new Date(date_time),
+          ...(image_url?.trim() && {
+            images: {
+              create: { image_url: image_url.trim(), type: 'poster' },
+            },
+          }),
+        },
+      });
+
+      // 2. Crear tipos de tickets asignados al evento
+      await tx.eventTicketType.createMany({
+        data: ticketTypes.map(tt => ({
+          id_event: newEvent.id_event,
+          id_catalog: Number(tt.id_catalog),
+          price: Number(tt.price),
+          capacity: Number(tt.capacity)
+        }))
+      });
+
+      return newEvent;
     });
 
     invalidateEventCache();
@@ -125,7 +188,7 @@ const createEvent = async (req, res) => {
     console.error('Error in createEvent:', err);
     if (err instanceof Prisma.PrismaClientKnownRequestError) {
       if (err.code === 'P2002') return res.status(409).json({ error: 'An event with that name already exists' });
-      if (err.code === 'P2003') return res.status(400).json({ error: 'The specified category does not exist' });
+      if (err.code === 'P2003') return res.status(400).json({ error: 'The specified category or ticket type does not exist' });
     }
     res.status(500).json({ error: 'Failed to create event' });
   }
@@ -133,7 +196,7 @@ const createEvent = async (req, res) => {
 
 const updateEvent = async (req, res) => {
   const { id } = req.params;
-  const { eventName, id_category, price, description, location, date_time, image_url } = req.body;
+  const { eventName, id_category, description, location, date_time, image_url } = req.body;
 
   try {
     const existing = await prisma.event.findFirst({
@@ -148,10 +211,9 @@ const updateEvent = async (req, res) => {
       data: {
         ...(eventName    && { eventName: eventName.trim() }),
         ...(id_category && { id_category: Number(id_category) }),
-        ...(price !== undefined && { price: Number(price) }),
         ...(description && { description: description.trim() }),
         ...(location    && { location: location.trim() }),
-        ...(date_time !== undefined && { date_time: date_time ? new Date(date_time) : null }),
+        ...(date_time !== undefined && { date_time: new Date(date_time) }),
       },
     });
 
