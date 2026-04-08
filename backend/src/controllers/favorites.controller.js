@@ -67,24 +67,39 @@ const getFavorites = async (req, res) => {
           include: {
             category: true,
             images: { where: { type: 'poster' }, take: 1 },
+            // NUEVO: Incluir tipos de tickets para mostrar rango de precios
+            ticketTypes: {
+              where: { deleted_at: null },
+              select: { price: true },
+              orderBy: { price: 'asc' }
+            }
           },
         },
       },
       orderBy: { created_at: 'desc' },
     });
 
-    const data = favorites.map(f => ({
-      // ✅ CORREGIDO: eventName en lugar de name
-      eventName:   f.event.eventName,
-      // ✅ CORREGIDO: price (key consistente con el schema)
-      price:       f.event.price,
-      location:    f.event.location,
-      dateTime:    f.event.date_time,
-      categoryName: f.event.category.categoryName,
-      // ✅ CORREGIDO: image_url en lugar de imageUrl
-      imageUrl:    f.event.images[0]?.image_url ?? null,
-      favoritedAt: f.created_at,
-    }));
+    const data = favorites.map(f => {
+      const prices = f.event.ticketTypes.map(tt => tt.price);
+      const minPrice = prices.length > 0 ? Math.min(...prices) : null;
+      const maxPrice = prices.length > 0 ? Math.max(...prices) : null;
+      
+      return {
+        idEvent:      f.event.id_event,
+        eventName:    f.event.eventName,
+        // NUEVO: Rango de precios en lugar de precio único
+        priceRange:   minPrice === maxPrice 
+          ? (minPrice ? `$${minPrice}` : 'Free')
+          : `$${minPrice} - $${maxPrice}`,
+        minPrice:     minPrice,
+        maxPrice:     maxPrice,
+        location:     f.event.location,
+        dateTime:     f.event.date_time,
+        categoryName: f.event.category.categoryName,
+        imageUrl:     f.event.images[0]?.image_url ?? null,
+        favoritedAt:  f.created_at,
+      };
+    });
 
     favCache.set(cacheKey, data);
     return res.status(200).json({ ok: true, data });
