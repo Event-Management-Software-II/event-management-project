@@ -127,7 +127,6 @@ const getEventsAdmin = async (req, res) => {
 };
 
 const createEvent = async (req, res) => {
-  // NUEVO: Ya no recibe price individual, ahora recibe ticketTypes array
   const { eventName, id_category, description, location, date_time, image_url, ticketTypes } = req.body;
 
   if (!eventName || !/^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s]+$/.test(eventName))
@@ -138,17 +137,21 @@ const createEvent = async (req, res) => {
     return res.status(400).json({ error: 'Date and time are required' });
   if (!description || description.trim().length < 20)
     return res.status(400).json({ error: 'Description must be at least 20 characters' });
-  if (!ticketTypes || !Array.isArray(ticketTypes) || ticketTypes.length === 0)
-    return res.status(400).json({ error: 'At least one ticket type is required' });
+  if (!Array.isArray(ticketTypes))
+    return res.status(400).json({ error: 'ticketTypes must be an array' });
 
-  // Validar estructura de ticketTypes
-  for (const tt of ticketTypes) {
-    if (!tt.id_catalog || tt.price === undefined || !tt.capacity)
-      return res.status(400).json({ error: 'Each ticket type must have id_catalog, price, and capacity' });
-    if (tt.price < 0)
-      return res.status(400).json({ error: 'Ticket price cannot be negative' });
-    if (tt.capacity <= 0)
-      return res.status(400).json({ error: 'Ticket capacity must be greater than 0' });
+  const isPaid = ticketTypes.length > 0;
+
+  // Validar estructura solo si el evento es de pago
+  if (isPaid) {
+    for (const tt of ticketTypes) {
+      if (!tt.id_catalog || tt.price === undefined || !tt.capacity)
+        return res.status(400).json({ error: 'Each ticket type must have id_catalog, price, and capacity' });
+      if (tt.price < 0)
+        return res.status(400).json({ error: 'Ticket price cannot be negative' });
+      if (tt.capacity <= 0)
+        return res.status(400).json({ error: 'Ticket capacity must be greater than 0' });
+    }
   }
 
   try {
@@ -169,15 +172,17 @@ const createEvent = async (req, res) => {
         },
       });
 
-      // 2. Crear tipos de tickets asignados al evento
-      await tx.eventTicketType.createMany({
-        data: ticketTypes.map(tt => ({
-          id_event: newEvent.id_event,
-          id_catalog: Number(tt.id_catalog),
-          price: Number(tt.price),
-          capacity: Number(tt.capacity)
-        }))
-      });
+      // 2. Crear tipos de tickets (solo si el evento es de pago)
+      if (isPaid) {
+        await tx.eventTicketType.createMany({
+          data: ticketTypes.map(tt => ({
+            id_event:   newEvent.id_event,
+            id_catalog: Number(tt.id_catalog),
+            price:      Number(tt.price),
+            capacity:   Number(tt.capacity),
+          })),
+        });
+      }
 
       return newEvent;
     });
