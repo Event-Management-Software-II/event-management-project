@@ -12,6 +12,17 @@ const CACHE_KEYS = {
   currentUser: (id) => `auth:user:${id}`,
 };
 
+// Configurar tiempos de expiración según rol
+const TOKEN_EXPIRY = {
+  user: '10m',      // Usuario normal: 10 minutos
+  admin: '1h',      // Administrador: 1 hora
+  default: '10m',   // Por defecto: 10 minutos
+};
+
+const getTokenExpiry = (roleName) => {
+  return TOKEN_EXPIRY[roleName?.toLowerCase()] || TOKEN_EXPIRY.default;
+};
+
 const invalidateUserCache = (userId) => {
   if (!userId) return;
   userCache.del(CACHE_KEYS.currentUser(userId));
@@ -47,10 +58,11 @@ const register = async (req, res) => {
       },
     });
 
+    const tokenExpiry = getTokenExpiry(role.roleName);
     const token = jwt.sign(
       { id: user.id_user, email: user.email, roleId: user.id_role, role: role.roleName },
       JWT_SECRET,
-      { expiresIn: '10m' }
+      { expiresIn: tokenExpiry }
     );
 
     const userResponse = {
@@ -96,10 +108,11 @@ const login = async (req, res) => {
     if (!isPasswordValid)
       return res.status(401).json({ error: 'Invalid email or password' });
 
+    const tokenExpiry = getTokenExpiry(user.role.roleName);
     const token = jwt.sign(
       { id: user.id_user, email: user.email, roleId: user.id_role, role: user.role.roleName },
       JWT_SECRET,
-      { expiresIn: '10m' }
+      { expiresIn: tokenExpiry }
     );
 
     const userResponse = {
