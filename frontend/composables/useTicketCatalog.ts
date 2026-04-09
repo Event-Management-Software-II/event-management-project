@@ -1,11 +1,10 @@
 import { ref, computed, readonly } from 'vue'
 
-const API = 'http://localhost:3001/api'
 
 export interface TicketCatalog {
-  id_catalog:  number
-  typeName:    string
-  created_at:  string
+  id_catalog: number
+  typeName: string
+  created_at: string
   updated_at?: string
   deleted_at?: string | null
 }
@@ -16,16 +15,20 @@ export interface TicketCatalogFormErrors {
 
 function validateForm(typeName: string): TicketCatalogFormErrors {
   const errors: TicketCatalogFormErrors = {}
-  if (!typeName.trim())                  errors.typeName = 'El nombre es obligatorio.'
-  else if (typeName.trim().length < 2)   errors.typeName = 'Mínimo 2 caracteres.'
+  if (!typeName.trim()) errors.typeName = 'El nombre es obligatorio.'
+  else if (typeName.trim().length < 2) errors.typeName = 'Mínimo 2 caracteres.'
   return errors
 }
 
-const catalog  = ref<TicketCatalog[]>([])
-const loading  = ref(false)
-const error    = ref<string | null>(null)
+const catalog = ref<TicketCatalog[]>([])
+const loading = ref(false)
+const error = ref<string | null>(null)
 
 export function useTicketCatalog() {
+  const config = useRuntimeConfig()
+  const API = `${config.public.apiUrl}/api`
+
+
   const { authHeaders } = useAuth()
 
   const activeCatalog = computed(() =>
@@ -119,9 +122,9 @@ export function useTicketCatalog() {
   }
 
   return {
-    catalog:              readonly(catalog),
-    loading:              readonly(loading),
-    error:                readonly(error),
+    catalog: readonly(catalog),
+    loading: readonly(loading),
+    error: readonly(error),
     activeCatalog,
     sortedCatalog,
     sortedActiveCatalog,

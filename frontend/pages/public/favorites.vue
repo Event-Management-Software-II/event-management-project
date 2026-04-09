@@ -110,6 +110,9 @@
 <script setup lang="ts">
 import EventDetailModal from '~/components/public/EventDetailModal.vue'
 
+const config = useRuntimeConfig()
+const API = `${config.public.apiUrl}/api`
+
 definePageMeta({ layout: false })
 
 // Evita SSR para esta página — depende de localStorage para el token
@@ -127,7 +130,7 @@ const selectedEvent = ref<any | null>(null)
 
 async function removeFavorite(idEvent: number) {
   try {
-    const res = await fetch(`http://localhost:3001/api/favorites/${idEvent}`, {
+    const res = await fetch(`${API}/favorites/${idEvent}`, {
       method: 'DELETE',
       headers: authHeaders(),
     })
@@ -141,7 +144,7 @@ async function removeFavorite(idEvent: number) {
 
 async function openEvent(idEvent: number) {
   try {
-    const res = await fetch(`http://localhost:3001/api/events/${idEvent}`)
+    const res = await fetch(`${API}/events/${idEvent}`)
     const data = await res.json()
     if (data && data.id_event) {
       // Normalizar al mismo shape que usa EventDetailModal
@@ -161,7 +164,7 @@ onMounted(async () => {
   console.log('montado, fetching favorites...')
   loading.value = true
   try {
-    const res = await fetch('http://localhost:3001/api/favorites', {
+    const res = await fetch(`${API}/favorites`, {
       headers: authHeaders(),
     })
     console.log('status:', res.status)

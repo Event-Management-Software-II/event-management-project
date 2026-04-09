@@ -148,10 +148,11 @@ const activeFilters = ref({ free: false, presencial: false, online: false })
 const filtered = computed(() =>
   visibleEvents.value.filter(e => {
     const matchQuery = !query.value ||
-    e.eventName.toLowerCase().includes(query.value.toLowerCase()) ||
+      e.eventName.toLowerCase().includes(query.value.toLowerCase()) ||
       e.location.toLowerCase().includes(query.value.toLowerCase())
     const matchCategory = !selectedCategory.value || e.id_category === selectedCategory.value
-    const matchFree = !activeFilters.value.free || e.price === 0
+    const matchFree = !activeFilters.value.free ||
+      !e.ticketTypes || e.ticketTypes.length === 0  // ← CORRECCIÓN
     return matchQuery && matchCategory && matchFree
   })
 )

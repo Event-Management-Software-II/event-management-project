@@ -1,7 +1,4 @@
-// composables/useAuth.ts
 import { ref, computed, readonly } from 'vue'
-
-const API = 'http://localhost:3001/api'
 
 export type UserRole = 'admin' | 'external' | 'guest'
 
@@ -76,6 +73,9 @@ const user = ref<AuthUser | null>(
 const loading = ref(false)
 
 export function useAuth() {
+  const config = useRuntimeConfig()
+  const API = `${config.public.apiUrl}/api`
+
   const isAuthenticated = computed(() => !!token.value)
 
   const role = computed(() => user.value?.role || 'guest')
