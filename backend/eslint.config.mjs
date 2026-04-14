@@ -6,7 +6,7 @@ export default defineConfig([
   {
     files: ["**/*.js"],
     languageOptions: {
-      globals: globals.node, // 🔥 importante: Node, no browser
+      globals: globals.node, 
     },
     ...js.configs.recommended,
   },
