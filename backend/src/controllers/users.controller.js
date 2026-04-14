@@ -25,7 +25,6 @@ const getUsers = async (req, res) => {
       email:      u.email,
       role:       u.role.roleName,
       created_at: u.created_at,
-    }));
 
     userCache.set(CACHE_KEYS.admin, data);
     res.json(data);
