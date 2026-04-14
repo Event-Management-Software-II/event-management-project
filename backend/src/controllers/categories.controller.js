@@ -1,171 +1,90 @@
 const { Prisma } = require('@prisma/client');
-const prisma = require('../prisma/prisma');
-const NodeCache = require('node-cache');
+const categoriesService = require('./categories.service');
 
-const catCache = new NodeCache({ stdTTL: 300 });
-
-const CACHE_KEYS = {
-  public: 'categories:public',
-  admin:  'categories:admin',
-};
-
-const invalidateCatCache = () => {
-  catCache.del(CACHE_KEYS.public);
-  catCache.del(CACHE_KEYS.admin);
-};
+// ─── Handlers HTTP ────────────────────────────────────────────────────────────
 
 const getCategories = async (req, res) => {
-  const { order } = req.query;
-  const cacheKey = `${CACHE_KEYS.public}:${order ?? 'default'}`;
-
-  const cached = catCache.get(cacheKey);
-  if (cached) return res.json(cached);
-
   try {
-    const categories = await prisma.category.findMany({
-      where: { deleted_at: null },
-      select: {
-        id_category:  true,
-        categoryName: true,  // Cambiado de name a categoryName
-      },
-      orderBy: order === 'asc'
-        ? { categoryName: 'asc' }  // Cambiado
-        : { id_category: 'asc' },
-    });
-
-    catCache.set(cacheKey, categories);
-    res.json(categories);
+    const categories = await categoriesService.getPublicCategories(req.query.order);
+    return res.json(categories);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Failed to fetch categories' });
+    return res.status(500).json({ error: 'Failed to fetch categories' });
   }
 };
 
 const getCategoriesAdmin = async (req, res) => {
-  const cached = catCache.get(CACHE_KEYS.admin);
-  if (cached) return res.json(cached);
-
   try {
-    const categories = await prisma.category.findMany({
-      where: { deleted_at: null },
-      orderBy: { categoryName: 'asc' },  // Cambiado
-    });
-
-    catCache.set(CACHE_KEYS.admin, categories);
-    res.json(categories);
+    const categories = await categoriesService.getAdminCategories();
+    return res.json(categories);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Failed to fetch categories' });
+    return res.status(500).json({ error: 'Failed to fetch categories' });
   }
 };
 
 const createCategory = async (req, res) => {
-  const { categoryName } = req.body;  // Cambiado de name a categoryName
+  const { categoryName } = req.body;
 
-  if (!categoryName || categoryName.trim() === '')  // Cambiado
+  if (!categoryName || categoryName.trim() === '')
     return res.status(400).json({ error: 'Category name is required' });
 
   try {
-    const category = await prisma.category.create({
-      data: { categoryName: categoryName.trim() },  // Cambiado
-    });
-
-    invalidateCatCache();
-    res.status(201).json(category);
+    const category = await categoriesService.createCategory(categoryName);
+    return res.status(201).json(category);
   } catch (err) {
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002')
       return res.status(409).json({ error: 'A category with that name already exists' });
     console.error(err);
-    res.status(500).json({ error: 'Failed to create category' });
+    return res.status(500).json({ error: 'Failed to create category' });
   }
 };
 
 const updateCategory = async (req, res) => {
-  const id = Number(req.params.id);
-  const { categoryName } = req.body;  // Cambiado
+  const { categoryName } = req.body;
 
-  if (!categoryName || categoryName.trim() === '')  // Cambiado
+  if (!categoryName || categoryName.trim() === '')
     return res.status(400).json({ error: 'Category name cannot be empty' });
 
   try {
-    const result = await prisma.category.updateMany({
-      where: { id_category: id, deleted_at: null },
-      data: {
-        categoryName: categoryName.trim(),  // Cambiado
-        updated_at: new Date(),
-      },
-    });
-
-    if (result.count === 0)
-      return res.status(404).json({ error: 'Category not found' });
-
-    const updated = await prisma.category.findUnique({
-      where: { id_category: id },
-      select: {
-        id_category:  true,
-        categoryName: true,  // Cambiado
-        updated_at:   true,
-      },
-    });
-
-    invalidateCatCache();
-    res.json(updated);
+    const updated = await categoriesService.updateCategory(Number(req.params.id), categoryName);
+    return res.json(updated);
   } catch (err) {
+    if (err.message === 'CATEGORY_NOT_FOUND')
+      return res.status(404).json({ error: 'Category not found' });
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002')
       return res.status(409).json({ error: 'A category with that name already exists' });
     console.error(err);
-    res.status(500).json({ error: 'Failed to update category' });
+    return res.status(500).json({ error: 'Failed to update category' });
   }
 };
 
 const deleteCategory = async (req, res) => {
-  const id = Number(req.params.id);
-
   try {
-    const activeEventsCount = await prisma.event.count({
-      where: { id_category: id, deleted_at: null },
-    });
-
-    if (activeEventsCount > 0) {
+    await categoriesService.deleteCategory(Number(req.params.id));
+    return res.json({ message: 'Category deleted successfully' });
+  } catch (err) {
+    if (err.message === 'CATEGORY_NOT_FOUND')
+      return res.status(404).json({ error: 'Category not found' });
+    if (err.message === 'CATEGORY_HAS_ACTIVE_EVENTS')
       return res.status(409).json({
         error: 'This category has active events linked to it. Reassign them before deleting.',
-        active_events: activeEventsCount,
+        active_events: err.activeEventsCount,
       });
-    }
-
-    const result = await prisma.category.updateMany({
-      where: { id_category: id, deleted_at: null },
-      data: { deleted_at: new Date() },
-    });
-
-    if (result.count === 0)
-      return res.status(404).json({ error: 'Category not found' });
-
-    invalidateCatCache();
-    res.json({ message: 'Category deleted successfully' });
-  } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Failed to delete category' });
+    return res.status(500).json({ error: 'Failed to delete category' });
   }
 };
 
 const restoreCategory = async (req, res) => {
-  const id = Number(req.params.id);
-
   try {
-    const result = await prisma.category.updateMany({
-      where: { id_category: id, deleted_at: { not: null } },
-      data: { deleted_at: null },
-    });
-
-    if (result.count === 0)
-      return res.status(404).json({ error: 'Category not found or already active' });
-
-    invalidateCatCache();
-    res.json({ message: 'Category restored successfully' });
+    await categoriesService.restoreCategory(Number(req.params.id));
+    return res.json({ message: 'Category restored successfully' });
   } catch (err) {
+    if (err.message === 'CATEGORY_NOT_FOUND_OR_ACTIVE')
+      return res.status(404).json({ error: 'Category not found or already active' });
     console.error(err);
-    res.status(500).json({ error: 'Failed to restore category' });
+    return res.status(500).json({ error: 'Failed to restore category' });
   }
 };
 
