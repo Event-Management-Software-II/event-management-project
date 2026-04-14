@@ -1,173 +1,71 @@
-const bcrypt = require('bcryptjs');
-const jwt    = require('jsonwebtoken');
 const { Prisma } = require('@prisma/client');
-const prisma = require('../prisma/prisma');
-const NodeCache = require('node-cache');
+const authService = require('./auth.service');
 
-const JWT_SECRET = process.env.JWT_SECRET;
-if (!JWT_SECRET) throw new Error('JWT_SECRET is not defined in environment variables');
-
-const userCache = new NodeCache({ stdTTL: 300 });
-const CACHE_KEYS = {
-  currentUser: (id) => `auth:user:${id}`,
+const validateRegisterInput = ({ email, password, full_name }) => {
+  if (!email || !password || !full_name)
+    return 'Email, password, and full name are required';
+  if (password.length < 6)
+    return 'Password must be at least 6 characters';
+  return null;
 };
 
-// Configurar tiempos de expiración según rol
-const TOKEN_EXPIRY = {
-  user: '10m',      // Usuario normal: 10 minutos
-  admin: '1h',      // Administrador: 1 hora
-  default: '10m',   // Por defecto: 10 minutos
-};
-
-const getTokenExpiry = (roleName) => {
-  return TOKEN_EXPIRY[roleName?.toLowerCase()] || TOKEN_EXPIRY.default;
-};
-
-const invalidateUserCache = (userId) => {
-  if (!userId) return;
-  userCache.del(CACHE_KEYS.currentUser(userId));
+const validateLoginInput = ({ email, password }) => {
+  if (!email || !password)
+    return 'Email and password are required';
+  return null;
 };
 
 const register = async (req, res) => {
-  const { email, password, full_name } = req.body;
-
-  if (!email || !password || !full_name)
-    return res.status(400).json({ error: 'Email, password, and full name are required' });
-  if (password.length < 6)
-    return res.status(400).json({ error: 'Password must be at least 6 characters' });
+  const validationError = validateRegisterInput(req.body);
+  if (validationError)
+    return res.status(400).json({ error: validationError });
 
   try {
-    const role = await prisma.role.findFirst({ where: { roleName: 'user' } });
-    if (!role)
-      return res.status(500).json({ error: 'Default user role not found' });
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    const user = await prisma.user.create({
-      data: {
-        email,
-        password: hashedPassword,
-        full_name,
-        id_role: role.id_role,
-      },
-      select: {
-        id_user:   true,
-        email:     true,
-        full_name: true,
-        id_role:   true,
-      },
-    });
-
-    const tokenExpiry = getTokenExpiry(role.roleName);
-    const token = jwt.sign(
-      { id: user.id_user, email: user.email, roleId: user.id_role, role: role.roleName },
-      JWT_SECRET,
-      { expiresIn: tokenExpiry }
-    );
-
-    const userResponse = {
-      id:        user.id_user,
-      email:     user.email,
-      full_name: user.full_name,
-      roleId:    user.id_role,
-      role:      role.roleName,
-    };
-
-    userCache.set(CACHE_KEYS.currentUser(user.id_user), userResponse);
-
-    res.status(201).json({
-      message: 'User registered successfully',
-      token,
-      user: userResponse,
-    });
+    const { token, user } = await authService.registerUser(req.body);
+    return res.status(201).json({ message: 'User registered successfully', token, user });
   } catch (err) {
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002')
       return res.status(409).json({ error: 'Email already registered' });
+    if (err.message === 'DEFAULT_ROLE_NOT_FOUND')
+      return res.status(500).json({ error: 'Default user role not found' });
+
     console.error('Registration error:', err);
-    res.status(500).json({ error: 'Failed to register user' });
+    return res.status(500).json({ error: 'Failed to register user' });
   }
 };
 
 const login = async (req, res) => {
-  const { email, password } = req.body;
-
-  if (!email || !password)
-    return res.status(400).json({ error: 'Email and password are required' });
+  const validationError = validateLoginInput(req.body);
+  if (validationError)
+    return res.status(400).json({ error: validationError });
 
   try {
-    const user = await prisma.user.findFirst({
-      where:   { email, deleted_at: null },
-      include: { role: true },
-    });
-
-    if (!user)
-      return res.status(401).json({ error: 'Invalid email or password' });
-
-    const normalizedHash = user.password.replace(/^\$2y\$/, '$2b$');
-    const isPasswordValid = await bcrypt.compare(password, normalizedHash);
-    if (!isPasswordValid)
-      return res.status(401).json({ error: 'Invalid email or password' });
-
-    const tokenExpiry = getTokenExpiry(user.role.roleName);
-    const token = jwt.sign(
-      { id: user.id_user, email: user.email, roleId: user.id_role, role: user.role.roleName },
-      JWT_SECRET,
-      { expiresIn: tokenExpiry }
-    );
-
-    const userResponse = {
-      id:        user.id_user,
-      email:     user.email,
-      full_name: user.full_name,
-      roleId:    user.id_role,
-      role:      user.role.roleName,
-    };
-
-    userCache.set(CACHE_KEYS.currentUser(user.id_user), userResponse);
-
-    res.json({
-      message: 'Login successful',
-      token,
-      user: userResponse,
-    });
+    const { token, user } = await authService.loginUser(req.body);
+    return res.json({ message: 'Login successful', token, user });
   } catch (err) {
+    if (err.message === 'INVALID_CREDENTIALS')
+      return res.status(401).json({ error: 'Invalid email or password' });
+
     console.error('Login error:', err);
-    res.status(500).json({ error: 'Failed to login' });
+    return res.status(500).json({ error: 'Failed to login' });
   }
 };
 
-const logout = async (req, res) => {
+const logout = (_req, res) => {
   res.json({ message: 'Logout successful' });
 };
 
 const getCurrentUser = async (req, res) => {
-  const cacheKey = CACHE_KEYS.currentUser(req.userId);
-  const cachedUser = userCache.get(cacheKey);
-  if (cachedUser) return res.json(cachedUser);
-
   try {
-    const user = await prisma.user.findFirst({
-      where:   { id_user: req.userId, deleted_at: null },
-      include: { role: true },
-    });
-
-    if (!user)
+    const user = await authService.getUser(req.userId);
+    return res.json(user);
+  } catch (err) {
+    if (err.message === 'USER_NOT_FOUND')
       return res.status(404).json({ error: 'User not found' });
 
-    const userResponse = {
-      id:        user.id_user,
-      email:     user.email,
-      full_name: user.full_name,
-      roleId:    user.id_role,
-      role:      user.role.roleName,
-    };
-
-    userCache.set(cacheKey, userResponse);
-    res.json(userResponse);
-  } catch (err) {
     console.error('Get user error:', err);
-    res.status(500).json({ error: 'Failed to fetch user data' });
+    return res.status(500).json({ error: 'Failed to fetch user data' });
   }
 };
 
-module.exports = { register, login, logout, getCurrentUser, invalidateUserCache };
+module.exports = { register, login, logout, getCurrentUser };
