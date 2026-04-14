@@ -1,8 +1,6 @@
 // composables/useUsers.ts
 import { readonly } from 'vue'
 
-const API = 'http://localhost:3001/api'
-
 export interface User {
   id: number
   name: string
@@ -12,15 +10,19 @@ export interface User {
 }
 
 export function useUsers() {
+
+  const config = useRuntimeConfig()
+  const API = `${config.public.apiUrl}/api`
+
   const { authHeaders } = useAuth()
 
-  const users   = useState<User[]>('users', () => [])
+  const users = useState<User[]>('users', () => [])
   const loading = useState<boolean>('users_loading', () => false)
-  const error   = useState<string | null>('users_error', () => null)
+  const error = useState<string | null>('users_error', () => null)
 
   async function fetchUsers() {
     loading.value = true
-    error.value   = null
+    error.value = null
     try {
       const res = await fetch(`${API}/admin/users`, {
         headers: { ...authHeaders() },
@@ -35,9 +37,9 @@ export function useUsers() {
   }
 
   return {
-    users:   readonly(users),
+    users: readonly(users),
     loading: readonly(loading),
-    error:   readonly(error),
+    error: readonly(error),
     fetchUsers,
   }
 }

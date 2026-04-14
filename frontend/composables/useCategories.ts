@@ -1,6 +1,5 @@
 import { ref, computed, readonly } from 'vue'
 
-const API = 'http://localhost:3001/api'
 
 export interface Category {
   id_category: number
@@ -22,10 +21,13 @@ function validateForm(categoryName: string): CategoryFormErrors {
 }
 
 const categories = ref<Category[]>([])
-const loading    = ref(false)
-const error      = ref<string | null>(null)
+const loading = ref(false)
+const error = ref<string | null>(null)
 
 export function useCategories() {
+  const config = useRuntimeConfig()
+  const API = `${config.public.apiUrl}/api`
+
   const { authHeaders } = useAuth()
 
   const activeCategories = computed(() =>

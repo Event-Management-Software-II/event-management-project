@@ -139,7 +139,11 @@
     </div>
 </template>
 
+
+
 <script setup lang="ts">
+const config = useRuntimeConfig()
+const API = `${config.public.apiUrl}/api`
 definePageMeta({ layout: false })
 
 if (import.meta.server) {
@@ -200,7 +204,7 @@ const QrCode = defineComponent({
 onMounted(async () => {
     loading.value = true
     try {
-        const res = await fetch('http://localhost:3001/api/purchases', {
+        const res = await fetch(`${API}/purchases`, {
             headers: { ...authHeaders(), 'Cache-Control': 'no-cache' },
         })
         const json = await res.json()

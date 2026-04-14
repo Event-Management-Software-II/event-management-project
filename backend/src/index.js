@@ -14,7 +14,13 @@ const ticketCatalogRoutes    = require('./routes/ticketCatalog.routes');
 const app  = express();
 const PORT = process.env.PORT || 3001;
 
-app.use(cors({ origin: process.env.FRONTEND_URL || 'http://localhost:3000', credentials: true }));
+app.use(cors({
+  origin: [
+    'http://localhost:3002',
+    'http://10.111.161.71:3002'
+  ],
+  credentials: true
+}));
 app.use(express.json());
 
 app.use((req, _res, next) => {
@@ -43,6 +49,6 @@ app.use((err, _req, res, _next) => {
   res.status(500).json({ error: 'Internal server error' });
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running at http://localhost:${PORT}`);
 });

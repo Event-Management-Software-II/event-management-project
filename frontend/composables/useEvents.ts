@@ -1,7 +1,5 @@
 import { ref, computed, readonly } from 'vue'
 
-const API = 'http://localhost:3001/api'
-
 export interface Event {
   id_event: number
   eventName: string
@@ -13,13 +11,14 @@ export interface Event {
   capacity?: number | null
   created_at: string
   deleted_at: string | null
-  category?: { 
+  category?: {
     id_category: number
     categoryName: string
   }
   images?: { image_url: string; type: string }[]
   categoryName?: string
   imageUrl?: string | null
+  ticketTypes?: any[]
 }
 
 export interface EventForm {
@@ -30,6 +29,11 @@ export interface EventForm {
   location: string
   date_time?: string
   image_url?: string
+  ticketTypes?: {
+    id_catalog: number
+    price: number
+    capacity: number
+  }[]
 }
 
 export interface EventFormErrors {
@@ -38,11 +42,12 @@ export interface EventFormErrors {
   price?: string
   description?: string
   location?: string
+  [key: string]: string | undefined
 }
 
-const events  = ref<Event[]>([])
+const events = ref<Event[]>([])
 const loading = ref(false)
-const error   = ref<string | null>(null)
+const error = ref<string | null>(null)
 
 function mapEvent(e: any): Event {
   return {
@@ -58,8 +63,6 @@ function validateForm(form: EventForm): EventFormErrors {
   if (!form.eventName.trim()) errors.eventName = 'El nombre es obligatorio.'
   else if (!alphanum.test(form.eventName)) errors.eventName = 'Solo letras, números y espacios.'
   if (!form.id_category) errors.id_category = 'Debes seleccionar una categoría.'
-  if (form.price === '' || Number.isNaN(Number(form.price)) || Number(form.price) < 0)
-    errors.price = 'Debe ser un número >= 0.'
   if (!form.description.trim()) errors.description = 'La descripción es obligatoria.'
   else if (form.description.trim().length < 20)
     errors.description = `Mínimo 20 caracteres. Faltan ${20 - form.description.trim().length}.`
@@ -68,6 +71,10 @@ function validateForm(form: EventForm): EventFormErrors {
 }
 
 export function useEvents() {
+
+  const config = useRuntimeConfig()
+  const API = `${config.public.apiUrl}/api`
+
   const { authHeaders } = useAuth()
 
   const visibleEvents = computed(() => events.value.filter(e => !e.deleted_at))
@@ -95,7 +102,7 @@ export function useEvents() {
       events.value = (await res.json()).map(mapEvent)
     } catch (e: any) { error.value = e.message }
     finally { loading.value = false }
-    }
+  }
 
   async function createEvent(form: EventForm): Promise<{ success: boolean; errors?: EventFormErrors; message?: string }> {
     const errors = validateForm(form)
@@ -104,14 +111,14 @@ export function useEvents() {
       const res = await fetch(`${API}/events/admin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...authHeaders() },
-        body: JSON.stringify({ 
-          eventName: form.eventName,              // CORREGIDO: eventName en lugar de name
-          id_category: Number(form.id_category), 
-          price: Number(form.price),
+        body: JSON.stringify({
+          eventName:   form.eventName,
+          id_category: Number(form.id_category),
           description: form.description,
-          location: form.location,
-          date_time: form.date_time,
-          image_url: form.image_url
+          location:    form.location,
+          date_time:   form.date_time,
+          image_url:   form.image_url,
+          ticketTypes: form.ticketTypes ?? [],   // ← CORRECCIÓN
         }),
       })
       const data = await res.json()
@@ -128,14 +135,14 @@ export function useEvents() {
       const res = await fetch(`${API}/events/admin/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', ...authHeaders() },
-        body: JSON.stringify({ 
-          eventName: form.eventName,              // CORREGIDO: eventName en lugar de name
-          id_category: Number(form.id_category), 
-          price: Number(form.price),
+        body: JSON.stringify({
+          eventName:   form.eventName,
+          id_category: Number(form.id_category),
           description: form.description,
-          location: form.location,
-          date_time: form.date_time,
-          image_url: form.image_url
+          location:    form.location,
+          date_time:   form.date_time,
+          image_url:   form.image_url,
+          ticketTypes: form.ticketTypes ?? [],   // ← CORRECCIÓN
         }),
       })
       const data = await res.json()

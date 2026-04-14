@@ -77,6 +77,10 @@ export function useTopEvents(activeEventIds: number[]) {
 // ── Composable principal ──────────────────────────────────────────────────────
 
 export function useTickets() {
+
+  const config = useRuntimeConfig()
+  const API = `${config.public.apiUrl}/api`
+
   const allTickets = ref<Ticket[]>([])
 
   // ── Persistencia ────────────────────────────────────────────────────────────
@@ -137,7 +141,7 @@ export function useTickets() {
   async function ensureTypesForEvent(event: any): Promise<TicketType[]> {
     if (typesCache.value[event.id_event]) return typesCache.value[event.id_event]
 
-    const API = 'http://localhost:3001/api'
+    const API = `${config.public.apiUrl}/api`
     try {
       const res = await fetch(`${API}/events/${event.id_event}/ticket-types`)
       const json = await res.json()
@@ -177,7 +181,7 @@ export function useTickets() {
     form: PurchaseForm
   ): Promise<{ success: boolean; tickets?: Ticket[]; error?: string }> {
     const { authHeaders } = useAuth()
-    const API = 'http://localhost:3001/api'
+    const API = `${config.public.apiUrl}/api`
     const newTickets: Ticket[] = []
 
     for (const item of form.types) {
