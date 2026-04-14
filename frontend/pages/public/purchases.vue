@@ -74,12 +74,12 @@
             </div>
 
             <div v-else class="purchase-list">
-                <div v-for="p in purchases" :key="p.id_purchase" class="purchase-card">
+                <div v-for="p in purchases" :key="p.idPurchase" class="purchase-card">
                     <!-- Imagen / portada -->
                     <div class="purchase-card-img">
-                        <img v-if="p.imageUrl" :src="p.imageUrl" :alt="p.NameEvent" />
+                        <img v-if="p.imageUrl" :src="p.imageUrl" :alt="p.eventName" />
                         <div v-else class="purchase-card-placeholder"></div>
-                        <span class="purchase-card-category">{{ p.nameCategory }}</span>
+                        <span class="purchase-card-category">{{ p.category }}</span>
                         <span class="purchase-badge" :class="`purchase-badge--${p.status}`">
                             {{ statusLabel(p.status) }}
                         </span>
@@ -88,9 +88,9 @@
                     <!-- Info del evento -->
                     <div class="purchase-card-body">
                         <div class="purchase-card-top">
-                            <h3 class="purchase-card-title">{{ p.NameEvent }}</h3>
+                            <h3 class="purchase-card-title">{{ p.eventName }}</h3>
                             <p class="purchase-card-meta">
-                                <span>📅 {{ formatDate(p.date_time) }}</span>
+                                <span>📅 {{ formatDate(p.dateTime) }}</span>
                                 <span>📍 {{ p.location }}</span>
                             </p>
                         </div>
@@ -104,25 +104,25 @@
                             <div class="purchase-detail-row">
                                 <span class="purchase-detail-label">Precio unitario</span>
                                 <span class="purchase-detail-value">
-                                    {{ p.unit_price === 0 ? 'Gratis' : `$${Number(p.unit_price).toLocaleString('es-CO')}` }}
+                                    {{ p.unitPrice === 0 ? 'Gratis' : `$${Number(p.unitPrice).toLocaleString('es-CO')}` }}
                                 </span>
                             </div>
                             <div class="purchase-detail-row purchase-detail-row--total">
                                 <span class="purchase-detail-label">Total</span>
                                 <span class="purchase-detail-value">
-                                    {{ p.total_price === 0 ? 'Gratis' : `$${Number(p.total_price).toLocaleString('es-CO')}` }}
+                                    {{ p.totalPrice === 0 ? 'Gratis' : `$${Number(p.totalPrice).toLocaleString('es-CO')}` }}
                                 </span>
                             </div>
                         </div>
 
-                        <p class="purchase-card-date">Comprado el {{ formatDate(p.created_at) }}</p>
+                        <p class="purchase-card-date">Comprado el {{ formatDate(p.createdAt) }}</p>
 
                         <!-- Tickets con QR -->
                         <div v-if="p.tickets?.length" class="tickets-section">
-                            <button class="tickets-toggle" @click="toggleOpen(p.id_purchase)">
-                                {{ openIds.has(p.id_purchase) ? '▲ Ocultar boletas' : '▼ Ver boletas (' + p.tickets.length + ')' }}
+                            <button class="tickets-toggle" @click="toggleOpen(p.idPurchase)">
+                                {{ openIds.has(p.idPurchase) ? '▲ Ocultar boletas' : '▼ Ver boletas (' + p.tickets.length + ')' }}
                             </button>
-                            <div v-if="openIds.has(p.id_purchase)" class="tickets-list">
+                            <div v-if="openIds.has(p.idPurchase)" class="tickets-list">
                                 <div v-for="t in p.tickets" :key="t.idTicket" class="ticket-row">
                                     <div class="ticket-row-info">
                                         <span class="ticket-number">{{ t.ticketNumber }}</span>
@@ -210,24 +210,13 @@ onMounted(async () => {
         const json = await res.json()
         console.log('[purchases] raw response:', json)
         if (json.ok && Array.isArray(json.data)) {
-            purchases.value = json.data.map((p: any) => ({
-                id_purchase:  p.idPurchase,
-                id_event:     p.idEvent,
-                NameEvent:    p.eventName,
-                nameCategory: p.category,
-                ticketType:   p.ticketType,
-                location:     p.location,
-                date_time:    p.dateTime,
-                imageUrl:     p.imageUrl,
-                quantity:     p.quantity,
-                unit_price:   p.unitPrice,
-                total_price:  p.totalPrice,
-                status:       p.status,
-                created_at:   p.createdAt,
-                tickets:      p.tickets ?? [],
-            }))
-            console.log('[purchases] mapped:', purchases.value)
-        console.log('[purchases] tickets ejemplo:', purchases.value[0]?.tickets)
+                    // Asignamos directamente la data, garantizando que tickets sea un array
+                    purchases.value = json.data.map((p: any) => ({
+                        ...p,
+                        tickets: p.tickets ?? []
+                    }))
+                    console.log('[purchases] mapped:', purchases.value)
+                    console.log('[purchases] tickets ejemplo:', purchases.value[0]?.tickets)
         } else {
             console.warn('[purchases] respuesta inesperada:', json)
         }
