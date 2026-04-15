@@ -1,5 +1,6 @@
 const { Prisma } = require('@prisma/client');
-const eventsService = require('./events.service');
+const eventsService = require('../services/events.service');
+
 
 const validateCreateInput = ({ eventName, id_category, description, date_time, ticketTypes }) => {
   if (!eventName || !/^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s]+$/.test(eventName))

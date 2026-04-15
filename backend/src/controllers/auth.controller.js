@@ -1,5 +1,5 @@
 const { Prisma } = require('@prisma/client');
-const authService = require('./auth.service');
+const authService = require('../services/auth.service');
 
 const validateRegisterInput = ({ email, password, full_name }) => {
   if (!email || !password || !full_name)
