@@ -469,20 +469,9 @@ const vClickOutside = {
     letter-spacing: .03em;
 }
 
-.purchase-badge--completada {
-    background: #d1fae5;
-    color: #065f46;
-}
-
-.purchase-badge--pendiente {
-    background: #fef9c3;
-    color: #854d0e;
-}
-
-.purchase-badge--cancelada {
-    background: #fee2e2;
-    color: #991b1b;
-}
+.purchase-badge--completed  { background: #d1fae5; color: #065f46; }
+.purchase-badge--pending    { background: #fef9c3; color: #854d0e; }
+.purchase-badge--cancelled  { background: #fee2e2; color: #991b1b; }
 
 /* Cuerpo de la tarjeta */
 .purchase-card-body {
