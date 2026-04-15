@@ -237,9 +237,9 @@ function formatDate(d: string | null) {
 
 function statusLabel(status: string) {
     const map: Record<string, string> = {
-        pendiente:   'Pendiente',
-        completada:  'Completada',
-        cancelada:   'Cancelada',
+        pending:   'Pendiente',
+        completed:  'Completada',
+        cancelled:   'Cancelada',
     }
     return map[status] ?? status
 }
