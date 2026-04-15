@@ -1,4 +1,4 @@
-const reportsService = require('./reports.service');
+const reportsService = require('../services/reports.service');
 
 // GET /api/reports/interest
 const getInterestReport = async (req, res) => {

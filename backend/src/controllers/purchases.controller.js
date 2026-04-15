@@ -1,4 +1,4 @@
-const purchasesService = require('./purchases.service');
+const purchasesService = require('../services/purchases.service');
 
 // GET /api/purchases
 const getPurchases = async (req, res) => {

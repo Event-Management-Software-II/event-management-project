@@ -1,5 +1,5 @@
 const { Prisma } = require('@prisma/client');
-const categoriesService = require('./categories.service');
+const categoriesService = require('../services/categories.service');
 
 // ─── Handlers HTTP ────────────────────────────────────────────────────────────
 

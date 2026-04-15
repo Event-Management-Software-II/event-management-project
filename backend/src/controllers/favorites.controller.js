@@ -1,5 +1,5 @@
 const { Prisma } = require('@prisma/client');
-const favoritesService = require('./favorites.service');
+const favoritesService = require('../services/favorites.service');
 
 // POST /api/favorites/:id_event
 const addFavorite = async (req, res) => {

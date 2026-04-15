@@ -1,5 +1,5 @@
 const { Prisma } = require('@prisma/client');
-const catalogService = require('./ticketCatalog.service');
+const catalogService = require('../services/ticketCatalog.service');
 
 const TYPE_NAME_REGEX = /^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s]+$/;
 
