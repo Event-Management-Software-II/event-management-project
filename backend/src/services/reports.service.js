@@ -5,8 +5,8 @@ const repCache = new NodeCache({ stdTTL: 300 });
 
 const CACHE_KEYS = {
   interest: 'reports:interest',
-  sales:    'reports:sales',
-  stats:    'reports:stats',
+  sales: 'reports:sales',
+  stats: 'reports:stats',
 };
 
 const invalidateReportsCache = () => repCache.flushAll();
@@ -18,8 +18,8 @@ const getInterestReport = async () => {
   if (cached) return cached;
 
   const grouped = await prisma.userEvent.groupBy({
-    by:      ['id_event'],
-    _count:  { id_event: true },
+    by: ['id_event'],
+    _count: { id_event: true },
     orderBy: { _count: { id_event: 'desc' } },
   });
 
@@ -29,14 +29,14 @@ const getInterestReport = async () => {
   }
 
   const events = await prisma.event.findMany({
-    where:   { id_event: { in: grouped.map((g) => g.id_event) } },
+    where: { id_event: { in: grouped.map((g) => g.id_event) } },
     include: { category: { select: { categoryName: true } } },
   });
 
   const eventMap = Object.fromEntries(events.map((e) => [e.id_event, e]));
 
   const report = grouped.map((g) => ({
-    'Event Name':          eventMap[g.id_event]?.eventName ?? null,
+    'Event Name': eventMap[g.id_event]?.eventName ?? null,
     'Number of Interests': g._count.id_event,
   }));
 
@@ -51,14 +51,17 @@ const getSalesReport = async () => {
   if (cached) return cached;
 
   const events = await prisma.event.findMany({
-    where:   { deleted_at: null },
+    where: { deleted_at: null },
     include: {
-      category:    { select: { categoryName: true } },
+      category: { select: { categoryName: true } },
       ticketTypes: {
-        where:   { deleted_at: null },
+        where: { deleted_at: null },
         include: {
-          catalog:   { select: { typeName: true } },
-          purchases: { where: { status: 'completed' }, select: { quantity: true, total_price: true } },
+          catalog: { select: { typeName: true } },
+          purchases: {
+            where: { status: 'completed' },
+            select: { quantity: true, total_price: true },
+          },
         },
       },
     },
@@ -70,15 +73,18 @@ const getSalesReport = async () => {
   for (const event of events) {
     for (const ett of event.ticketTypes) {
       const ticketsSold = ett.purchases.reduce((sum, p) => sum + p.quantity, 0);
-      const revenue     = ett.purchases.reduce((sum, p) => sum + (p.total_price || 0), 0);
+      const revenue = ett.purchases.reduce(
+        (sum, p) => sum + (p.total_price || 0),
+        0
+      );
 
       report.push({
-        id_event:          event.id_event,
-        event_name:        event.eventName,
-        category_name:     event.category.categoryName,
-        ticket_type_name:  ett.catalog.typeName,
-        capacity:          ett.capacity,
-        tickets_sold:      ticketsSold,
+        id_event: event.id_event,
+        event_name: event.eventName,
+        category_name: event.category.categoryName,
+        ticket_type_name: ett.catalog.typeName,
+        capacity: ett.capacity,
+        tickets_sold: ticketsSold,
         tickets_remaining: ett.capacity - ticketsSold,
         revenue,
       });
@@ -88,7 +94,7 @@ const getSalesReport = async () => {
   report.sort((a, b) =>
     a.id_event !== b.id_event
       ? a.id_event - b.id_event
-      : b.tickets_sold - a.tickets_sold,
+      : b.tickets_sold - a.tickets_sold
   );
 
   repCache.set(CACHE_KEYS.sales, report);
@@ -104,25 +110,26 @@ const getAdminHomeStats = async () => {
   const now = new Date();
   const yesterday = new Date(now.getTime() - 86_400_000);
 
-  const [totalRevenue, activeEvents, completedEvents, registeredUsers] = await Promise.all([
-    prisma.purchase.aggregate({
-      where: { status: 'completed' },
-      _sum:  { total_price: true },
-    }),
-    prisma.event.count({
-      where: { deleted_at: null, date_time: { gt: now } },
-    }),
-    prisma.event.count({
-      where: { deleted_at: null, date_time: { lte: yesterday } },
-    }),
-    prisma.user.count({
-      where: { deleted_at: null, role: { roleName: { not: 'admin' } } },
-    }),
-  ]);
+  const [totalRevenue, activeEvents, completedEvents, registeredUsers] =
+    await Promise.all([
+      prisma.purchase.aggregate({
+        where: { status: 'completed' },
+        _sum: { total_price: true },
+      }),
+      prisma.event.count({
+        where: { deleted_at: null, date_time: { gt: now } },
+      }),
+      prisma.event.count({
+        where: { deleted_at: null, date_time: { lte: yesterday } },
+      }),
+      prisma.user.count({
+        where: { deleted_at: null, role: { roleName: { not: 'admin' } } },
+      }),
+    ]);
 
   const stats = {
-    total_revenue:    totalRevenue._sum.total_price ?? 0,
-    active_events:    activeEvents,
+    total_revenue: totalRevenue._sum.total_price ?? 0,
+    active_events: activeEvents,
     completed_events: completedEvents,
     registered_users: registeredUsers,
   };

@@ -18,11 +18,11 @@ const getUsers = async () => {
     orderBy: { created_at: 'desc' },
   });
 
-  const data = users.map(u => ({
-    id:         u.id_user,
-    name:       u.full_name,
-    email:      u.email,
-    role:       u.role.roleName,
+  const data = users.map((u) => ({
+    id: u.id_user,
+    name: u.full_name,
+    email: u.email,
+    role: u.role.roleName,
     created_at: u.created_at,
   }));
 

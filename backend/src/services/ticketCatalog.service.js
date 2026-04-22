@@ -58,7 +58,9 @@ const softDeleteCatalogItem = async (id) => {
   });
 
   if (inUse) {
-    const err = new Error('Cannot delete: This ticket type is currently assigned to active events');
+    const err = new Error(
+      'Cannot delete: This ticket type is currently assigned to active events'
+    );
     err.code = 'IN_USE';
     throw err;
   }
