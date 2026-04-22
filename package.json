@@ -434,5 +434,15 @@
   "bugs": {
     "url": "https://github.com/david-espindola01/event-management-project/issues"
   },
-  "homepage": "https://github.com/david-espindola01/event-management-project#readme"
+  "homepage": "https://github.com/david-espindola01/event-management-project#readme",
+  "lint-staged": {
+    "backend/**/*.{js,mjs}": [
+      "prettier --write",
+      "eslint --fix"
+    ],
+    "frontend/**/*.{js,ts,vue,mjs}": [
+      "prettier --write",
+      "eslint --fix"
+    ]
+  }
 }
