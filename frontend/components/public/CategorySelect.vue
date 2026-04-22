@@ -14,12 +14,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref } from 'vue';
 
-const props = defineProps<{ categories: any[] }>()
-const emit  = defineEmits(['update:category'])
+const props = defineProps<{ categories: any[] }>();
+const emit = defineEmits(['update:category']);
 
-const selected = ref<any>('')
+const selected = ref<any>('');
 
-function onChange() { emit('update:category', selected.value) }
+function onChange() {
+  emit('update:category', selected.value);
+}
 </script>

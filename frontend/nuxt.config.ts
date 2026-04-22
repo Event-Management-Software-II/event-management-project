@@ -1,4 +1,4 @@
-import { defineNuxtConfig } from 'nuxt/config'
+import { defineNuxtConfig } from 'nuxt/config';
 
 export default defineNuxtConfig({
   ssr: true,
@@ -6,18 +6,17 @@ export default defineNuxtConfig({
   app: {
     head: {
       title: 'Event Management',
-      meta: [{ name: 'description', content: 'Catálogo de eventos' }]
-    }, 
-    
+      meta: [{ name: 'description', content: 'Catálogo de eventos' }],
+    },
   },
   devServer: {
-    host:'0.0.0.0',
-    port: 3002
+    host: '0.0.0.0',
+    port: 3002,
   },
   runtimeConfig: {
     public: {
-      apiUrl: process.env.NUXT_PUBLIC_API_URL
-    }
+      apiUrl: process.env.NUXT_PUBLIC_API_URL,
+    },
   },
-  css: ['~/assets/styles/main.css']
-})
+  css: ['~/assets/styles/main.css'],
+});
