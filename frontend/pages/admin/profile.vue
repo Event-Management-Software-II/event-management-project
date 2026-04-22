@@ -17,8 +17,19 @@
         <div class="profile-row">
           <div class="profile-label">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
-              <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-              <circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="1.8"/>
+              <path
+                d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+              />
+              <circle
+                cx="12"
+                cy="7"
+                r="4"
+                stroke="currentColor"
+                stroke-width="1.8"
+              />
             </svg>
             Nombre
           </div>
@@ -28,8 +39,18 @@
         <div class="profile-row">
           <div class="profile-label">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
-              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-              <path d="M22 6l-10 7L2 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+              <path
+                d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+              />
+              <path
+                d="M22 6l-10 7L2 6"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+              />
             </svg>
             Correo
           </div>
@@ -39,7 +60,12 @@
         <div class="profile-row">
           <div class="profile-label">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
-              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+              <path
+                d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+              />
             </svg>
             Rol
           </div>
@@ -49,8 +75,21 @@
         <div class="profile-row">
           <div class="profile-label">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
-              <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" stroke-width="1.8"/>
-              <path d="M16 2v4M8 2v4M3 10h18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+              <rect
+                x="3"
+                y="4"
+                width="18"
+                height="18"
+                rx="2"
+                stroke="currentColor"
+                stroke-width="1.8"
+              />
+              <path
+                d="M16 2v4M8 2v4M3 10h18"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+              />
             </svg>
             Miembro desde
           </div>
@@ -62,26 +101,39 @@
 </template>
 
 <script setup lang="ts">
-definePageMeta({ layout: 'admin' })
+definePageMeta({ layout: 'admin' });
 
-const { user } = useAuth()
+const { user } = useAuth();
 
 const initials = computed(() => {
-  if (!user.value?.name) return '?'
-  return user.value.name.split(' ').map((n: string) => n[0]).slice(0, 2).join('').toUpperCase()
-})
+  if (!user.value?.name) return '?';
+  return user.value.name
+    .split(' ')
+    .map((n: string) => n[0])
+    .slice(0, 2)
+    .join('')
+    .toUpperCase();
+});
 
 const formattedDate = computed(() => {
-  const date = (user.value as any)?.created_at
-  if (!date) return '—'
+  const date = (user.value as any)?.created_at;
+  if (!date) return '—';
   try {
-    return new Date(date).toLocaleDateString('es-CO', { day: '2-digit', month: 'long', year: 'numeric' })
-  } catch { return date }
-})
+    return new Date(date).toLocaleDateString('es-CO', {
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric',
+    });
+  } catch {
+    return date;
+  }
+});
 </script>
 
 <style scoped>
-.profile-card { max-width: 560px; }
+.profile-card {
+  max-width: 560px;
+}
 
 .profile-header {
   display: flex;
@@ -92,7 +144,8 @@ const formattedDate = computed(() => {
 }
 
 .profile-avatar {
-  width: 56px; height: 56px;
+  width: 56px;
+  height: 56px;
   border-radius: 50%;
   background: var(--primary-pale);
   color: var(--primary);
@@ -115,13 +168,18 @@ const formattedDate = computed(() => {
   display: inline-block;
   padding: 3px 10px;
   border-radius: 20px;
-  font-size: .7rem;
+  font-size: 0.7rem;
   font-weight: 700;
-  letter-spacing: .04em;
+  letter-spacing: 0.04em;
 }
-.role-badge--admin { background: var(--primary-pale); color: var(--primary); }
+.role-badge--admin {
+  background: var(--primary-pale);
+  color: var(--primary);
+}
 
-.profile-body { padding: 8px 0; }
+.profile-body {
+  padding: 8px 0;
+}
 
 .profile-row {
   display: flex;
@@ -130,15 +188,17 @@ const formattedDate = computed(() => {
   border-bottom: 1px solid var(--border);
   gap: 16px;
 }
-.profile-row:last-child { border-bottom: none; }
+.profile-row:last-child {
+  border-bottom: none;
+}
 
 .profile-label {
   width: 160px;
   flex-shrink: 0;
-  font-size: .72rem;
+  font-size: 0.72rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: .07em;
+  letter-spacing: 0.07em;
   color: var(--text-muted);
   display: flex;
   align-items: center;
@@ -146,7 +206,7 @@ const formattedDate = computed(() => {
 }
 
 .profile-value {
-  font-size: .88rem;
+  font-size: 0.88rem;
   color: var(--text-primary);
 }
 </style>

@@ -9,7 +9,10 @@ const addFavorite = async (req, res) => {
   } catch (err) {
     if (err.message === 'EVENT_NOT_FOUND')
       return res.status(404).json({ error: 'Event not found' });
-    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002')
+    if (
+      err instanceof Prisma.PrismaClientKnownRequestError &&
+      err.code === 'P2002'
+    )
       return res.status(409).json({ error: 'Event already in favorites' });
     console.error('Error in addFavorite:', err);
     return res.status(500).json({ error: 'Failed to add favorite' });
@@ -43,7 +46,10 @@ const getFavorites = async (req, res) => {
 // GET /api/favorites/:id_event/status
 const getFavoriteStatus = async (req, res) => {
   try {
-    const favorited = await favoritesService.getFavoriteStatus(req.userId, req.params.id_event);
+    const favorited = await favoritesService.getFavoriteStatus(
+      req.userId,
+      req.params.id_event
+    );
     return res.json({ favorited });
   } catch (err) {
     console.error('Error in getFavoriteStatus:', err);
@@ -51,4 +57,9 @@ const getFavoriteStatus = async (req, res) => {
   }
 };
 
-module.exports = { addFavorite, removeFavorite, getFavorites, getFavoriteStatus };
+module.exports = {
+  addFavorite,
+  removeFavorite,
+  getFavorites,
+  getFavoriteStatus,
+};

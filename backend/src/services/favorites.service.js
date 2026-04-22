@@ -8,7 +8,8 @@ const CACHE_KEYS = {
   byUser: (id_user) => `favorites:${id_user}`,
 };
 
-const invalidateFavoriteCache = (id_user) => favCache.del(CACHE_KEYS.byUser(id_user));
+const invalidateFavoriteCache = (id_user) =>
+  favCache.del(CACHE_KEYS.byUser(id_user));
 
 // ── READ ──────────────────────────────────────────────────────────────────────
 
@@ -21,14 +22,18 @@ const getFavoritesByUser = async (id_user) => {
     where: {
       id_user: Number(id_user),
       event: { deleted_at: null },
-      user:  { deleted_at: null },
+      user: { deleted_at: null },
     },
     include: {
       event: {
         include: {
-          category:    true,
-          images:      { where: { type: 'poster' }, take: 1 },
-          ticketTypes: { where: { deleted_at: null }, select: { price: true }, orderBy: { price: 'asc' } },
+          category: true,
+          images: { where: { type: 'poster' }, take: 1 },
+          ticketTypes: {
+            where: { deleted_at: null },
+            select: { price: true },
+            orderBy: { price: 'asc' },
+          },
         },
       },
     },
@@ -36,23 +41,26 @@ const getFavoritesByUser = async (id_user) => {
   });
 
   const data = rows.map((f) => {
-    const prices   = f.event.ticketTypes.map((tt) => tt.price);
+    const prices = f.event.ticketTypes.map((tt) => tt.price);
     const minPrice = prices.length > 0 ? Math.min(...prices) : null;
     const maxPrice = prices.length > 0 ? Math.max(...prices) : null;
 
     return {
-      idEvent:      f.event.id_event,
-      eventName:    f.event.eventName,
-      priceRange:   minPrice === maxPrice
-        ? (minPrice ? `$${minPrice}` : 'Free')
-        : `$${minPrice} - $${maxPrice}`,
+      idEvent: f.event.id_event,
+      eventName: f.event.eventName,
+      priceRange:
+        minPrice === maxPrice
+          ? minPrice
+            ? `$${minPrice}`
+            : 'Free'
+          : `$${minPrice} - $${maxPrice}`,
       minPrice,
       maxPrice,
-      location:     f.event.location,
-      dateTime:     f.event.date_time,
+      location: f.event.location,
+      dateTime: f.event.date_time,
       categoryName: f.event.category.categoryName,
-      imageUrl:     f.event.images[0]?.image_url ?? null,
-      favoritedAt:  f.created_at,
+      imageUrl: f.event.images[0]?.image_url ?? null,
+      favoritedAt: f.created_at,
     };
   });
 
@@ -64,7 +72,7 @@ const getFavoriteStatus = async (id_user, id_event) => {
   const favorite = await prisma.userEvent.findUnique({
     where: {
       id_user_id_event: {
-        id_user:  Number(id_user),
+        id_user: Number(id_user),
         id_event: Number(id_event),
       },
     },

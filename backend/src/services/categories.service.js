@@ -6,7 +6,7 @@ const catCache = new NodeCache({ stdTTL: 300 });
 
 const CACHE_KEYS = {
   public: 'categories:public',
-  admin:  'categories:admin',
+  admin: 'categories:admin',
 };
 
 // ─── Cache ────────────────────────────────────────────────────────────────────
@@ -25,8 +25,8 @@ const getPublicCategories = async (order) => {
   if (cached) return cached;
 
   const categories = await prisma.category.findMany({
-    where:   { deleted_at: null },
-    select:  { id_category: true, categoryName: true },
+    where: { deleted_at: null },
+    select: { id_category: true, categoryName: true },
     orderBy: order === 'asc' ? { categoryName: 'asc' } : { id_category: 'asc' },
   });
 
@@ -39,7 +39,7 @@ const getAdminCategories = async () => {
   if (cached) return cached;
 
   const categories = await prisma.category.findMany({
-    where:   { deleted_at: null },
+    where: { deleted_at: null },
     orderBy: { categoryName: 'asc' },
   });
 
@@ -59,13 +59,13 @@ const createCategory = async (categoryName) => {
 const updateCategory = async (id, categoryName) => {
   const result = await prisma.category.updateMany({
     where: { id_category: id, deleted_at: null },
-    data:  { categoryName: categoryName.trim(), updated_at: new Date() },
+    data: { categoryName: categoryName.trim(), updated_at: new Date() },
   });
 
   if (result.count === 0) throw new Error('CATEGORY_NOT_FOUND');
 
   const updated = await prisma.category.findUnique({
-    where:  { id_category: id },
+    where: { id_category: id },
     select: { id_category: true, categoryName: true, updated_at: true },
   });
 
@@ -79,11 +79,13 @@ const deleteCategory = async (id) => {
   });
 
   if (activeEventsCount > 0)
-    throw Object.assign(new Error('CATEGORY_HAS_ACTIVE_EVENTS'), { activeEventsCount });
+    throw Object.assign(new Error('CATEGORY_HAS_ACTIVE_EVENTS'), {
+      activeEventsCount,
+    });
 
   const result = await prisma.category.updateMany({
     where: { id_category: id, deleted_at: null },
-    data:  { deleted_at: new Date() },
+    data: { deleted_at: new Date() },
   });
 
   if (result.count === 0) throw new Error('CATEGORY_NOT_FOUND');
@@ -94,7 +96,7 @@ const deleteCategory = async (id) => {
 const restoreCategory = async (id) => {
   const result = await prisma.category.updateMany({
     where: { id_category: id, deleted_at: { not: null } },
-    data:  { deleted_at: null },
+    data: { deleted_at: null },
   });
 
   if (result.count === 0) throw new Error('CATEGORY_NOT_FOUND_OR_ACTIVE');

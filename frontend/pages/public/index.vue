@@ -7,9 +7,19 @@
         <div class="user-menu" v-click-outside="closeDropdown">
           <button class="user-icon-btn" @click="dropdownOpen = !dropdownOpen">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" stroke="currentColor" stroke-width="1.8"
-                stroke-linecap="round" />
-              <circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="1.8" />
+              <path
+                d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+              />
+              <circle
+                cx="12"
+                cy="7"
+                r="4"
+                stroke="currentColor"
+                stroke-width="1.8"
+              />
             </svg>
           </button>
           <Transition name="dropdown">
@@ -20,34 +30,78 @@
                   <div class="pub-dropdown-email">{{ user?.email }}</div>
                 </div>
                 <div class="pub-dropdown-divider"></div>
-                <NuxtLink to="/public/profile" class="pub-dropdown-item" @click="closeDropdown">
+                <NuxtLink
+                  to="/public/profile"
+                  class="pub-dropdown-item"
+                  @click="closeDropdown"
+                >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                    <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" stroke="currentColor" stroke-width="1.8"
-                      stroke-linecap="round" />
-                    <circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="1.8" />
+                    <path
+                      d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"
+                      stroke="currentColor"
+                      stroke-width="1.8"
+                      stroke-linecap="round"
+                    />
+                    <circle
+                      cx="12"
+                      cy="7"
+                      r="4"
+                      stroke="currentColor"
+                      stroke-width="1.8"
+                    />
                   </svg>
                   Ver perfil
                 </NuxtLink>
-                <NuxtLink to="/public/favorites" class="pub-dropdown-item" @click="closeDropdown">
+                <NuxtLink
+                  to="/public/favorites"
+                  class="pub-dropdown-item"
+                  @click="closeDropdown"
+                >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
                     <path
                       d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"
-                      stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+                      stroke="currentColor"
+                      stroke-width="1.8"
+                      stroke-linecap="round"
+                    />
                   </svg>
                   Ver favoritos
                 </NuxtLink>
-                <NuxtLink to="/public/purchases" class="pub-dropdown-item" @click="closeDropdown">
+                <NuxtLink
+                  to="/public/purchases"
+                  class="pub-dropdown-item"
+                  @click="closeDropdown"
+                >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                    <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
-                    <path d="M3 6h18M16 10a4 4 0 01-8 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                    <path
+                      d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"
+                      stroke="currentColor"
+                      stroke-width="1.8"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                    <path
+                      d="M3 6h18M16 10a4 4 0 01-8 0"
+                      stroke="currentColor"
+                      stroke-width="1.8"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
                   </svg>
                   Mis compras
                 </NuxtLink>
                 <div class="pub-dropdown-divider"></div>
-                <button class="pub-dropdown-item pub-dropdown-item--danger" @click="handleLogout">
+                <button
+                  class="pub-dropdown-item pub-dropdown-item--danger"
+                  @click="handleLogout"
+                >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                    <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" stroke="currentColor"
-                      stroke-width="1.8" stroke-linecap="round" />
+                    <path
+                      d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"
+                      stroke="currentColor"
+                      stroke-width="1.8"
+                      stroke-linecap="round"
+                    />
                   </svg>
                   Cerrar sesión
                 </button>
@@ -58,17 +112,33 @@
                   <div class="pub-dropdown-email">Accede a tu cuenta</div>
                 </div>
                 <div class="pub-dropdown-divider"></div>
-                <NuxtLink to="/login" class="pub-dropdown-item" @click="closeDropdown">
+                <NuxtLink
+                  to="/login"
+                  class="pub-dropdown-item"
+                  @click="closeDropdown"
+                >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                    <path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4M10 17l5-5-5-5M15 12H3" stroke="currentColor"
-                      stroke-width="1.8" stroke-linecap="round" />
+                    <path
+                      d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4M10 17l5-5-5-5M15 12H3"
+                      stroke="currentColor"
+                      stroke-width="1.8"
+                      stroke-linecap="round"
+                    />
                   </svg>
                   Iniciar sesión
                 </NuxtLink>
-                <NuxtLink to="/register" class="pub-dropdown-item" @click="closeDropdown">
+                <NuxtLink
+                  to="/register"
+                  class="pub-dropdown-item"
+                  @click="closeDropdown"
+                >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                    <path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2M12 3a4 4 0 110 8 4 4 0 010-8zM20 8v6M23 11h-6"
-                      stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+                    <path
+                      d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2M12 3a4 4 0 110 8 4 4 0 010-8zM20 8v6M23 11h-6"
+                      stroke="currentColor"
+                      stroke-width="1.8"
+                      stroke-linecap="round"
+                    />
                   </svg>
                   Registrarse
                 </NuxtLink>
@@ -86,16 +156,24 @@
       </div>
 
       <div class="pub-search">
-        <SearchBar :categories="sortedActiveCategories" @update:query="q => query = q"
-          @update:category="c => selectedCategory = c" />
+        <SearchBar
+          :categories="sortedActiveCategories"
+          @update:query="(q) => (query = q)"
+          @update:category="(c) => (selectedCategory = c)"
+        />
       </div>
 
       <div class="pub-content">
         <aside class="pub-aside">
-          <Filters @update:filters="f => activeFilters = f" />
+          <Filters @update:filters="(f) => (activeFilters = f)" />
         </aside>
         <section class="pub-grid-wrap">
-          <div v-if="loading" style="text-align:center;padding:48px;color:var(--text-muted)">Cargando eventos…</div>
+          <div
+            v-if="loading"
+            style="text-align: center; padding: 48px; color: var(--text-muted)"
+          >
+            Cargando eventos…
+          </div>
           <div v-else class="pub-grid">
             <EventCard v-for="e in filtered" :key="e.id_event" :event="e" />
           </div>
@@ -110,52 +188,63 @@
 </template>
 
 <script setup lang="ts">
-import { useEvents } from '~/composables/useEvents'
-import { useCategories } from '~/composables/useCategories'
-import SearchBar from '~/components/public/SearchBar.vue'
-import Filters from '~/components/public/Filters.vue'
-import EventCard from '~/components/public/EventCard.vue'
+import { useEvents } from '~/composables/useEvents';
+import { useCategories } from '~/composables/useCategories';
+import SearchBar from '~/components/public/SearchBar.vue';
+import Filters from '~/components/public/Filters.vue';
+import EventCard from '~/components/public/EventCard.vue';
 
-const { visibleEvents, loading, fetchEvents } = useEvents()
-const { sortedActiveCategories, fetchCategories } = useCategories()
-const { user, logout } = useAuth()
-const isGuest = computed(() => !user.value)
-const dropdownOpen = ref(false)
-function closeDropdown() { dropdownOpen.value = false }
-async function handleLogout() { closeDropdown(); await logout(); await navigateTo('/login') }
+const { visibleEvents, loading, fetchEvents } = useEvents();
+const { sortedActiveCategories, fetchCategories } = useCategories();
+const { user, logout } = useAuth();
+const isGuest = computed(() => !user.value);
+const dropdownOpen = ref(false);
+function closeDropdown() {
+  dropdownOpen.value = false;
+}
+async function handleLogout() {
+  closeDropdown();
+  await logout();
+  await navigateTo('/login');
+}
 interface ClickOutsideElement extends HTMLElement {
-  _clickOutside?: (e: MouseEvent) => void
+  _clickOutside?: (e: MouseEvent) => void;
 }
 
 const vClickOutside = {
   mounted(el: ClickOutsideElement, binding: any) {
-    el._clickOutside = (e: MouseEvent) => { if (!el.contains(e.target as Node)) binding.value() }
-    document.addEventListener('click', el._clickOutside)
+    el._clickOutside = (e: MouseEvent) => {
+      if (!el.contains(e.target as Node)) binding.value();
+    };
+    document.addEventListener('click', el._clickOutside);
   },
   unmounted(el: ClickOutsideElement) {
-    if (el._clickOutside) document.removeEventListener('click', el._clickOutside)
+    if (el._clickOutside)
+      document.removeEventListener('click', el._clickOutside);
   },
-}
+};
 
 onMounted(async () => {
-  await Promise.all([fetchEvents(), fetchCategories('asc')])
-})
+  await Promise.all([fetchEvents(), fetchCategories('asc')]);
+});
 
-const query = ref('')
-const selectedCategory = ref<number | ''>('')
-const activeFilters = ref({ free: false, presencial: false, online: false })
+const query = ref('');
+const selectedCategory = ref<number | ''>('');
+const activeFilters = ref({ free: false, presencial: false, online: false });
 
 const filtered = computed(() =>
-  visibleEvents.value.filter(e => {
-    const matchQuery = !query.value ||
+  visibleEvents.value.filter((e) => {
+    const matchQuery =
+      !query.value ||
       e.eventName.toLowerCase().includes(query.value.toLowerCase()) ||
-      e.location.toLowerCase().includes(query.value.toLowerCase())
-    const matchCategory = !selectedCategory.value || e.id_category === selectedCategory.value
-    const matchFree = !activeFilters.value.free ||
-      !e.ticketTypes || e.ticketTypes.length === 0  // ← CORRECCIÓN
-    return matchQuery && matchCategory && matchFree
+      e.location.toLowerCase().includes(query.value.toLowerCase());
+    const matchCategory =
+      !selectedCategory.value || e.id_category === selectedCategory.value;
+    const matchFree =
+      !activeFilters.value.free || !e.ticketTypes || e.ticketTypes.length === 0; // ← CORRECCIÓN
+    return matchQuery && matchCategory && matchFree;
   })
-)
+);
 </script>
 
 <style>
@@ -244,7 +333,7 @@ a {
 }
 
 .pub-count {
-  font-size: .82rem;
+  font-size: 0.82rem;
   color: var(--text-muted);
 }
 
@@ -294,7 +383,9 @@ a {
   color: var(--text-secondary);
   display: flex;
   align-items: center;
-  transition: background var(--transition), border-color var(--transition);
+  transition:
+    background var(--transition),
+    border-color var(--transition);
 }
 
 .user-icon-btn:hover {
@@ -310,7 +401,7 @@ a {
   background: var(--bg-surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, .10);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
   min-width: 200px;
   z-index: 100;
   overflow: hidden;
@@ -321,13 +412,13 @@ a {
 }
 
 .pub-dropdown-name {
-  font-size: .84rem;
+  font-size: 0.84rem;
   font-weight: 700;
   color: var(--text-primary);
 }
 
 .pub-dropdown-email {
-  font-size: .74rem;
+  font-size: 0.74rem;
   color: var(--text-muted);
   margin-top: 2px;
 }
@@ -343,13 +434,15 @@ a {
   gap: 9px;
   width: 100%;
   padding: 10px 14px;
-  font-size: .82rem;
+  font-size: 0.82rem;
   font-weight: 600;
   color: var(--text-secondary);
   background: none;
   border: none;
   cursor: pointer;
-  transition: background var(--transition), color var(--transition);
+  transition:
+    background var(--transition),
+    color var(--transition);
   text-decoration: none;
   text-align: left;
 }
@@ -370,7 +463,9 @@ a {
 
 .dropdown-enter-active,
 .dropdown-leave-active {
-  transition: opacity .15s ease, transform .15s ease;
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease;
 }
 
 .dropdown-enter-from,
@@ -379,7 +474,7 @@ a {
   transform: translateY(-6px);
 }
 
-@media (max-width:768px) {
+@media (max-width: 768px) {
   .pub-content {
     flex-direction: column;
   }

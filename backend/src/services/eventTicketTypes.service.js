@@ -32,15 +32,15 @@ const getTicketTypesByEvent = async (id_event) => {
     const sold = ett.purchases.reduce((sum, p) => sum + p.quantity, 0);
     const remaining = ett.capacity - sold;
     return {
-      id_event_ticket:  ett.id_event_ticket,
-      id_catalog:       ett.id_catalog,
-      typeName:         ett.catalog.typeName,
-      price:            ett.price,
-      capacity:         ett.capacity,
-      tickets_sold:     sold,
+      id_event_ticket: ett.id_event_ticket,
+      id_catalog: ett.id_catalog,
+      typeName: ett.catalog.typeName,
+      price: ett.price,
+      capacity: ett.capacity,
+      tickets_sold: sold,
       tickets_remaining: remaining,
-      sold_out:         remaining <= 0,
-      created_at:       ett.created_at,
+      sold_out: remaining <= 0,
+      created_at: ett.created_at,
     };
   });
 
@@ -58,10 +58,10 @@ const createTicketType = async (id_event, { id_catalog, price, capacity }) => {
 
   const created = await prisma.eventTicketType.create({
     data: {
-      id_event:   Number(id_event),
+      id_event: Number(id_event),
       id_catalog: Number(id_catalog),
-      price:      Number(price),
-      capacity:   Number(capacity),
+      price: Number(price),
+      capacity: Number(capacity),
     },
     include: { catalog: { select: { typeName: true } } },
   });
@@ -80,7 +80,9 @@ const updateTicketType = async (id_event, id_ticket, { price, capacity }) => {
     });
     const sold = soldAgg._sum.quantity || 0;
     if (capacity < sold) {
-      const err = new Error(`Cannot reduce capacity below tickets already sold. Sold: ${sold}, Requested: ${capacity}`);
+      const err = new Error(
+        `Cannot reduce capacity below tickets already sold. Sold: ${sold}, Requested: ${capacity}`
+      );
       err.code = 'CAPACITY_CONFLICT';
       err.sold = sold;
       throw err;
@@ -88,12 +90,12 @@ const updateTicketType = async (id_event, id_ticket, { price, capacity }) => {
   }
 
   const updateData = {};
-  if (price    !== undefined) updateData.price    = Number(price);
+  if (price !== undefined) updateData.price = Number(price);
   if (capacity !== undefined) updateData.capacity = Number(capacity);
 
   const updated = await prisma.eventTicketType.update({
     where: { id_event_ticket: Number(id_ticket), id_event: Number(id_event) },
-    data:  updateData,
+    data: updateData,
     include: { catalog: { select: { typeName: true } } },
   });
 
@@ -110,15 +112,21 @@ const deleteTicketType = async (id_event, id_ticket) => {
   });
   const sold = soldAgg._sum.quantity || 0;
   if (sold > 0) {
-    const err = new Error(`Cannot remove a ticket type that already has ${sold} ticket(s) sold.`);
+    const err = new Error(
+      `Cannot remove a ticket type that already has ${sold} ticket(s) sold.`
+    );
     err.code = 'HAS_SALES';
     err.sold = sold;
     throw err;
   }
 
   const result = await prisma.eventTicketType.updateMany({
-    where: { id_event_ticket: Number(id_ticket), id_event: Number(id_event), deleted_at: null },
-    data:  { deleted_at: new Date() },
+    where: {
+      id_event_ticket: Number(id_ticket),
+      id_event: Number(id_event),
+      deleted_at: null,
+    },
+    data: { deleted_at: new Date() },
   });
 
   if (result.count === 0) throw new Error('TICKET_TYPE_NOT_FOUND');

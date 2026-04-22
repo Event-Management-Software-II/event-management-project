@@ -4,27 +4,29 @@ const authService = require('../services/auth.service');
 const validateRegisterInput = ({ email, password, full_name }) => {
   if (!email || !password || !full_name)
     return 'Email, password, and full name are required';
-  if (password.length < 6)
-    return 'Password must be at least 6 characters';
+  if (password.length < 6) return 'Password must be at least 6 characters';
   return null;
 };
 
 const validateLoginInput = ({ email, password }) => {
-  if (!email || !password)
-    return 'Email and password are required';
+  if (!email || !password) return 'Email and password are required';
   return null;
 };
 
 const register = async (req, res) => {
   const validationError = validateRegisterInput(req.body);
-  if (validationError)
-    return res.status(400).json({ error: validationError });
+  if (validationError) return res.status(400).json({ error: validationError });
 
   try {
     const { token, user } = await authService.registerUser(req.body);
-    return res.status(201).json({ message: 'User registered successfully', token, user });
+    return res
+      .status(201)
+      .json({ message: 'User registered successfully', token, user });
   } catch (err) {
-    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002')
+    if (
+      err instanceof Prisma.PrismaClientKnownRequestError &&
+      err.code === 'P2002'
+    )
       return res.status(409).json({ error: 'Email already registered' });
     if (err.message === 'DEFAULT_ROLE_NOT_FOUND')
       return res.status(500).json({ error: 'Default user role not found' });
@@ -36,8 +38,7 @@ const register = async (req, res) => {
 
 const login = async (req, res) => {
   const validationError = validateLoginInput(req.body);
-  if (validationError)
-    return res.status(400).json({ error: validationError });
+  if (validationError) return res.status(400).json({ error: validationError });
 
   try {
     const { token, user } = await authService.loginUser(req.body);
