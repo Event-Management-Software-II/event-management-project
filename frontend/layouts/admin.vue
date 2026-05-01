@@ -2,10 +2,10 @@
   <div class="admin-shell">
     <!-- Sidebar -->
     <aside class="sidebar" :class="{ 'mobile-open': mobileOpen }">
-      <div class="sidebar-logo">
+      <NuxtLink to="/admin" class="sidebar-logo">
         <span>🎟️</span>
         <span>Admin Panel</span>
-      </div>
+      </NuxtLink>
 
       <nav class="sidebar-nav">
         <NuxtLink
@@ -381,6 +381,10 @@ a {
   align-items: center;
   gap: 8px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  color: #e2e8f0;
+  text-decoration: none;
+  cursor: pointer;
+  transition: opacity var(--transition);
 }
 
 .sidebar-nav {
