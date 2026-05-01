@@ -18,6 +18,6 @@ export default defineNuxtRouteMiddleware((to) => {
   // If already logged in and tries to access login/register → redirect to their home
   if (isAuthRoute && role.value !== 'guest') {
     if (role.value === 'admin') return navigateTo('/admin/events');
-    if (role.value === 'external') return navigateTo('/public');
+    if (role.value === 'external') return navigateTo('/public/index');
   }
 });
