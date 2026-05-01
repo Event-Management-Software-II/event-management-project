@@ -108,7 +108,19 @@ const getAdminHomeStats = async () => {
   if (cached) return cached;
 
   const now = new Date();
-  const yesterday = new Date(now.getTime() - 86_400_000);
+  const completedThreshold = new Date(now.getTime() - 86_400_000);
+
+  const activeFilter = { deleted_at: null, date_time: { gt: now } };
+  const completedFilter = {
+    deleted_at: null,
+    date_time: { lte: completedThreshold },
+  };
+
+  // Rango para ingresos mensuales: últimos 6 meses
+  const sixMonthsAgo = new Date(now);
+  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
+  sixMonthsAgo.setDate(1);
+  sixMonthsAgo.setHours(0, 0, 0, 0);
 
   const [totalRevenue, activeEvents, completedEvents, registeredUsers] =
     await Promise.all([
@@ -116,16 +128,86 @@ const getAdminHomeStats = async () => {
         where: { status: 'completed' },
         _sum: { total_price: true },
       }),
-      prisma.event.count({
-        where: { deleted_at: null, date_time: { gt: now } },
+      prisma.event.findMany({
+        where: activeFilter,
+        select: { id_event:true, eventName : true },
+        orderBy: { date_time: 'asc'},
       }),
-      prisma.event.count({
+      prisma.event.findMany({
+        where: completedFilter,
+        select: { id_event:true, eventName : true, date_time:true },
+        orderBy: { date_time: 'desc'},
         where: { deleted_at: null, date_time: { lte: yesterday } },
       }),
       prisma.user.count({
         where: { deleted_at: null, role: { roleName: { not: 'admin' } } },
       }),
-    ]);
+
+    // Lista detallada de eventos activos: entradas vendidas vs capacidad
+    prisma.event.findMany({
+      where: activeFilter,
+      select: {
+        id_event: true,
+        eventName: true,
+        date_time: true,
+        ticketTypes: {
+          where: { deleted_at: null },
+          select: {
+            capacity: true,
+            purchases: {
+              where: { status: 'completed' },
+              select: { quantity: true },
+            },
+          },
+        },
+      },
+      orderBy: { date_time: 'asc' },
+    }),
+ 
+    // Ingresos mensuales — compras completadas en los últimos 6 meses
+    prisma.purchase.findMany({
+      where: {
+        status: 'completed',
+        created_at: { gte: sixMonthsAgo },
+      },
+      select: { total_price: true, created_at: true },
+    }),
+  ]);
+ 
+  // Construir lista detallada de eventos activos
+  const activeEventsDetailMapped = activeEventsDetail.map((e) => {
+    const capacity    = e.ticketTypes.reduce((s, tt) => s + tt.capacity, 0);
+    const ticketsSold = e.ticketTypes.reduce(
+      (s, tt) => s + tt.purchases.reduce((sp, p) => sp + p.quantity, 0),
+      0
+    );
+    return {
+      id_event:     e.id_event,
+      eventName:    e.eventName,
+      date_time:    e.date_time,
+      tickets_sold: ticketsSold,
+      capacity,
+      progress:     capacity > 0 ? Math.round((ticketsSold / capacity) * 100) : 0,
+    };
+  });
+ 
+  // Construir ingresos mensuales agrupados por mes
+  const MONTH_NAMES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+  const monthMap = {};
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(now);
+    d.setMonth(d.getMonth() - i);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    monthMap[key] = { label: `${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}`, revenue: 0 };
+  }
+  for (const p of monthlyPurchases) {
+    const d   = new Date(p.created_at);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    if (monthMap[key]) monthMap[key].revenue += p.total_price ?? 0;
+  }
+  const monthly_revenue = Object.values(monthMap);
+ 
+
 
   const stats = {
     total_revenue: totalRevenue._sum.total_price ?? 0,
