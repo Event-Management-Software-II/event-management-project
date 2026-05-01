@@ -45,10 +45,10 @@ CREATE TABLE "Category" (
 -- ============================================================
 CREATE TABLE "TicketTypeCatalog" (
     "id_catalog"  SERIAL PRIMARY KEY,
-    "typeName"    VARCHAR(100) NOT NULL UNIQUE,   -- e.g. 'VIP', 'Oro', 'General'
+    "typeName"    VARCHAR(100) NOT NULL UNIQUE,
     "created_at"  TIMESTAMP DEFAULT NOW(),
     "updated_at"  TIMESTAMP DEFAULT NOW(),
-    "deleted_at"  TIMESTAMP DEFAULT NULL           -- soft delete: hidden from dropdowns
+    "deleted_at"  TIMESTAMP DEFAULT NULL
 );
 
 -- Events
@@ -81,11 +81,14 @@ CREATE TABLE "EventTicketType" (
     "created_at"       TIMESTAMP DEFAULT NOW(),
     "updated_at"       TIMESTAMP DEFAULT NOW(),
     "deleted_at"       TIMESTAMP DEFAULT NULL,
-    UNIQUE ("id_event", "id_catalog")              -- same type can't be assigned twice to the same event
+    UNIQUE ("id_event", "id_catalog")
 );
 
 CREATE INDEX idx_ett_event   ON "EventTicketType"("id_event");
 CREATE INDEX idx_ett_catalog ON "EventTicketType"("id_catalog");
+-- FIX #3 (complemento SQL): el índice deleted_at de EventTicketType declarado en Prisma
+-- no tenía su par en SQL. Se agrega para mantener consistencia.
+CREATE INDEX idx_ett_deleted_at ON "EventTicketType"("deleted_at");
 
 -- Event images
 CREATE TABLE "EventImage" (
@@ -95,6 +98,8 @@ CREATE TABLE "EventImage" (
     "type"      VARCHAR(50) NOT NULL DEFAULT 'poster'
                   CHECK ("type" IN ('poster', 'banner', 'gallery'))
 );
+
+CREATE INDEX idx_eventimage_event ON "EventImage"("id_event");
 
 -- Event change history (RF-001.3)
 CREATE TABLE "EventHistory" (
@@ -108,17 +113,26 @@ CREATE TABLE "EventHistory" (
     "changed_at"  TIMESTAMP DEFAULT NOW()
 );
 
+CREATE INDEX idx_eventhistory_event      ON "EventHistory"("id_event");
+CREATE INDEX idx_eventhistory_changed_at ON "EventHistory"("changed_at");
+
 -- EventTicketType change history
 -- Tracks every modification to price / capacity of a ticket tier.
+-- FIX #3 (principal en SQL): la columna "id_event_ticket" tiene FK NOT NULL,
+-- igual que en el SQL original. Se elimina el campo espurio que Prisma había
+-- generado ("eventTicketTypeId_event_ticket") que no existe en ninguna tabla SQL.
 CREATE TABLE "EventTicketTypeHistory" (
     "id_history"      SERIAL PRIMARY KEY,
     "id_event_ticket" INTEGER NOT NULL REFERENCES "EventTicketType"("id_event_ticket"),
-    "id_event"        INTEGER NOT NULL,
-    "id_catalog"      INTEGER NOT NULL,
+    "id_event"        INTEGER NOT NULL,   -- desnormalizado, sin FK explícita
+    "id_catalog"      INTEGER NOT NULL,   -- desnormalizado, sin FK explícita
     "price"           DOUBLE PRECISION,
     "capacity"        INTEGER,
     "changed_at"      TIMESTAMP DEFAULT NOW()
 );
+
+CREATE INDEX idx_etth_event_ticket ON "EventTicketTypeHistory"("id_event_ticket");
+CREATE INDEX idx_etth_changed_at   ON "EventTicketTypeHistory"("changed_at");
 
 -- User interests (RF-002)
 CREATE TABLE "Interest" (
@@ -128,6 +142,8 @@ CREATE TABLE "Interest" (
     "created_at"      TIMESTAMP DEFAULT NOW(),
     UNIQUE ("id_event", "user_identifier")
 );
+
+CREATE INDEX idx_interest_event ON "Interest"("id_event");
 
 -- User favorites (User ↔ Event)
 CREATE TABLE "UserEvent" (
@@ -144,6 +160,7 @@ CREATE INDEX idx_userevent_event ON "UserEvent"("id_event");
 -- Purchases
 -- A purchase is always tied to a specific EventTicketType (tier + event).
 -- unit_price is a snapshot of the price at purchase time.
+-- total_price es GENERATED para que siempre sea consistente con quantity * unit_price.
 CREATE TABLE "Purchase" (
     "id_purchase"      SERIAL PRIMARY KEY,
     "id_user"          INTEGER NOT NULL REFERENCES "User"("id_user") ON DELETE CASCADE,
@@ -152,26 +169,27 @@ CREATE TABLE "Purchase" (
     "quantity"         INTEGER NOT NULL CHECK ("quantity" > 0),
     "unit_price"       DOUBLE PRECISION NOT NULL CHECK ("unit_price" >= 0),
     "total_price"      DOUBLE PRECISION GENERATED ALWAYS AS ("quantity" * "unit_price") STORED,
-    "qr_code"          TEXT,             -- base64 or URL of the generated QR for the whole purchase
+    "qr_code"          TEXT,
     "status"           VARCHAR(20) NOT NULL DEFAULT 'pending'
                          CHECK ("status" IN ('pending', 'completed', 'cancelled')),
     "created_at"       TIMESTAMP DEFAULT NOW(),
     "updated_at"       TIMESTAMP DEFAULT NOW()
 );
 
-CREATE INDEX idx_purchase_user         ON "Purchase"("id_user");
-CREATE INDEX idx_purchase_event        ON "Purchase"("id_event");
-CREATE INDEX idx_purchase_eventticket  ON "Purchase"("id_event_ticket");
-CREATE INDEX idx_purchase_status       ON "Purchase"("status");
+CREATE INDEX idx_purchase_user        ON "Purchase"("id_user");
+CREATE INDEX idx_purchase_event       ON "Purchase"("id_event");
+CREATE INDEX idx_purchase_eventticket ON "Purchase"("id_event_ticket");
+CREATE INDEX idx_purchase_status      ON "Purchase"("status");
+-- FIX #5: índice created_at que Prisma declaraba pero SQL no tenía. Se agrega aquí.
+CREATE INDEX idx_purchase_created_at  ON "Purchase"("created_at");
 
 -- Individual tickets (one row per physical ticket / seat within a purchase)
--- Each ticket has its own QR code so it can be printed individually.
 CREATE TABLE "Ticket" (
-    "id_ticket"   SERIAL PRIMARY KEY,
-    "id_purchase" INTEGER NOT NULL REFERENCES "Purchase"("id_purchase") ON DELETE CASCADE,
-    "ticket_number" VARCHAR(50) NOT NULL UNIQUE,  -- human-readable code, e.g. EVT001-VIP-0042
-    "qr_code"     TEXT NOT NULL,                  -- base64 or URL for individual QR
-    "created_at"  TIMESTAMP DEFAULT NOW()
+    "id_ticket"     SERIAL PRIMARY KEY,
+    "id_purchase"   INTEGER NOT NULL REFERENCES "Purchase"("id_purchase") ON DELETE CASCADE,
+    "ticket_number" VARCHAR(50) NOT NULL UNIQUE,
+    "qr_code"       TEXT NOT NULL,
+    "created_at"    TIMESTAMP DEFAULT NOW()
 );
 
 CREATE INDEX idx_ticket_purchase ON "Ticket"("id_purchase");
@@ -251,13 +269,11 @@ CREATE TRIGGER trg_ett_history
     FOR EACH ROW EXECUTE FUNCTION save_ett_history();
 
 -- Guard: prevent reducing capacity below already-sold quantity.
--- Fires on UPDATE of EventTicketType when capacity changes.
 CREATE OR REPLACE FUNCTION check_ett_capacity_reduction()
 RETURNS TRIGGER AS $$
 DECLARE
     v_sold INTEGER;
 BEGIN
-    -- Only enforce when capacity is being lowered
     IF NEW."capacity" >= OLD."capacity" THEN
         RETURN NEW;
     END IF;
@@ -281,13 +297,12 @@ CREATE TRIGGER trg_ett_capacity_guard
     BEFORE UPDATE ON "EventTicketType"
     FOR EACH ROW EXECUTE FUNCTION check_ett_capacity_reduction();
 
--- Guard: prevent removing (soft-deleting) an EventTicketType that has sold tickets.
+-- Guard: prevent soft-deleting an EventTicketType that has sold tickets.
 CREATE OR REPLACE FUNCTION check_ett_softdelete()
 RETURNS TRIGGER AS $$
 DECLARE
     v_sold INTEGER;
 BEGIN
-    -- Only care when deleted_at transitions from NULL to a value
     IF OLD."deleted_at" IS NOT NULL OR NEW."deleted_at" IS NULL THEN
         RETURN NEW;
     END IF;
@@ -311,7 +326,6 @@ CREATE TRIGGER trg_ett_softdelete_guard
     FOR EACH ROW EXECUTE FUNCTION check_ett_softdelete();
 
 -- Guard: validate capacity before inserting or updating a purchase.
--- Also blocks purchases on non-active events (deleted or past).
 CREATE OR REPLACE FUNCTION check_purchase_rules()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -324,7 +338,6 @@ BEGIN
         RETURN NEW;
     END IF;
 
-    -- 1. Event must be active (not deleted, not past)
     SELECT "date_time", "deleted_at"
       INTO v_date_time, v_deleted_at
       FROM "Event"
@@ -338,7 +351,6 @@ BEGIN
         RAISE EXCEPTION 'Event has already taken place and cannot accept purchases.';
     END IF;
 
-    -- 2. Capacity check per ticket tier
     SELECT "capacity" INTO v_capacity
       FROM "EventTicketType"
      WHERE "id_event_ticket" = NEW."id_event_ticket";
@@ -367,10 +379,6 @@ CREATE TRIGGER trg_purchase_rules
 -- VIEWS
 -- ============================================================
 
--- Computed event status (used by all other views)
--- active    = not deleted, date_time > NOW()
--- completed = not deleted, date_time <= NOW() - 1 day
--- deleted   = deleted_at IS NOT NULL
 CREATE OR REPLACE VIEW v_event_status AS
 SELECT
     "id_event",
@@ -378,11 +386,10 @@ SELECT
         WHEN "deleted_at" IS NOT NULL                          THEN 'deleted'
         WHEN "date_time" > NOW()                               THEN 'active'
         WHEN "date_time" <= (NOW() - INTERVAL '1 day')         THEN 'completed'
-        ELSE 'pending_completion'   -- within the 1-day grace window
+        ELSE 'pending_completion'
     END AS "status"
 FROM "Event";
 
--- Active events (public + client pages)
 CREATE OR REPLACE VIEW v_events AS
 SELECT
     e."id_event",
@@ -412,7 +419,6 @@ GROUP BY e."id_event", e."eventName", e."description",
          e."location", e."date_time", e."created_at",
          c."id_category", c."categoryName";
 
--- Completed events (historical view, no purchase options)
 CREATE OR REPLACE VIEW v_events_completed AS
 SELECT
     e."id_event",
@@ -432,7 +438,6 @@ JOIN "Category" c ON e."id_category" = c."id_category"
 WHERE e."deleted_at" IS NULL
   AND e."date_time" <= (NOW() - INTERVAL '1 day');
 
--- Active ticket types per event with sold/remaining counts
 CREATE OR REPLACE VIEW v_event_ticket_types AS
 SELECT
     ett."id_event_ticket",
@@ -459,19 +464,16 @@ LEFT JOIN (
 WHERE ett."deleted_at" IS NULL
   AND e."deleted_at"   IS NULL;
 
--- Active categories
 CREATE OR REPLACE VIEW v_categories AS
 SELECT "id_category", "categoryName", "created_at"
 FROM "Category"
 WHERE "deleted_at" IS NULL;
 
--- Global ticket type catalog (active entries only)
 CREATE OR REPLACE VIEW v_ticket_catalog AS
 SELECT "id_catalog", "typeName", "created_at"
 FROM "TicketTypeCatalog"
 WHERE "deleted_at" IS NULL;
 
--- Interest ranking (RF-002.2)
 CREATE OR REPLACE VIEW v_interest_report AS
 SELECT
     e."eventName"               AS "event_name",
@@ -482,7 +484,6 @@ WHERE e."deleted_at" IS NULL
 GROUP BY e."id_event", e."eventName"
 ORDER BY "interest_count" DESC;
 
--- User favorites
 CREATE OR REPLACE VIEW v_user_favorites AS
 SELECT
     u."id_user",
@@ -509,7 +510,6 @@ WHERE e."deleted_at" IS NULL
   AND u."deleted_at" IS NULL
 ORDER BY ue."created_at" DESC;
 
--- Purchase detail (includes ticket type name)
 CREATE OR REPLACE VIEW v_purchases AS
 SELECT
     p."id_purchase",
@@ -546,7 +546,6 @@ WHERE u."deleted_at" IS NULL
   AND e."deleted_at" IS NULL
 ORDER BY p."created_at" DESC;
 
--- Admin report: tickets sold per event, broken down by type
 CREATE OR REPLACE VIEW v_event_sales_report AS
 SELECT
     e."id_event",
@@ -569,36 +568,26 @@ GROUP BY e."id_event", e."eventName", c."categoryName",
          ttc."typeName", ett."capacity", ett."id_event_ticket"
 ORDER BY e."id_event", "tickets_sold" DESC;
 
--- Admin home: company-wide KPIs
 CREATE OR REPLACE VIEW v_admin_home_stats AS
 SELECT
-    -- Total revenue (all time, completed purchases)
     COALESCE(
         (SELECT SUM("total_price") FROM "Purchase" WHERE "status" = 'completed'),
         0
     ) AS "total_revenue",
-
-    -- Active events
     (
         SELECT COUNT(*) FROM "Event"
         WHERE "deleted_at" IS NULL AND "date_time" > NOW()
     )::INT AS "active_events",
-
-    -- Past / completed events
     (
         SELECT COUNT(*) FROM "Event"
         WHERE "deleted_at" IS NULL AND "date_time" <= (NOW() - INTERVAL '1 day')
     )::INT AS "completed_events",
-
-    -- Registered non-admin users
     (
         SELECT COUNT(*) FROM "User" u
         JOIN "Role" r ON u."id_role" = r."id_role"
         WHERE u."deleted_at" IS NULL AND r."roleName" <> 'admin'
     )::INT AS "registered_users";
 
--- Top 3 best-selling active events (source of truth for Redis cache)
--- The backend reads from this view to warm / refresh the cache.
 CREATE OR REPLACE VIEW v_top3_active_events AS
 SELECT
     e."id_event",
@@ -626,7 +615,7 @@ ORDER BY "total_tickets_sold" DESC
 LIMIT 3;
 
 -- ============================================================
--- SEED DATA - Roles only (minimum required for system boot)
+-- SEED DATA
 -- ============================================================
 INSERT INTO "Role" ("roleName") VALUES ('admin') ON CONFLICT DO NOTHING;
 INSERT INTO "Role" ("roleName") VALUES ('user')  ON CONFLICT DO NOTHING;
