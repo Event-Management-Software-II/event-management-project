@@ -6,6 +6,6 @@
 const { role } = useAuth();
 
 if (role.value === 'admin') await navigateTo('/admin/events');
-else if (role.value === 'external') await navigateTo('/public');
-else await navigateTo('/public');
+else if (role.value === 'external') await navigateTo('/public/index');
+else await navigateTo('/public/index');
 </script>

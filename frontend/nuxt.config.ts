@@ -1,8 +1,8 @@
 import { defineNuxtConfig } from 'nuxt/config';
 
 export default defineNuxtConfig({
+  compatibilityDate: '2026-05-01',
   ssr: true,
-  nitro: { compatibilityDate: '2026-02-24' },
   app: {
     head: {
       title: 'Event Management',
