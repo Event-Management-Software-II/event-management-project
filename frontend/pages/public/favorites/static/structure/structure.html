@@ -1,0 +1,163 @@
+<div class="pub-shell">
+    <header class="pub-header">
+      <div class="pub-header-inner">
+        <NuxtLink to="/public/index" class="pub-logo">🎟️ Eventos Boyacá</NuxtLink>
+        <div class="pub-header-actions">
+          <div class="user-menu" v-click-outside="closeDropdown">
+            <button class="user-icon-btn" @click="dropdownOpen = !dropdownOpen">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                />
+                <circle
+                  cx="12"
+                  cy="7"
+                  r="4"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                />
+              </svg>
+            </button>
+            <Transition name="dropdown">
+              <div v-if="dropdownOpen" class="pub-dropdown">
+                <div class="pub-dropdown-header">
+                  <div class="pub-dropdown-name">{{ user?.name }}</div>
+                  <div class="pub-dropdown-email">{{ user?.email }}</div>
+                </div>
+                <div class="pub-dropdown-divider"></div>
+                <NuxtLink
+                  to="/public/profile"
+                  class="pub-dropdown-item"
+                  @click="closeDropdown"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                    <path
+                      d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"
+                      stroke="currentColor"
+                      stroke-width="1.8"
+                      stroke-linecap="round"
+                    />
+                    <circle
+                      cx="12"
+                      cy="7"
+                      r="4"
+                      stroke="currentColor"
+                      stroke-width="1.8"
+                    />
+                  </svg>
+                  Ver perfil
+                </NuxtLink>
+                <NuxtLink
+                  to="/public/favorites"
+                  class="pub-dropdown-item active-item"
+                  @click="closeDropdown"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                    <path
+                      d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"
+                      stroke="currentColor"
+                      stroke-width="1.8"
+                      stroke-linecap="round"
+                    />
+                  </svg>
+                  Ver favoritos
+                </NuxtLink>
+                <div class="pub-dropdown-divider"></div>
+                <button
+                  class="pub-dropdown-item pub-dropdown-item--danger"
+                  @click="handleLogout"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                    <path
+                      d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"
+                      stroke="currentColor"
+                      stroke-width="1.8"
+                      stroke-linecap="round"
+                    />
+                  </svg>
+                  Cerrar sesión
+                </button>
+              </div>
+            </Transition>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="pub-main">
+      <div class="pub-head">
+        <h2 class="pub-title">Mis favoritos</h2>
+        <p class="pub-count">{{ favoriteEvents.length }} evento(s)</p>
+      </div>
+
+      <div
+        v-if="loading"
+        style="text-align: center; padding: 48px; color: var(--text-muted)"
+      >
+        Cargando eventos…
+      </div>
+
+      <div v-else-if="favoriteEvents.length === 0" class="pub-empty">
+        <p>❤️</p>
+        <p>Aún no tienes eventos favoritos</p>
+        <NuxtLink to="/public/index" class="back-btn">Explorar eventos</NuxtLink>
+      </div>
+
+      <div v-else class="pub-grid">
+        <div
+          v-for="e in favoriteEvents"
+          :key="e.id_event"
+          class="fav-card"
+          @click="openEvent(e.id_event)"
+        >
+          <div class="fav-card-img">
+            <img v-if="e.imageUrl" :src="e.imageUrl" :alt="e.NameEvent" />
+            <div v-else class="fav-card-placeholder"></div>
+            <span class="fav-card-category">{{ e.nameCategory }}</span>
+            <button
+              class="btn-like active"
+              @click.stop="removeFavorite(e.id_event)"
+              title="Ya no me interesa"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"
+                  fill="#e74c3c"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                />
+              </svg>
+            </button>
+          </div>
+          <div class="fav-card-body">
+            <p class="fav-card-meta">
+              <span>📅 {{ formatDate(e.date_time) }}</span>
+              <span>📍 {{ e.location }}</span>
+            </p>
+            <h3 class="fav-card-title">{{ e.NameEvent }}</h3>
+            <p class="fav-card-price">
+              {{
+                !e.minPrice || e.minPrice === 0
+                  ? 'Gratis'
+                  : `Desde $${Number(e.minPrice).toLocaleString('es-CO')}`
+              }}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal de detalle -->
+      <Teleport to="body">
+        <EventDetailModal
+          v-if="selectedEvent"
+          :event="selectedEvent"
+          @close="selectedEvent = null"
+        />
+      </Teleport>
+    </main>
+  </div>
+
