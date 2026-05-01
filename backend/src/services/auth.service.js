@@ -1,17 +1,13 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const prisma = require('../prisma/prisma');
-const NodeCache = require('node-cache');
+const CacheService = require('./cache.service');
 
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET)
   throw new Error('JWT_SECRET is not defined in environment variables');
 
-const userCache = new NodeCache({ stdTTL: 300 });
-
-const CACHE_KEYS = {
-  currentUser: (id) => `auth:user:${id}`,
-};
+const cache = new CacheService({ ttl: 300, namespace: 'auth' });
 
 const TOKEN_EXPIRY = {
   user: '10m',
@@ -43,8 +39,7 @@ const signToken = (user, roleName) =>
   );
 
 const invalidateUserCache = (userId) => {
-  if (!userId) return;
-  userCache.del(CACHE_KEYS.currentUser(userId));
+  if (userId) cache.del(`user:${userId}`);
 };
 
 const registerUser = async ({ email, password, full_name }) => {
@@ -61,7 +56,7 @@ const registerUser = async ({ email, password, full_name }) => {
   const userResponse = buildUserResponse(user, role.roleName);
   const token = signToken(user, role.roleName);
 
-  userCache.set(CACHE_KEYS.currentUser(user.id_user), userResponse);
+  cache.set(`user:${user.id_user}`, userResponse);
 
   return { token, user: userResponse };
 };
@@ -81,14 +76,13 @@ const loginUser = async ({ email, password }) => {
   const userResponse = buildUserResponse(user, user.role.roleName);
   const token = signToken(user, user.role.roleName);
 
-  userCache.set(CACHE_KEYS.currentUser(user.id_user), userResponse);
+  cache.set(`user:${user.id_user}`, userResponse);
 
   return { token, user: userResponse };
 };
 
 const getUser = async (userId) => {
-  const cacheKey = CACHE_KEYS.currentUser(userId);
-  const cached = userCache.get(cacheKey);
+  const cached = cache.get(`user:${userId}`);
   if (cached) return cached;
 
   const user = await prisma.user.findFirst({
@@ -99,7 +93,7 @@ const getUser = async (userId) => {
   if (!user) throw new Error('USER_NOT_FOUND');
 
   const userResponse = buildUserResponse(user, user.role.roleName);
-  userCache.set(cacheKey, userResponse);
+  cache.set(`user:${userId}`, userResponse);
 
   return userResponse;
 };
