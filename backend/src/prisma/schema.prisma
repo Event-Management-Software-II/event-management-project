@@ -5,7 +5,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL") // FIX #1: faltaba la url de conexión
 }
 
 model Role {
