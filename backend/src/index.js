@@ -16,9 +16,14 @@ const uploadRoutes = require('./routes/upload.routes');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+const ALLOWED_ORIGINS = [
+  'http://localhost:3002',
+  process.env.FRONTEND_URL,
+].filter(Boolean);
+
 app.use(
   cors({
-    origin: ['http://localhost:3002', 'http://10.111.161.71:3002'],
+    origin: ALLOWED_ORIGINS,
     credentials: true,
   })
 );
