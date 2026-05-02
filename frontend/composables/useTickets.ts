@@ -144,9 +144,16 @@ export function useTickets() {
     try {
       const res = await fetch(`${API}/events/${event.id_event}/ticket-types`);
       const json = await res.json();
-      if (!json.ok || !Array.isArray(json.data)) return [];
-
-      const types: TicketType[] = json.data.map((tt: any) => ({
+      
+      const rawData = Array.isArray(json)
+        ? json
+        : json.ok && Array.isArray(json.data)
+          ? json.data
+          : null;
+ 
+      if (!rawData) return [];
+ 
+      const types: TicketType[] = rawData.map((tt: any) => ({
         id: String(tt.id_event_ticket), // ID numérico real de la BD
         name: tt.typeName,
         price: tt.price,
