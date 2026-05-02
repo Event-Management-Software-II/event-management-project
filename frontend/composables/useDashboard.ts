@@ -1,9 +1,5 @@
 import { ref } from 'vue';
 
-const API = 'http://localhost:3001/api';
-
-// ── Tipos (RF-008.1) ───────────────────────────────────────────────────────────
-
 export interface ActiveEventItem {
   id_event: number;
   eventName: string;
@@ -53,7 +49,10 @@ const error = ref<string | null>(null);
 // ── Composable ─────────────────────────────────────────────────────────────────
 
 export function useDashboard() {
-  const { authHeaders } = useAuth();
+const config = useRuntimeConfig();
+const API = `${config.public.apiUrl}/api`;
+
+const { authHeaders } = useAuth();
 
   async function fetchStats(force = false): Promise<void> {
     if (stats.value && !force) return;
