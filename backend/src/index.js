@@ -1,6 +1,7 @@
+require('dotenv').config();
+
 const express = require('express');
 const cors = require('cors');
-require('dotenv').config();
 
 const authRoutes = require('./routes/auth.routes');
 const categoriesRoutes = require('./routes/categories.routes');
@@ -10,6 +11,7 @@ const favoritesRoutes = require('./routes/favorites.routes');
 const usersRoutes = require('./routes/users.routes');
 const purchasesRouter = require('./routes/purchases.routes');
 const ticketCatalogRoutes = require('./routes/ticketCatalog.routes');
+const uploadRoutes = require('./routes/upload.routes');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -35,6 +37,7 @@ app.use('/api/admin/reports', reportsRoutes);
 app.use('/api/favorites', favoritesRoutes);
 app.use('/api/admin/users', usersRoutes);
 app.use('/api/ticket-catalog', ticketCatalogRoutes);
+app.use('/api/upload', uploadRoutes);
 
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
