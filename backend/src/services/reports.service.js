@@ -116,33 +116,39 @@ const getAdminHomeStats = async () => {
     date_time: { lte: completedThreshold },
   };
 
-  // Rango para ingresos mensuales: últimos 6 meses
   const sixMonthsAgo = new Date(now);
   sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
   sixMonthsAgo.setDate(1);
   sixMonthsAgo.setHours(0, 0, 0, 0);
 
-  const [totalRevenue, activeEvents, completedEvents, registeredUsers] =
-    await Promise.all([
-      prisma.purchase.aggregate({
-        where: { status: 'completed' },
-        _sum: { total_price: true },
-      }),
-      prisma.event.findMany({
-        where: activeFilter,
-        select: { id_event:true, eventName : true },
-        orderBy: { date_time: 'asc'},
-      }),
-      prisma.event.findMany({
-        where: completedFilter,
-        select: { id_event:true, eventName : true, date_time:true },
-        orderBy: { date_time: 'desc'},
-        where: { deleted_at: null, date_time: { lte: yesterday } },
-      }),
-      prisma.user.count({
-        where: { deleted_at: null, role: { roleName: { not: 'admin' } } },
-      }),
-
+  // CORRECCIÓN: el quinto elemento se llama `activeEventsDetail` (datos crudos
+  // de Prisma). Más abajo se transforma en `active_events_detail` con .map().
+  // Tener ambos con el mismo nombre en el mismo scope → SyntaxError de JS.
+  const [
+    totalRevenue,
+    activeEventsList,
+    completedEventsList,
+    registeredUsers,
+    activeEventsDetail,   // ← nombre del dato CRUDO que viene de Prisma
+    monthlyPurchases,
+  ] = await Promise.all([
+    prisma.purchase.aggregate({
+      where: { status: 'completed' },
+      _sum: { total_price: true },
+    }),
+    prisma.event.findMany({
+      where: activeFilter,
+      select: { id_event: true, eventName: true },
+      orderBy: { date_time: 'asc' },
+    }),
+    prisma.event.findMany({
+      where: completedFilter,
+      select: { id_event: true, eventName: true, date_time: true },
+      orderBy: { date_time: 'desc' },
+    }),
+    prisma.user.count({
+      where: { deleted_at: null, role: { roleName: { not: 'admin' } } },
+    }),
     // Lista detallada de eventos activos: entradas vendidas vs capacidad
     prisma.event.findMany({
       where: activeFilter,
@@ -163,7 +169,6 @@ const getAdminHomeStats = async () => {
       },
       orderBy: { date_time: 'asc' },
     }),
- 
     // Ingresos mensuales — compras completadas en los últimos 6 meses
     prisma.purchase.findMany({
       where: {
@@ -173,25 +178,25 @@ const getAdminHomeStats = async () => {
       select: { total_price: true, created_at: true },
     }),
   ]);
- 
-  // Construir lista detallada de eventos activos
-  const activeEventsDetailMapped = activeEventsDetail.map((e) => {
-    const capacity    = e.ticketTypes.reduce((s, tt) => s + tt.capacity, 0);
+
+  // CORRECCIÓN: `active_events_detail` es la versión PROCESADA (nueva const).
+  // Usa `activeEventsDetail` (el crudo de arriba) como fuente del .map().
+  const active_events_detail = activeEventsDetail.map((e) => {
+    const capacity = e.ticketTypes.reduce((s, tt) => s + tt.capacity, 0);
     const ticketsSold = e.ticketTypes.reduce(
       (s, tt) => s + tt.purchases.reduce((sp, p) => sp + p.quantity, 0),
       0
     );
     return {
-      id_event:     e.id_event,
-      eventName:    e.eventName,
-      date_time:    e.date_time,
+      id_event: e.id_event,
+      eventName: e.eventName,
+      date_time: e.date_time,
       tickets_sold: ticketsSold,
       capacity,
-      progress:     capacity > 0 ? Math.round((ticketsSold / capacity) * 100) : 0,
+      progress: capacity > 0 ? Math.round((ticketsSold / capacity) * 100) : 0,
     };
   });
- 
-  // Construir ingresos mensuales agrupados por mes
+
   const MONTH_NAMES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
   const monthMap = {};
   for (let i = 5; i >= 0; i--) {
@@ -201,19 +206,25 @@ const getAdminHomeStats = async () => {
     monthMap[key] = { label: `${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}`, revenue: 0 };
   }
   for (const p of monthlyPurchases) {
-    const d   = new Date(p.created_at);
+    const d = new Date(p.created_at);
     const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
     if (monthMap[key]) monthMap[key].revenue += p.total_price ?? 0;
   }
   const monthly_revenue = Object.values(monthMap);
- 
-
 
   const stats = {
     total_revenue: totalRevenue._sum.total_price ?? 0,
-    active_events: activeEvents,
-    completed_events: completedEvents,
+    active_events: {
+      count: activeEventsList.length,
+      items: activeEventsList,
+    },
+    completed_events: {
+      count: completedEventsList.length,
+      items: completedEventsList,
+    },
     registered_users: registeredUsers,
+    active_events_detail,
+    monthly_revenue,
   };
 
   repCache.set(CACHE_KEYS.stats, stats);
