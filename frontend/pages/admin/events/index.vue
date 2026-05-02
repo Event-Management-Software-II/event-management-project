@@ -283,10 +283,12 @@
                 label="Fecha y hora (opcional)"
                 type="datetime-local"
               />
-              <AppInputAdmin
+
+              <!-- ── IMAGEN (reemplaza el AppInputAdmin de URL) ── -->
+              <ImageUpload
                 v-model="form.image_url"
-                label="URL imagen (opcional)"
-                placeholder="https://..."
+                :api-url="apiBaseUrl"
+                :auth-headers="currentAuthHeaders"
               />
 
               <!-- ── SECCIÓN DE TICKETS ── -->
@@ -391,7 +393,6 @@
                       </button>
                     </div>
 
-                    <!-- Selector de tipo (solo muestra los que no están ya elegidos) -->
                     <div class="ticket-type-fields">
                       <div class="field-group">
                         <label class="field-label"
@@ -467,12 +468,10 @@
                     </div>
                   </div>
 
-                  <!-- Error global de tickets -->
                   <p v-if="formErrors.ticketTypes" class="ticket-global-error">
                     {{ formErrors.ticketTypes }}
                   </p>
 
-                  <!-- Botón agregar tipo (deshabilitado si ya se usaron todos los del catálogo) -->
                   <button
                     type="button"
                     class="ticket-add-btn"
@@ -561,8 +560,12 @@
 import type { Event, EventForm } from '~/composables/useEvents';
 import AppButtonAdmin from '~/components/admin/AppButtonAdmin.vue';
 import AppInputAdmin from '~/components/admin/AppInputAdmin.vue';
+import ImageUpload from '~/components/admin/ImageUpload.vue'; 
 
 definePageMeta({ layout: 'admin' });
+
+const config = useRuntimeConfig();
+const apiBaseUrl = config.public.apiUrl as string;
 
 const {
   events,
@@ -576,6 +579,12 @@ const {
 const { sortedActiveCategories, fetchCategoriesAdmin } = useCategories();
 const { sortedActiveCatalog: ticketCatalog, fetchCatalogAdmin } =
   useTicketCatalog();
+
+//headers de auth listos para pasarlos al ImageUpload
+const { authHeaders } = useAuth();
+const currentAuthHeaders = computed(
+  () => authHeaders() as Record<string, string>
+);
 
 onMounted(async () => {
   await Promise.all([
@@ -619,6 +628,7 @@ interface TicketTypeRow {
 
 interface ExtendedEventForm extends EventForm {
   ticketTypes: TicketTypeRow[];
+  image_url: string | null;
 }
 
 const isPaid = ref(false);
@@ -643,12 +653,10 @@ function removeTicketType(idx: number) {
   }
 }
 
-// IDs de catálogo ya seleccionados en otras filas (para evitar duplicados)
 const usedCatalogIds = computed(() =>
   form.value.ticketTypes.map((tt) => tt.id_catalog).filter(Boolean)
 );
 
-// Para cada fila, el catálogo disponible = todos menos los usados en OTRAS filas
 function availableCatalogFor(idx: number) {
   const selectedInOtherRows = form.value.ticketTypes
     .filter((_, i) => i !== idx)
@@ -659,7 +667,6 @@ function availableCatalogFor(idx: number) {
   );
 }
 
-// True cuando ya no quedan tipos de catálogo sin usar
 const allCatalogUsed = computed(
   () =>
     usedCatalogIds.value.filter(Boolean).length >= ticketCatalog.value.length
@@ -678,7 +685,8 @@ const emptyForm = (): ExtendedEventForm => ({
   description: '',
   location: '',
   date_time: '',
-  image_url: '',
+  image_url: null,
+  price: '',
   ticketTypes: [],
 });
 
@@ -704,7 +712,8 @@ function openModal(m: 'create' | 'edit', ev?: Event) {
       description: ev.description,
       location: ev.location,
       date_time: ev.date_time ?? '',
-      image_url: ev.imageUrl ?? '',
+      image_url: ev.imageUrl ?? null,
+      price: '',
       ticketTypes: existingTickets,
     };
   } else {
@@ -756,7 +765,6 @@ async function save() {
   try {
     const payload = {
       ...form.value,
-      // Si es gratis, no enviamos ticketTypes (el back espera array vacío o ausente para evento gratis)
       ticketTypes: isPaid.value
         ? form.value.ticketTypes.map((tt) => ({
             id_catalog: Number(tt.id_catalog),
