@@ -28,7 +28,7 @@ export interface EventForm {
   description: string;
   location: string;
   date_time?: string;
-  image_url?: string;
+  image_url?: string | null;
   ticketTypes?: {
     id_catalog: number;
     price: number;
@@ -134,7 +134,7 @@ export function useEvents() {
           description: form.description,
           location: form.location,
           date_time: form.date_time,
-          image_url: form.image_url,
+          image_url: form.image_url ?? null,
           ticketTypes: form.ticketTypes ?? [], // ← CORRECCIÓN
         }),
       });
@@ -166,7 +166,7 @@ export function useEvents() {
           description: form.description,
           location: form.location,
           date_time: form.date_time,
-          image_url: form.image_url,
+          image_url: form.image_url ?? null,
           ticketTypes: form.ticketTypes ?? [], // ← CORRECCIÓN
         }),
       });
