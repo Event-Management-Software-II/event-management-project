@@ -1,7 +1,7 @@
 <div class="pub-shell">
     <header class="pub-header">
       <div class="pub-header-inner">
-        <NuxtLink to="/public/index" class="pub-logo">🎟️ Eventos Boyacá</NuxtLink>
+        <NuxtLink to="/public" class="pub-logo">🎟️ Eventos Boyacá</NuxtLink>
         <div class="pub-header-actions">
           <div class="user-menu" v-click-outside="closeDropdown">
             <button class="user-icon-btn" @click="dropdownOpen = !dropdownOpen">
@@ -103,7 +103,7 @@
       <div v-else-if="favoriteEvents.length === 0" class="pub-empty">
         <p>❤️</p>
         <p>Aún no tienes eventos favoritos</p>
-        <NuxtLink to="/public/index" class="back-btn">Explorar eventos</NuxtLink>
+        <NuxtLink to="/public" class="back-btn">Explorar eventos</NuxtLink>
       </div>
 
       <div v-else class="pub-grid">

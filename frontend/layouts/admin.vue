@@ -133,7 +133,7 @@
       </nav>
 
       <div class="sidebar-footer">
-        <NuxtLink to="/public/index" class="back-link" @click="closeMobile">
+        <NuxtLink to="/public" class="back-link" @click="closeMobile">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
             <path
               d="M19 12H5M5 12l7-7M5 12l7 7"
