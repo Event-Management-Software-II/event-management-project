@@ -191,7 +191,7 @@
       </p>
 
       <p class="auth-footer-text" style="margin-top: 8px">
-        <NuxtLink to="/public/index" class="auth-link auth-link--muted"
+        <NuxtLink to="/public" class="auth-link auth-link--muted"
           >Continuar como invitado →</NuxtLink
         >
       </p>
@@ -215,7 +215,7 @@ async function submit() {
   errors.value = {};
   const result = await register(form.value);
   if (result.success) {
-    await navigateTo('/public/index');
+    await navigateTo('/public');
   } else {
     errors.value = result.errors ?? {};
   }
