@@ -131,17 +131,28 @@
 
       <div v-else class="purchase-list">
         <div v-for="p in purchases" :key="p.idPurchase" class="purchase-card">
-          <!-- Imagen / portada -->
           <div class="purchase-card-img">
             <img v-if="p.imageUrl" :src="p.imageUrl" :alt="p.eventName" />
             <div v-else class="purchase-card-placeholder"></div>
             <span class="purchase-card-category">{{ p.category }}</span>
-            <span class="purchase-badge" :class="`purchase-badge--${p.status}`">
-              {{ statusLabel(p.status) }}
-            </span>
+            
+            <div class="purchase-badges-container">
+              <span class="purchase-badge"
+                :class="p.eventStatus === 'Activo' ? 'purchase-badge--active' : 'purchase-badge--finished'">
+                {{ p.eventStatus }}
+              </span>
+              
+              <span class="purchase-badge"
+                :class="{
+                  'purchase-badge--paid': p.status === 'completed',
+                  'purchase-badge--pending': p.status === 'pending',
+                  'purchase-badge--cancelled': p.status === 'cancelled'
+                }">
+                {{ p.paymentStatus }}
+              </span>
+            </div>
           </div>
 
-          <!-- Info del evento -->
           <div class="purchase-card-body">
             <div class="purchase-card-top">
               <h3 class="purchase-card-title">{{ p.eventName }}</h3>
@@ -151,7 +162,6 @@
               </p>
             </div>
 
-            <!-- Detalle de la compra -->
             <div class="purchase-card-detail">
               <div class="purchase-detail-row">
                 <span class="purchase-detail-label">Tickets</span>
@@ -183,7 +193,6 @@
               Comprado el {{ formatDate(p.createdAt) }}
             </p>
 
-            <!-- Tickets con QR -->
             <div v-if="p.tickets?.length" class="tickets-section">
               <button class="tickets-toggle" @click="toggleOpen(p.idPurchase)">
                 {{
