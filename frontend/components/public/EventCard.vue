@@ -150,7 +150,8 @@ const { isAuthenticated, authHeaders } = useAuth();
 const { getTypesForEvent, getAvailability, init, ensureTypesForEvent } =
   useTickets();
 
-const API = 'http://10.111.161.71:3001/api';
+const config = useRuntimeConfig();
+const API = `${config.public.apiUrl}/api`;
 
 const showRegisterModal = ref(false);
 const showDetail = ref(false);
