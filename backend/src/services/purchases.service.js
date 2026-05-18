@@ -12,29 +12,52 @@ const invalidatePurchaseCache = (id_user) =>
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-const mapPurchase = (p) => ({
-  idPurchase: p.id_purchase,
-  idEvent: p.ticketType.event.id_event,
-  eventName: p.ticketType.event.eventName,
-  category: p.ticketType.event.category.categoryName,
-  location: p.ticketType.event.location,
-  dateTime: p.ticketType.event.date_time,
-  imageUrl: p.ticketType.event.images[0]?.image_url ?? null,
-  ticketType: p.ticketType.catalog.typeName,
-  idEventTicket: p.id_event_ticket,
-  quantity: p.quantity,
-  unitPrice: p.unit_price,
-  totalPrice: p.total_price ?? p.quantity * p.unit_price,
-  status: p.status,
-  qrCode: p.qr_code,
-  createdAt: p.created_at,
-  tickets: p.tickets.map((t) => ({
-    idTicket: t.id_ticket,
-    ticketNumber: t.ticket_number,
-    qrCode: t.qr_code,
-    createdAt: t.created_at,
-  })),
-});
+/**
+ * Determina el estado del evento según su fecha:
+ * - Si la fecha es futura → "Activo"
+ * - Si la fecha ya pasó   → "Finalizado"
+ */
+const getEventStatus = (dateTime) => {
+  if (!dateTime) return 'Activo';
+  return new Date(dateTime) > new Date() ? 'Activo' : 'Finalizado';
+};
+
+const mapPurchase = (p) => {
+  // Mapeo seguro de estados de pago internos a etiquetas legibles
+  const paymentLabels = {
+    completed: 'Pagado',
+    pending: 'Pendiente',
+    cancelled: 'Cancelado'
+  };
+
+  return {
+    idPurchase: p.id_purchase,
+    idEvent: p.ticketType.event.id_event,
+    eventName: p.ticketType.event.eventName,
+    category: p.ticketType.event.category.categoryName,
+    location: p.ticketType.event.location,
+    dateTime: p.ticketType.event.date_time,
+    imageUrl: p.ticketType.event.images[0]?.image_url ?? null,
+    ticketType: p.ticketType.catalog.typeName,
+    idEventTicket: p.id_event_ticket,
+    quantity: p.quantity,
+    unitPrice: p.unit_price,
+    totalPrice: p.total_price ?? p.quantity * p.unit_price,
+    status: p.status,
+    // Estado del evento según la fecha (Activo / Finalizado)
+    eventStatus: getEventStatus(p.ticketType.event.date_time),
+    // Estado del pago dinámico mapeado (Pagado / Pendiente / Cancelado)
+    paymentStatus: paymentLabels[p.status] || 'Pendiente',
+    qrCode: p.qr_code,
+    createdAt: p.created_at,
+    tickets: p.tickets.map((t) => ({
+      idTicket: t.id_ticket,
+      ticketNumber: t.ticket_number,
+      qrCode: t.qr_code,
+      createdAt: t.created_at,
+    })),
+  };
+};
 
 const buildTicketNumber = (eventName, id_event_ticket, index) =>
   `${eventName.substring(0, 3).toUpperCase()}${String(id_event_ticket).padStart(3, '0')}-${Date.now().toString(36).slice(-4)}${index}`;
@@ -123,7 +146,7 @@ const createPurchase = async (id_user, { id_event_ticket, quantity }) => {
         id_event_ticket: Number(id_event_ticket),
         quantity: Number(quantity),
         unit_price: eventTicketType.price,
-        status: 'completed', // cambiar a 'pending' cuando haya pasarela de pagos
+        status: 'completed',
       },
     });
 
