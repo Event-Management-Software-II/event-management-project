@@ -6,7 +6,9 @@ const repCache = new NodeCache({ stdTTL: 300 });
 const CACHE_KEYS = {
   interest: 'reports:interest',
   sales: 'reports:sales',
+  salesByEvent: 'reports:salesByEvent',
   stats: 'reports:stats',
+  favorites: 'reports:favorites',
 };
 
 const invalidateReportsCache = () => repCache.flushAll();
@@ -44,7 +46,7 @@ const getInterestReport = async () => {
   return report;
 };
 
-// ── Sales report ──────────────────────────────────────────────────────────────
+// ── Sales report (flat, legacy) ───────────────────────────────────────────────
 
 const getSalesReport = async () => {
   const cached = repCache.get(CACHE_KEYS.sales);
@@ -101,6 +103,107 @@ const getSalesReport = async () => {
   return report;
 };
 
+// ── Sales report grouped BY EVENT (nuevo) ─────────────────────────────────────
+// Devuelve un array de eventos, cada uno con su total de ventas y el detalle
+// de tipos de entrada como array anidado. El frontend renderiza un acordeón.
+
+const getSalesReportByEvent = async () => {
+  const cached = repCache.get(CACHE_KEYS.salesByEvent);
+  if (cached) return cached;
+
+  const events = await prisma.event.findMany({
+    where: { deleted_at: null },
+    include: {
+      category: { select: { categoryName: true } },
+      ticketTypes: {
+        where: { deleted_at: null },
+        include: {
+          catalog: { select: { typeName: true } },
+          purchases: {
+            where: { status: 'completed' },
+            select: { quantity: true, total_price: true },
+          },
+        },
+      },
+    },
+    orderBy: { id_event: 'asc' },
+  });
+
+  const report = events.map((event) => {
+    const ticketDetail = event.ticketTypes.map((ett) => {
+      const ticketsSold = ett.purchases.reduce((s, p) => s + p.quantity, 0);
+      const revenue = ett.purchases.reduce(
+        (s, p) => s + (p.total_price || 0),
+        0
+      );
+      return {
+        id_event_ticket: ett.id_event_ticket,
+        ticket_type_name: ett.catalog.typeName,
+        capacity: ett.capacity,
+        tickets_sold: ticketsSold,
+        tickets_remaining: ett.capacity - ticketsSold,
+        revenue,
+      };
+    });
+
+    const totalSold = ticketDetail.reduce((s, t) => s + t.tickets_sold, 0);
+    const totalRevenue = ticketDetail.reduce((s, t) => s + t.revenue, 0);
+
+    return {
+      id_event: event.id_event,
+      event_name: event.eventName,
+      category_name: event.category.categoryName,
+      total_sold: totalSold,
+      total_revenue: totalRevenue,
+      ticket_types: ticketDetail,
+    };
+  });
+
+  // ordenar por total vendido desc
+  report.sort((a, b) => b.total_sold - a.total_sold);
+
+  repCache.set(CACHE_KEYS.salesByEvent, report);
+  return report;
+};
+
+// ── Favorites report ──────────────────────────────────────────────────────────
+
+const getFavoritesReport = async () => {
+  const cached = repCache.get(CACHE_KEYS.favorites);
+  if (cached) return cached;
+
+  const grouped = await prisma.userEvent.groupBy({
+    by: ['id_event'],
+    _count: { id_event: true },
+    orderBy: { _count: { id_event: 'desc' } },
+  });
+
+  if (grouped.length === 0) {
+    repCache.set(CACHE_KEYS.favorites, []);
+    return [];
+  }
+
+  const events = await prisma.event.findMany({
+    where: {
+      id_event: { in: grouped.map((g) => g.id_event) },
+      deleted_at: null,
+    },
+    select: { id_event: true, eventName: true },
+  });
+
+  const eventMap = Object.fromEntries(events.map((e) => [e.id_event, e]));
+
+  const report = grouped
+    .filter((g) => eventMap[g.id_event])
+    .map((g) => ({
+      event_name: eventMap[g.id_event].eventName,
+      total_favorites: g._count.id_event,
+    }));
+
+  repCache.set(CACHE_KEYS.favorites, report);
+  return report;
+};
+
 // ── Admin home stats ──────────────────────────────────────────────────────────
 
 const getAdminHomeStats = async () => {
@@ -121,15 +224,12 @@ const getAdminHomeStats = async () => {
   sixMonthsAgo.setDate(1);
   sixMonthsAgo.setHours(0, 0, 0, 0);
 
-  // CORRECCIÓN: el quinto elemento se llama `activeEventsDetail` (datos crudos
-  // de Prisma). Más abajo se transforma en `active_events_detail` con .map().
-  // Tener ambos con el mismo nombre en el mismo scope → SyntaxError de JS.
   const [
     totalRevenue,
     activeEventsList,
     completedEventsList,
     registeredUsers,
-    activeEventsDetail,   // ← nombre del dato CRUDO que viene de Prisma
+    activeEventsDetail,
     monthlyPurchases,
   ] = await Promise.all([
     prisma.purchase.aggregate({
@@ -149,7 +249,6 @@ const getAdminHomeStats = async () => {
     prisma.user.count({
       where: { deleted_at: null, role: { roleName: { not: 'admin' } } },
     }),
-    // Lista detallada de eventos activos: entradas vendidas vs capacidad
     prisma.event.findMany({
       where: activeFilter,
       select: {
@@ -169,7 +268,6 @@ const getAdminHomeStats = async () => {
       },
       orderBy: { date_time: 'asc' },
     }),
-    // Ingresos mensuales — compras completadas en los últimos 6 meses
     prisma.purchase.findMany({
       where: {
         status: 'completed',
@@ -179,8 +277,6 @@ const getAdminHomeStats = async () => {
     }),
   ]);
 
-  // CORRECCIÓN: `active_events_detail` es la versión PROCESADA (nueva const).
-  // Usa `activeEventsDetail` (el crudo de arriba) como fuente del .map().
   const active_events_detail = activeEventsDetail.map((e) => {
     const capacity = e.ticketTypes.reduce((s, tt) => s + tt.capacity, 0);
     const ticketsSold = e.ticketTypes.reduce(
@@ -234,6 +330,8 @@ const getAdminHomeStats = async () => {
 module.exports = {
   getInterestReport,
   getSalesReport,
+  getSalesReportByEvent,
+  getFavoritesReport,
   getAdminHomeStats,
   invalidateReportsCache,
 };
