@@ -1,5 +1,7 @@
+const { randomUUID } = require('crypto');
 const prisma = require('../prisma/prisma');
 const NodeCache = require('node-cache');
+const { processPayment } = require('./payment.service');
 
 const purchaseCache = new NodeCache({ stdTTL: 60 });
 
@@ -27,7 +29,7 @@ const mapPurchase = (p) => {
   const paymentLabels = {
     completed: 'Pagado',
     pending: 'Pendiente',
-    cancelled: 'Cancelado'
+    cancelled: 'Cancelado',
   };
 
   return {
@@ -106,39 +108,77 @@ const getPurchasesByUser = async (id_user) => {
 
 // ── CREATE ────────────────────────────────────────────────────────────────────
 
-const createPurchase = async (id_user, { id_event_ticket, quantity }) => {
+const createPurchase = async (
+  id_user,
+  { id_event_ticket, quantity, pan, cvv, expiry, cardHolder }
+) => {
+  // 1. Verificar que el tipo de ticket existe, evento activo y futuro
+  const eventTicketType = await prisma.eventTicketType.findFirst({
+    where: {
+      id_event_ticket: Number(id_event_ticket),
+      deleted_at: null,
+      event: { deleted_at: null, date_time: { gt: new Date() } },
+    },
+    include: { event: true, catalog: true },
+  });
+
+  if (!eventTicketType) {
+    const err = new Error('TICKET_TYPE_NOT_FOUND');
+    throw err;
+  }
+
+  // 2. Verificar disponibilidad
+  const soldAgg = await prisma.purchase.aggregate({
+    where: { id_event_ticket: Number(id_event_ticket), status: 'completed' },
+    _sum: { quantity: true },
+  });
+
+  const sold = soldAgg._sum.quantity || 0;
+  const available = eventTicketType.capacity - sold;
+
+  if (quantity > available) {
+    const err = new Error('NOT_ENOUGH_TICKETS');
+    err.available = available;
+    throw err;
+  }
+
+  // 3. Procesar pago (solo si el ticket tiene precio)
+  if (eventTicketType.price > 0) {
+    if (!pan || !cvv || !cardHolder) {
+      const err = new Error('PAYMENT_DATA_REQUIRED');
+      throw err;
+    }
+
+    const amount = eventTicketType.price * Number(quantity);
+    const externalReference = `EVT-${id_event_ticket}-USR-${id_user}-${randomUUID().slice(0, 8)}`;
+
+    const payment = await processPayment({
+      amount,
+      currency: 'COP',
+      pan,
+      cvv,
+      expiry,
+      cardHolder,
+      externalReference,
+      description: `${quantity}x ${eventTicketType.catalog.typeName} — ${eventTicketType.event.eventName}`,
+    });
+
+    if (!payment.ok) {
+      const err = new Error('PAYMENT_GATEWAY_ERROR');
+      err.details = payment.error;
+      throw err;
+    }
+
+    if (!payment.approved) {
+      const err = new Error('PAYMENT_REJECTED');
+      err.details =
+        payment.data?.error || 'El pago fue rechazado por el proveedor.';
+      throw err;
+    }
+  }
+
+  // 4. Crear la compra y tickets en una transacción
   const purchase = await prisma.$transaction(async (tx) => {
-    // 1. Verificar que el tipo de ticket existe, evento activo y futuro
-    const eventTicketType = await tx.eventTicketType.findFirst({
-      where: {
-        id_event_ticket: Number(id_event_ticket),
-        deleted_at: null,
-        event: { deleted_at: null, date_time: { gt: new Date() } },
-      },
-      include: { event: true, catalog: true },
-    });
-
-    if (!eventTicketType) {
-      const err = new Error('TICKET_TYPE_NOT_FOUND');
-      throw err;
-    }
-
-    // 2. Verificar disponibilidad
-    const soldAgg = await tx.purchase.aggregate({
-      where: { id_event_ticket: Number(id_event_ticket), status: 'completed' },
-      _sum: { quantity: true },
-    });
-
-    const sold = soldAgg._sum.quantity || 0;
-    const available = eventTicketType.capacity - sold;
-
-    if (quantity > available) {
-      const err = new Error('NOT_ENOUGH_TICKETS');
-      err.available = available;
-      throw err;
-    }
-
-    // 3. Crear la compra
     const newPurchase = await tx.purchase.create({
       data: {
         id_user: Number(id_user),
@@ -150,7 +190,6 @@ const createPurchase = async (id_user, { id_event_ticket, quantity }) => {
       },
     });
 
-    // 4. Generar tickets individuales
     const ticketsData = Array.from({ length: quantity }, (_, i) => {
       const ticketNumber = buildTicketNumber(
         eventTicketType.event.eventName,

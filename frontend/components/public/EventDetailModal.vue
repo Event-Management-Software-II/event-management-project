@@ -1,10 +1,29 @@
 <template>
+  <!-- eslint-disable vue/require-toggle-inside-transition -->
   <Transition name="modal">
-    <div class="modal-overlay" @click.self="$emit('close')">
-      <div class="detail-modal" role="dialog" :aria-label="event.NameEvent">
+    <!-- eslint-enable vue/require-toggle-inside-transition -->
+    <div
+      v-show="true"
+      class="modal-overlay"
+      @click.self="$emit('close')"
+    >
+      <div
+        class="detail-modal"
+        role="dialog"
+        :aria-label="event.NameEvent"
+      >
         <!-- Botón cerrar -->
-        <button class="modal-close" @click="$emit('close')" aria-label="Cerrar">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+        <button
+          class="modal-close"
+          aria-label="Cerrar"
+          @click="$emit('close')"
+        >
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+          >
             <path
               d="M18 6L6 18M6 6l12 12"
               stroke="currentColor"
@@ -24,12 +43,12 @@
               :src="event.imageUrl"
               :alt="event.NameEvent"
               class="modal-img"
-            />
+            >
             <div
               v-else
               class="modal-img-placeholder"
               :style="{ background: categoryGradient }"
-            ></div>
+            />
             <span class="modal-category-chip">{{ event.nameCategory }}</span>
             <span
               class="modal-status-chip"
@@ -41,10 +60,17 @@
 
           <!-- Info principal -->
           <div class="modal-info">
-            <h2 class="modal-event-name">{{ event.NameEvent }}</h2>
+            <h2 class="modal-event-name">
+              {{ event.NameEvent }}
+            </h2>
             <div class="modal-metas">
               <span class="modal-meta">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                <svg
+                  width="13"
+                  height="13"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                >
                   <rect
                     x="3"
                     y="4"
@@ -64,7 +90,12 @@
                 {{ formatDate(event.date_time) }}
               </span>
               <span class="modal-meta">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                <svg
+                  width="13"
+                  height="13"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                >
                   <path
                     d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"
                     stroke="currentColor"
@@ -81,13 +112,20 @@
                 {{ event.location }}
               </span>
             </div>
-            <p class="modal-description">{{ event.description }}</p>
+            <p class="modal-description">
+              {{ event.description }}
+            </p>
           </div>
 
           <!-- Imagen distribución del lugar -->
           <div class="venue-map-section">
-            <h4 class="section-label">Distribución del lugar</h4>
-            <div class="venue-map" :class="`venue-map--${venueLayout}`">
+            <h4 class="section-label">
+              Distribución del lugar
+            </h4>
+            <div
+              class="venue-map"
+              :class="`venue-map--${venueLayout}`"
+            >
               <!-- Escenario -->
 
               <!-- Zonas según tipos de entrada -->
@@ -125,15 +163,13 @@
                   <span
                     class="legend-dot"
                     :class="`zone-color-${i % 6}`"
-                  ></span>
-                  <span
-                    >{{ tp.name }} —
+                  />
+                  <span>{{ tp.name }} —
                     {{
                       tp.price === 0
                         ? 'Gratis'
                         : `$${tp.price.toLocaleString('es-CO')}`
-                    }}</span
-                  >
+                    }}</span>
                 </div>
               </div>
             </div>
@@ -143,8 +179,13 @@
         <!-- Columna derecha: compra -->
         <div class="modal-right">
           <!-- Evento finalizado -->
-          <div v-if="!isActive" class="past-notice">
-            <div class="past-notice-icon">📁</div>
+          <div
+            v-if="!isActive"
+            class="past-notice"
+          >
+            <div class="past-notice-icon">
+              📁
+            </div>
             <h3>Evento finalizado</h3>
             <p>
               Este evento ya concluyó. Puedes revisar tus boletas anteriores en
@@ -161,25 +202,37 @@
 
           <template v-else>
             <!-- Sin sesión -->
-            <div v-if="isGuest" class="login-prompt">
-              <div class="login-prompt-icon">🔒</div>
+            <div
+              v-if="isGuest"
+              class="login-prompt"
+            >
+              <div class="login-prompt-icon">
+                🔒
+              </div>
               <h3>Inicia sesión para comprar</h3>
               <p>Necesitas una cuenta para adquirir boletas.</p>
-              <NuxtLink to="/login" class="btn-primary" @click="$emit('close')"
-                >Iniciar sesión</NuxtLink
+              <NuxtLink
+                to="/login"
+                class="btn-primary"
+                @click="$emit('close')"
               >
+                Iniciar sesión
+              </NuxtLink>
               <NuxtLink
                 to="/register"
                 class="btn-secondary"
                 @click="$emit('close')"
-                >Registrarse</NuxtLink
               >
+                Registrarse
+              </NuxtLink>
             </div>
 
             <template v-else>
               <!-- PASO 1: Selección de tipos -->
               <div v-if="step === 'select'">
-                <h3 class="aside-title">Selecciona tus entradas</h3>
+                <h3 class="aside-title">
+                  Selecciona tus entradas
+                </h3>
                 <p class="aside-sub">
                   Haz clic en una zona del mapa o elige aquí
                 </p>
@@ -198,7 +251,7 @@
                     <div
                       class="type-item-color"
                       :class="`zone-color-${i % 6}`"
-                    ></div>
+                    />
                     <div class="type-item-info">
                       <span class="type-item-name">{{ tp.name }}</span>
                       <span class="type-item-price">{{
@@ -237,35 +290,43 @@
                     </div>
                   </div>
 
-                  <div v-if="!ticketTypes.length" class="no-types">
+                  <div
+                    v-if="!ticketTypes.length"
+                    class="no-types"
+                  >
                     ℹ️ El administrador aún no configuró los tipos de entrada.
                   </div>
                 </div>
 
                 <!-- Descripción del tipo seleccionado -->
                 <Transition name="slide">
-                  <div v-if="selectedType" class="type-description">
+                  <div
+                    v-if="selectedType"
+                    class="type-description"
+                  >
                     <h4>{{ selectedType.name }}</h4>
                     <p>
                       {{
                         typeDescriptions[selectedType.id] ??
-                        defaultDescription(selectedType)
+                          defaultDescription(selectedType)
                       }}
                     </p>
                     <div class="qty-row">
                       <span class="qty-label">Cantidad</span>
                       <div class="qty-control">
-                        <button @click="qty = Math.max(1, qty - 1)">−</button>
+                        <button @click="qty = Math.max(1, qty - 1)">
+                          −
+                        </button>
                         <span>{{ qty }}</span>
                         <button
+                          :disabled="
+                            qty >= (availability[selectedType.id] ?? 0)
+                          "
                           @click="
                             qty = Math.min(
                               availability[selectedType.id] ?? 0,
                               qty + 1
                             )
-                          "
-                          :disabled="
-                            qty >= (availability[selectedType.id] ?? 0)
                           "
                         >
                           +
@@ -274,7 +335,10 @@
                     </div>
 
                     <div class="add-row">
-                      <button class="btn-add" @click="addToCart">
+                      <button
+                        class="btn-add"
+                        @click="addToCart"
+                      >
                         + Agregar al carrito
                         <span class="add-price">{{
                           selectedType.price === 0
@@ -287,12 +351,19 @@
                 </Transition>
 
                 <!-- Carrito acumulado -->
-                <div v-if="cart.length" class="cart-section">
-                  <h4 class="cart-title">Tu selección</h4>
-                  <div v-for="(item, idx) in cart" :key="idx" class="cart-item">
-                    <span class="cart-item-name"
-                      >{{ item.typeName }} × {{ item.qty }}</span
-                    >
+                <div
+                  v-if="cart.length"
+                  class="cart-section"
+                >
+                  <h4 class="cart-title">
+                    Tu selección
+                  </h4>
+                  <div
+                    v-for="(item, idx) in cart"
+                    :key="idx"
+                    class="cart-item"
+                  >
+                    <span class="cart-item-name">{{ item.typeName }} × {{ item.qty }}</span>
                     <div class="cart-item-right">
                       <span class="cart-item-price">{{
                         item.total === 0
@@ -319,9 +390,7 @@
                   <div class="no-cancel-notice">
                     ⚠️ Las boletas <strong>no se pueden cancelar</strong>. Para
                     ayuda escribe a
-                    <a href="mailto:soporte@eventosboyaca.com"
-                      >soporte@eventosboyaca.com</a
-                    >
+                    <a href="mailto:soporte@eventosboyaca.com">soporte@eventosboyaca.com</a>
                   </div>
 
                   <button
@@ -335,10 +404,15 @@
 
               <!-- PASO 2: Confirmación -->
               <div v-if="step === 'confirm'">
-                <button class="btn-back" @click="step = 'select'">
+                <button
+                  class="btn-back"
+                  @click="step = 'select'"
+                >
                   ← Volver
                 </button>
-                <h3 class="aside-title">Confirmar compra</h3>
+                <h3 class="aside-title">
+                  Confirmar compra
+                </h3>
 
                 <div class="confirm-summary">
                   <div class="confirm-event">
@@ -372,30 +446,66 @@
                 </div>
 
                 <div class="form-group">
-                  <label class="form-label">Nombre del titular / grupo</label>
+                  <label class="form-label">Nombre del titular</label>
                   <input
                     v-model="holderName"
                     class="form-input"
                     placeholder="Ej: María García"
-                  />
+                  >
                 </div>
 
-                <div class="payment-notice">
-                  <div class="payment-notice-icon">💳</div>
-                  <div>
-                    <strong>Pago en taquilla</strong>
-                    <p>
-                      Presenta tus boletas con código QR en la entrada del
-                      evento para pagar.
-                    </p>
+                <template v-if="cartTotal > 0">
+                  <div class="form-group">
+                    <label class="form-label">
+                      Número de tarjeta
+                      <span
+                        v-if="detectedCardType"
+                        class="card-type-badge"
+                      >{{
+                        detectedCardType
+                      }}</span>
+                    </label>
+                    <input
+                      v-model="pan"
+                      class="form-input"
+                      placeholder="Ej: 5412345678901234"
+                      maxlength="16"
+                      inputmode="numeric"
+                    >
                   </div>
-                </div>
+                  <div class="card-row">
+                    <div class="form-group">
+                      <label class="form-label">Fecha de expiración</label>
+                      <input
+                        v-model="expiry"
+                        class="form-input"
+                        placeholder="MM/YY"
+                        maxlength="5"
+                        inputmode="numeric"
+                        @input="formatExpiry"
+                      >
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">CVV</label>
+                      <input
+                        v-model="cvv"
+                        class="form-input"
+                        placeholder="123"
+                        maxlength="4"
+                        inputmode="numeric"
+                      >
+                    </div>
+                  </div>
+                </template>
 
-                <span v-if="buyError" class="form-err">{{ buyError }}</span>
+                <span
+                  v-if="buyError"
+                  class="form-err"
+                >{{ buyError }}</span>
 
                 <button
                   class="btn-primary btn-checkout"
-                  :disabled="!holderName.trim() || buyLoading"
+                  :disabled="!canConfirm || buyLoading"
                   @click="confirmPurchase"
                 >
                   {{
@@ -428,16 +538,19 @@
 </template>
 
 <script setup lang="ts">
+import { ref, computed, onMounted } from 'vue';
 import { useTickets, isEventActive } from '~/composables/useTickets';
 import type { Ticket, TicketType } from '~/composables/useTickets';
 import TicketSuccessModal from '~/components/public/TicketSuccessModal.vue';
 
 const props = defineProps<{
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   event: any;
   initialTypeId?: string | null;
 }>();
 const emit = defineEmits(['close']);
 
+// eslint-disable-next-line no-undef
 const { isGuest, user } = useAuth();
 const {
   getTypesForEvent,
@@ -452,11 +565,30 @@ const step = ref<'select' | 'confirm' | 'success'>('select');
 const selectedTypeId = ref<string | null>(props.initialTypeId ?? null);
 const qty = ref(1);
 const holderName = ref(user.value?.name ?? '');
+const pan = ref('');
+const cvv = ref('');
+const expiry = ref('');
 const buyLoading = ref(false);
 const buyError = ref('');
 const boughtTickets = ref<Ticket[]>([]);
 
 const isActive = computed(() => isEventActive(props.event.date_time));
+const detectedCardType = computed(() => {
+  const first = pan.value.trim()[0];
+  if (first === '4') return 'Visa';
+  if (first === '5') return 'Mastercard';
+  return null;
+});
+
+const canConfirm = computed(() => {
+  if (!holderName.value.trim()) return false;
+  if (
+    cartTotal.value > 0 &&
+    (!pan.value.trim() || !cvv.value.trim() || !expiry.value.trim())
+  )
+    return false;
+  return true;
+});
 const ticketTypes = computed<TicketType[]>(() =>
   getTypesForEvent(props.event.id_event)
 );
@@ -522,6 +654,13 @@ async function confirmPurchase() {
     buyError.value = 'El nombre es obligatorio.';
     return;
   }
+  if (
+    cartTotal.value > 0 &&
+    (!pan.value.trim() || !cvv.value.trim() || !expiry.value.trim())
+  ) {
+    buyError.value = 'Los datos de la tarjeta son obligatorios.';
+    return;
+  }
   buyLoading.value = true;
   buyError.value = '';
   const result = await purchaseTickets(
@@ -534,6 +673,9 @@ async function confirmPurchase() {
     {
       types: cart.value.map((i) => ({ typeId: i.typeId, quantity: i.qty })),
       holderName: holderName.value.trim(),
+      pan: pan.value.trim() || undefined,
+      cvv: cvv.value.trim() || undefined,
+      expiry: expiry.value.trim() || undefined,
     }
   );
   buyLoading.value = false;
@@ -552,8 +694,17 @@ function resetAndBuyMore() {
   cart.value = [];
   selectedTypeId.value = null;
   qty.value = 1;
+  pan.value = '';
+  cvv.value = '';
+  expiry.value = '';
   buyError.value = '';
   step.value = 'select';
+}
+
+function formatExpiry() {
+  let val = expiry.value.replace(/\D/g, '');
+  if (val.length >= 3) val = val.slice(0, 2) + '/' + val.slice(2, 4);
+  expiry.value = val;
 }
 
 function selectType(typeId: string) {
@@ -1225,6 +1376,24 @@ function formatDate(d: string | null) {
 }
 
 /* Form */
+.card-type-badge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 8px;
+  background: #e8f4f5;
+  color: #34656d;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  vertical-align: middle;
+}
+.card-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
 .form-group {
   margin-bottom: 12px;
 }
