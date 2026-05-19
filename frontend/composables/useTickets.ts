@@ -26,7 +26,6 @@ export interface PurchaseForm {
   holderName: string;
   pan?: string;
   cvv?: string;
-  expiry?: string;
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -209,7 +208,6 @@ export function useTickets() {
             quantity: item.quantity,
             pan: form.pan,
             cvv: form.cvv,
-            expiry: form.expiry,
             cardHolder: form.holderName,
           }),
         });
