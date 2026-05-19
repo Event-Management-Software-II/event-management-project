@@ -2,6 +2,10 @@ require('dotenv').config();
 
 const express = require('express');
 const cors = require('cors');
+const morgan = require('morgan');
+const swaggerUi = require('swagger-ui-express');
+const swaggerDefinition = require('./swagger');
+const logger = require('./utils/logger');
 
 const authRoutes = require('./routes/auth.routes');
 const categoriesRoutes = require('./routes/categories.routes');
@@ -29,10 +33,15 @@ app.use(
 );
 app.use(express.json());
 
-app.use((req, _res, next) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
-  next();
-});
+app.use(
+  morgan('combined', {
+    stream: {
+      write: (message) => logger.info(message.trim(), { type: 'HTTP' }),
+    },
+  })
+);
+
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDefinition));
 
 app.use('/api/purchases', purchasesRouter);
 app.use('/api/auth', authRoutes);
@@ -51,10 +60,11 @@ app.get('/api/health', (_req, res) => {
 app.use((_req, res) => res.status(404).json({ error: 'Route not found' }));
 
 app.use((err, _req, res, _next) => {
-  console.error(err);
+  logger.error('Unhandled error', { error: err.message, stack: err.stack });
   res.status(500).json({ error: 'Internal server error' });
 });
 
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server running at http://localhost:${PORT}`);
+  logger.info(`Events backend running at http://localhost:${PORT}`);
+  logger.info(`API docs: http://localhost:${PORT}/api-docs`);
 });

@@ -1,7 +1,7 @@
 const { Prisma } = require('@prisma/client');
 const favoritesService = require('../services/favorites.service');
+const logger = require('../utils/logger');
 
-// POST /api/favorites/:id_event
 const addFavorite = async (req, res) => {
   try {
     await favoritesService.addFavorite(req.userId, req.params.id_event);
@@ -14,12 +14,16 @@ const addFavorite = async (req, res) => {
       err.code === 'P2002'
     )
       return res.status(409).json({ error: 'Event already in favorites' });
-    console.error('Error in addFavorite:', err);
+    logger.error('Failed to add favorite', {
+      userId: req.userId,
+      eventId: req.params.id_event,
+      error: err.message,
+      stack: err.stack,
+    });
     return res.status(500).json({ error: 'Failed to add favorite' });
   }
 };
 
-// DELETE /api/favorites/:id_event
 const removeFavorite = async (req, res) => {
   try {
     await favoritesService.removeFavorite(req.userId, req.params.id_event);
@@ -27,23 +31,30 @@ const removeFavorite = async (req, res) => {
   } catch (err) {
     if (err.message === 'FAVORITE_NOT_FOUND')
       return res.status(404).json({ error: 'Favorite not found' });
-    console.error('Error in removeFavorite:', err);
+    logger.error('Failed to remove favorite', {
+      userId: req.userId,
+      eventId: req.params.id_event,
+      error: err.message,
+      stack: err.stack,
+    });
     return res.status(500).json({ error: 'Failed to remove favorite' });
   }
 };
 
-// GET /api/favorites
 const getFavorites = async (req, res) => {
   try {
     const data = await favoritesService.getFavoritesByUser(req.userId);
     return res.json({ ok: true, data });
   } catch (err) {
-    console.error('Error in getFavorites:', err);
+    logger.error('Failed to fetch favorites', {
+      userId: req.userId,
+      error: err.message,
+      stack: err.stack,
+    });
     return res.status(500).json({ error: 'Failed to fetch favorites' });
   }
 };
 
-// GET /api/favorites/:id_event/status
 const getFavoriteStatus = async (req, res) => {
   try {
     const favorited = await favoritesService.getFavoriteStatus(
@@ -52,7 +63,12 @@ const getFavoriteStatus = async (req, res) => {
     );
     return res.json({ favorited });
   } catch (err) {
-    console.error('Error in getFavoriteStatus:', err);
+    logger.error('Failed to fetch favorite status', {
+      userId: req.userId,
+      eventId: req.params.id_event,
+      error: err.message,
+      stack: err.stack,
+    });
     return res.status(500).json({ error: 'Failed to fetch favorite status' });
   }
 };

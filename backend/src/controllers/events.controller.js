@@ -1,5 +1,6 @@
 const { Prisma } = require('@prisma/client');
 const eventsService = require('../services/events.service');
+const logger = require('../utils/logger');
 
 const validateCreateInput = ({
   eventName,
@@ -31,7 +32,10 @@ const getEvents = async (req, res) => {
     const events = await eventsService.getPublicEvents(req.query);
     return res.json(events);
   } catch (err) {
-    console.error(err);
+    logger.error('Failed to fetch events', {
+      error: err.message,
+      stack: err.stack,
+    });
     return res.status(500).json({ error: 'Failed to fetch events' });
   }
 };
@@ -43,7 +47,11 @@ const getEventById = async (req, res) => {
   } catch (err) {
     if (err.message === 'EVENT_NOT_FOUND')
       return res.status(404).json({ error: 'Event not found' });
-    console.error(err);
+    logger.error('Failed to fetch event', {
+      id: req.params.id,
+      error: err.message,
+      stack: err.stack,
+    });
     return res.status(500).json({ error: 'Failed to fetch event' });
   }
 };
@@ -53,7 +61,10 @@ const getEventsAdmin = async (req, res) => {
     const events = await eventsService.getAdminEvents();
     return res.json(events);
   } catch (err) {
-    console.error(err);
+    logger.error('Failed to fetch admin events', {
+      error: err.message,
+      stack: err.stack,
+    });
     return res.status(500).json({ error: 'Failed to fetch events' });
   }
 };
@@ -64,6 +75,11 @@ const createEvent = async (req, res) => {
 
   try {
     const event = await eventsService.createEvent(req.body);
+    logger.info('Event created', {
+      eventId: event.id_event,
+      name: event.eventName,
+      userId: req.userId,
+    });
     return res.status(201).json(event);
   } catch (err) {
     if (err instanceof Prisma.PrismaClientKnownRequestError) {
@@ -76,7 +92,10 @@ const createEvent = async (req, res) => {
           error: 'The specified category or ticket type does not exist',
         });
     }
-    console.error('Error in createEvent:', err);
+    logger.error('Failed to create event', {
+      error: err.message,
+      stack: err.stack,
+    });
     return res.status(500).json({ error: 'Failed to create event' });
   }
 };
@@ -84,13 +103,21 @@ const createEvent = async (req, res) => {
 const updateEvent = async (req, res) => {
   try {
     const updated = await eventsService.updateEvent(req.params.id, req.body);
+    logger.info('Event updated', {
+      eventId: req.params.id,
+      userId: req.userId,
+    });
     return res.json(updated);
   } catch (err) {
     if (err.message === 'EVENT_NOT_FOUND')
       return res
         .status(404)
         .json({ error: 'Event not found or already deleted' });
-    console.error('Error in updateEvent:', err);
+    logger.error('Failed to update event', {
+      id: req.params.id,
+      error: err.message,
+      stack: err.stack,
+    });
     return res.status(500).json({ error: 'Failed to update event' });
   }
 };
@@ -98,13 +125,21 @@ const updateEvent = async (req, res) => {
 const deleteEvent = async (req, res) => {
   try {
     await eventsService.deleteEvent(req.params.id);
+    logger.info('Event deleted', {
+      eventId: req.params.id,
+      userId: req.userId,
+    });
     return res.json({ message: 'Event deleted successfully' });
   } catch (err) {
     if (err.message === 'EVENT_NOT_FOUND')
       return res
         .status(404)
         .json({ error: 'Event not found or already deleted' });
-    console.error(err);
+    logger.error('Failed to delete event', {
+      id: req.params.id,
+      error: err.message,
+      stack: err.stack,
+    });
     return res.status(500).json({ error: 'Failed to delete event' });
   }
 };
@@ -112,13 +147,21 @@ const deleteEvent = async (req, res) => {
 const restoreEvent = async (req, res) => {
   try {
     await eventsService.restoreEvent(req.params.id);
+    logger.info('Event restored', {
+      eventId: req.params.id,
+      userId: req.userId,
+    });
     return res.json({ message: 'Event restored successfully' });
   } catch (err) {
     if (err.message === 'EVENT_NOT_FOUND_OR_ACTIVE')
       return res
         .status(404)
         .json({ error: 'Event not found or already active' });
-    console.error(err);
+    logger.error('Failed to restore event', {
+      id: req.params.id,
+      error: err.message,
+      stack: err.stack,
+    });
     return res.status(500).json({ error: 'Failed to restore event' });
   }
 };
@@ -138,6 +181,11 @@ const registerInterest = async (req, res) => {
       err.code === 'P2002'
     )
       return res.status(409).json({ error: 'Already registered interest' });
+    logger.error('Failed to register interest', {
+      eventId: req.params.id,
+      userId: req.userId,
+      error: err.message,
+    });
     return res.status(500).json({ error: 'Failed to register interest' });
   }
 };
@@ -147,6 +195,11 @@ const removeInterest = async (req, res) => {
     const total = await eventsService.removeInterest(req.params.id, req.userId);
     return res.json({ message: 'Interest removed', total_interests: total });
   } catch (err) {
+    logger.error('Failed to remove interest', {
+      eventId: req.params.id,
+      userId: req.userId,
+      error: err.message,
+    });
     return res.status(500).json({ error: 'Failed to remove interest' });
   }
 };
@@ -159,6 +212,11 @@ const getInterestStatus = async (req, res) => {
     );
     return res.json({ interested });
   } catch (err) {
+    logger.error('Failed to check interest status', {
+      eventId: req.params.id,
+      userId: req.userId,
+      error: err.message,
+    });
     return res.status(500).json({ error: 'Error checking status' });
   }
 };

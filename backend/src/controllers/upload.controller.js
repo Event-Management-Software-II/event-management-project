@@ -1,10 +1,6 @@
 const { uploadImage } = require('../services/upload.service');
+const logger = require('../utils/logger');
 
-/**
- * POST /api/upload/event-image
- * Recibe un archivo vía multipart/form-data (campo "image"),
- * lo sube a Cloudinary y devuelve la URL pública.
- */
 const uploadEventImage = async (req, res) => {
   try {
     if (!req.file) {
@@ -12,6 +8,7 @@ const uploadEventImage = async (req, res) => {
     }
 
     const url = await uploadImage(req.file.buffer, 'events');
+    logger.info('Event image uploaded', { url, userId: req.userId });
     return res.status(201).json({ ok: true, url });
   } catch (err) {
     if (err.message === 'INVALID_FILE_TYPE') {
@@ -24,7 +21,10 @@ const uploadEventImage = async (req, res) => {
         .status(413)
         .json({ error: 'El archivo supera el límite de 5 MB.' });
     }
-    console.error('[uploadController] Error:', err);
+    logger.error('Failed to upload event image', {
+      error: err.message,
+      stack: err.stack,
+    });
     return res.status(500).json({ error: 'Error al subir la imagen.' });
   }
 };

@@ -1,4 +1,5 @@
 const eventTicketTypesService = require('../services/eventTicketTypes.service');
+const logger = require('../utils/logger');
 
 const getEventTicketTypes = async (req, res) => {
   try {
@@ -7,7 +8,11 @@ const getEventTicketTypes = async (req, res) => {
     );
     return res.json(data);
   } catch (err) {
-    console.error(err);
+    logger.error('Failed to fetch event ticket types', {
+      eventId: req.params.id,
+      error: err.message,
+      stack: err.stack,
+    });
     return res.status(500).json({ error: 'Failed to fetch ticket types' });
   }
 };
@@ -18,11 +23,19 @@ const createEventTicketType = async (req, res) => {
       req.params.id,
       req.body
     );
+    logger.info('Event ticket type created', {
+      eventId: req.params.id,
+      userId: req.userId,
+    });
     return res.status(201).json(data);
   } catch (err) {
     if (err.message === 'EVENT_NOT_FOUND')
       return res.status(404).json({ error: 'Event not found' });
-    console.error(err);
+    logger.error('Failed to create event ticket type', {
+      eventId: req.params.id,
+      error: err.message,
+      stack: err.stack,
+    });
     return res.status(500).json({ error: 'Failed to create ticket type' });
   }
 };
@@ -34,11 +47,21 @@ const updateEventTicketType = async (req, res) => {
       req.params.id_ticket,
       req.body
     );
+    logger.info('Event ticket type updated', {
+      eventId: req.params.id,
+      ticketTypeId: req.params.id_ticket,
+      userId: req.userId,
+    });
     return res.json(data);
   } catch (err) {
     if (err.code === 'CAPACITY_CONFLICT')
       return res.status(409).json({ error: err.message });
-    console.error(err);
+    logger.error('Failed to update event ticket type', {
+      eventId: req.params.id,
+      ticketTypeId: req.params.id_ticket,
+      error: err.message,
+      stack: err.stack,
+    });
     return res.status(500).json({ error: 'Failed to update ticket type' });
   }
 };
@@ -49,13 +72,23 @@ const softDeleteEventTicketType = async (req, res) => {
       req.params.id,
       req.params.id_ticket
     );
+    logger.info('Event ticket type deleted', {
+      eventId: req.params.id,
+      ticketTypeId: req.params.id_ticket,
+      userId: req.userId,
+    });
     return res.json({ message: 'Ticket type deleted successfully' });
   } catch (err) {
     if (err.code === 'HAS_SALES')
       return res.status(409).json({ error: err.message });
     if (err.message === 'TICKET_TYPE_NOT_FOUND')
       return res.status(404).json({ error: 'Ticket type not found' });
-    console.error(err);
+    logger.error('Failed to delete event ticket type', {
+      eventId: req.params.id,
+      ticketTypeId: req.params.id_ticket,
+      error: err.message,
+      stack: err.stack,
+    });
     return res.status(500).json({ error: 'Failed to delete ticket type' });
   }
 };

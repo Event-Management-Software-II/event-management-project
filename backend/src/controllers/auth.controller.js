@@ -1,5 +1,6 @@
 const { Prisma } = require('@prisma/client');
 const authService = require('../services/auth.service');
+const logger = require('../utils/logger');
 
 const validateRegisterInput = ({ email, password, full_name }) => {
   if (!email || !password || !full_name)
@@ -19,6 +20,7 @@ const register = async (req, res) => {
 
   try {
     const { token, user } = await authService.registerUser(req.body);
+    logger.info('User registered', { userId: user.id_user, email: user.email });
     return res
       .status(201)
       .json({ message: 'User registered successfully', token, user });
@@ -31,7 +33,10 @@ const register = async (req, res) => {
     if (err.message === 'DEFAULT_ROLE_NOT_FOUND')
       return res.status(500).json({ error: 'Default user role not found' });
 
-    console.error('Registration error:', err);
+    logger.error('Registration error', {
+      error: err.message,
+      stack: err.stack,
+    });
     return res.status(500).json({ error: 'Failed to register user' });
   }
 };
@@ -42,12 +47,15 @@ const login = async (req, res) => {
 
   try {
     const { token, user } = await authService.loginUser(req.body);
+    logger.info('User logged in', { userId: user.id_user, email: user.email });
     return res.json({ message: 'Login successful', token, user });
   } catch (err) {
-    if (err.message === 'INVALID_CREDENTIALS')
+    if (err.message === 'INVALID_CREDENTIALS') {
+      logger.warn('Failed login attempt', { email: req.body.email });
       return res.status(401).json({ error: 'Invalid email or password' });
+    }
 
-    console.error('Login error:', err);
+    logger.error('Login error', { error: err.message, stack: err.stack });
     return res.status(500).json({ error: 'Failed to login' });
   }
 };
@@ -64,7 +72,11 @@ const getCurrentUser = async (req, res) => {
     if (err.message === 'USER_NOT_FOUND')
       return res.status(404).json({ error: 'User not found' });
 
-    console.error('Get user error:', err);
+    logger.error('Get user error', {
+      userId: req.userId,
+      error: err.message,
+      stack: err.stack,
+    });
     return res.status(500).json({ error: 'Failed to fetch user data' });
   }
 };
