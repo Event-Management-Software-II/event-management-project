@@ -21,12 +21,11 @@ const processPayment = async ({
   currency = 'COP',
   pan,
   cvv,
-  expiry,
   cardHolder,
   externalReference,
   description,
 }) => {
-  if (!amount || !pan || !cvv || !expiry || !cardHolder || !externalReference) {
+  if (!amount || !pan || !cvv || !cardHolder || !externalReference) {
     return {
       ok: false,
       error: 'Missing payment data.',
@@ -39,7 +38,6 @@ const processPayment = async ({
     currency,
     pan,
     cvv,
-    expiry,
     cardHolder,
     externalReference,
     description,

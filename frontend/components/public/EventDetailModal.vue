@@ -473,28 +473,15 @@
                       inputmode="numeric"
                     >
                   </div>
-                  <div class="card-row">
-                    <div class="form-group">
-                      <label class="form-label">Fecha de expiración</label>
-                      <input
-                        v-model="expiry"
-                        class="form-input"
-                        placeholder="MM/YY"
-                        maxlength="5"
-                        inputmode="numeric"
-                        @input="formatExpiry"
-                      >
-                    </div>
-                    <div class="form-group">
-                      <label class="form-label">CVV</label>
-                      <input
-                        v-model="cvv"
-                        class="form-input"
-                        placeholder="123"
-                        maxlength="4"
-                        inputmode="numeric"
-                      >
-                    </div>
+                  <div class="form-group">
+                    <label class="form-label">CVV</label>
+                    <input
+                      v-model="cvv"
+                      class="form-input"
+                      placeholder="123"
+                      maxlength="4"
+                      inputmode="numeric"
+                    >
                   </div>
                 </template>
 
@@ -567,7 +554,6 @@ const qty = ref(1);
 const holderName = ref(user.value?.name ?? '');
 const pan = ref('');
 const cvv = ref('');
-const expiry = ref('');
 const buyLoading = ref(false);
 const buyError = ref('');
 const boughtTickets = ref<Ticket[]>([]);
@@ -582,10 +568,7 @@ const detectedCardType = computed(() => {
 
 const canConfirm = computed(() => {
   if (!holderName.value.trim()) return false;
-  if (
-    cartTotal.value > 0 &&
-    (!pan.value.trim() || !cvv.value.trim() || !expiry.value.trim())
-  )
+  if (cartTotal.value > 0 && (!pan.value.trim() || !cvv.value.trim()))
     return false;
   return true;
 });
@@ -654,10 +637,7 @@ async function confirmPurchase() {
     buyError.value = 'El nombre es obligatorio.';
     return;
   }
-  if (
-    cartTotal.value > 0 &&
-    (!pan.value.trim() || !cvv.value.trim() || !expiry.value.trim())
-  ) {
+  if (cartTotal.value > 0 && (!pan.value.trim() || !cvv.value.trim())) {
     buyError.value = 'Los datos de la tarjeta son obligatorios.';
     return;
   }
@@ -675,7 +655,6 @@ async function confirmPurchase() {
       holderName: holderName.value.trim(),
       pan: pan.value.trim() || undefined,
       cvv: cvv.value.trim() || undefined,
-      expiry: expiry.value.trim() || undefined,
     }
   );
   buyLoading.value = false;
@@ -696,15 +675,8 @@ function resetAndBuyMore() {
   qty.value = 1;
   pan.value = '';
   cvv.value = '';
-  expiry.value = '';
   buyError.value = '';
   step.value = 'select';
-}
-
-function formatExpiry() {
-  let val = expiry.value.replace(/\D/g, '');
-  if (val.length >= 3) val = val.slice(0, 2) + '/' + val.slice(2, 4);
-  expiry.value = val;
 }
 
 function selectType(typeId: string) {

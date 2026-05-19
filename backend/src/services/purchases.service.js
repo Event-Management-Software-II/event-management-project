@@ -110,7 +110,7 @@ const getPurchasesByUser = async (id_user) => {
 
 const createPurchase = async (
   id_user,
-  { id_event_ticket, quantity, pan, cvv, expiry, cardHolder }
+  { id_event_ticket, quantity, pan, cvv, cardHolder }
 ) => {
   // 1. Verificar que el tipo de ticket existe, evento activo y futuro
   const eventTicketType = await prisma.eventTicketType.findFirst({
@@ -157,7 +157,6 @@ const createPurchase = async (
       currency: 'COP',
       pan,
       cvv,
-      expiry,
       cardHolder,
       externalReference,
       description: `${quantity}x ${eventTicketType.catalog.typeName} — ${eventTicketType.event.eventName}`,

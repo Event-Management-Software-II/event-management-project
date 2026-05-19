@@ -13,7 +13,7 @@ const getPurchases = async (req, res) => {
 
 // POST /api/purchases
 const createPurchase = async (req, res) => {
-  const { id_event_ticket, quantity, pan, cvv, expiry, cardHolder } = req.body;
+  const { id_event_ticket, quantity, pan, cvv, cardHolder } = req.body;
 
   if (!id_event_ticket || !quantity || quantity <= 0)
     return res
@@ -26,7 +26,6 @@ const createPurchase = async (req, res) => {
       quantity,
       pan,
       cvv,
-      expiry,
       cardHolder,
     });
     return res.status(201).json({
