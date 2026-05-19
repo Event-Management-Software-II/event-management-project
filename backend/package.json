@@ -11,7 +11,7 @@
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
     "db:init": "node src/db/init.js",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate --schema=src/prisma/schema.prisma"
   },
   "keywords": [],
   "author": "",
@@ -20,17 +20,26 @@
   "dependencies": {
     "@prisma/adapter-pg": "^7.6.0",
     "@prisma/client": "^7.6.0",
+    "axios": "^1.16.1",
     "bcryptjs": "^3.0.3",
+    "cloudinary": "^2.10.0",
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
     "express-rate-limit": "^8.3.2",
     "jsonwebtoken": "^9.0.3",
+    "multer": "^2.1.1",
     "node-cache": "^5.1.2",
-    "pg": "^8.20.0"
+    "pg": "^8.20.0",
+    "undici": "^8.3.0"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.4.0",
+    "eslint-config-prettier": "^10.1.8",
+    "globals": "^17.6.0",
     "nodemon": "^3.1.14",
+    "prettier": "^3.8.3",
     "prisma": "^7.7.0"
   }
 }

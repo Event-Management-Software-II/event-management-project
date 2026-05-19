@@ -24,6 +24,9 @@ export interface Ticket {
 export interface PurchaseForm {
   types: { typeId: string; quantity: number }[];
   holderName: string;
+  pan?: string;
+  cvv?: string;
+  expiry?: string;
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -42,7 +45,6 @@ const typesCache = ref<Record<number, TicketType[]>>({});
 // eventId → { typeId → disponibles }
 const availabilityCache = ref<Record<number, Record<string, number>>>({});
 
-const generateId = () => Math.random().toString(36).substring(2, 10);
 const generateQr = (eventId: number, typeName: string, seq: number) =>
   `QR-${eventId}-${typeName.toUpperCase()}-${seq}-${Date.now()}`;
 
@@ -77,7 +79,6 @@ export function useTopEvents(activeEventIds: number[]) {
 
 export function useTickets() {
   const config = useRuntimeConfig();
-  const API = `${config.public.apiUrl}/api`;
 
   const allTickets = ref<Ticket[]>([]);
 
@@ -94,12 +95,6 @@ export function useTickets() {
         allTickets.value = [];
       }
     }
-  }
-
-  function saveTickets(tickets: Ticket[]) {
-    if (!import.meta.client) return;
-    localStorage.setItem('app_tickets', JSON.stringify(tickets));
-    rebuildSalesCache(tickets);
   }
 
   // ── init: carga tickets y construye caché de tipos/disponibilidad ────────────
@@ -136,6 +131,7 @@ export function useTickets() {
 
   // Carga los tipos reales desde la API y los almacena en caché.
   // Usa los id_event_ticket reales de la BD como id del TicketType.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async function ensureTypesForEvent(event: any): Promise<TicketType[]> {
     if (typesCache.value[event.id_event])
       return typesCache.value[event.id_event];
@@ -144,15 +140,16 @@ export function useTickets() {
     try {
       const res = await fetch(`${API}/events/${event.id_event}/ticket-types`);
       const json = await res.json();
-      
+
       const rawData = Array.isArray(json)
         ? json
         : json.ok && Array.isArray(json.data)
           ? json.data
           : null;
- 
+
       if (!rawData) return [];
- 
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const types: TicketType[] = rawData.map((tt: any) => ({
         id: String(tt.id_event_ticket), // ID numérico real de la BD
         name: tt.typeName,
@@ -210,6 +207,10 @@ export function useTickets() {
           body: JSON.stringify({
             id_event_ticket: Number(item.typeId),
             quantity: item.quantity,
+            pan: form.pan,
+            cvv: form.cvv,
+            expiry: form.expiry,
+            cardHolder: form.holderName,
           }),
         });
 
@@ -272,12 +273,13 @@ export function useTickets() {
   // ── API legacy (getTicketTypes / buyTickets) ─────────────────────────────────
   // Mantenidas para compatibilidad con cualquier otro componente que las use.
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async function getTicketTypes(event: any): Promise<TicketType[]> {
     return ensureTypesForEvent(event);
   }
 
   async function buyTickets(
-    event: any,
+    event: any, // eslint-disable-line @typescript-eslint/no-explicit-any
     types: TicketType[],
     form: PurchaseForm
   ): Promise<{ success: boolean; tickets?: Ticket[]; error?: string }> {
