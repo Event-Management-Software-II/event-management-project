@@ -1,7 +1,6 @@
 const { Prisma } = require('@prisma/client');
 const categoriesService = require('../services/categories.service');
-
-// ─── Handlers HTTP ────────────────────────────────────────────────────────────
+const logger = require('../utils/logger');
 
 const getCategories = async (req, res) => {
   try {
@@ -10,7 +9,10 @@ const getCategories = async (req, res) => {
     );
     return res.json(categories);
   } catch (err) {
-    console.error(err);
+    logger.error('Failed to fetch categories', {
+      error: err.message,
+      stack: err.stack,
+    });
     return res.status(500).json({ error: 'Failed to fetch categories' });
   }
 };
@@ -20,7 +22,10 @@ const getCategoriesAdmin = async (req, res) => {
     const categories = await categoriesService.getAdminCategories();
     return res.json(categories);
   } catch (err) {
-    console.error(err);
+    logger.error('Failed to fetch admin categories', {
+      error: err.message,
+      stack: err.stack,
+    });
     return res.status(500).json({ error: 'Failed to fetch categories' });
   }
 };
@@ -33,6 +38,11 @@ const createCategory = async (req, res) => {
 
   try {
     const category = await categoriesService.createCategory(categoryName);
+    logger.info('Category created', {
+      categoryId: category.id_category,
+      name: categoryName,
+      userId: req.userId,
+    });
     return res.status(201).json(category);
   } catch (err) {
     if (
@@ -42,7 +52,11 @@ const createCategory = async (req, res) => {
       return res
         .status(409)
         .json({ error: 'A category with that name already exists' });
-    console.error(err);
+    logger.error('Failed to create category', {
+      name: categoryName,
+      error: err.message,
+      stack: err.stack,
+    });
     return res.status(500).json({ error: 'Failed to create category' });
   }
 };
@@ -58,6 +72,11 @@ const updateCategory = async (req, res) => {
       Number(req.params.id),
       categoryName
     );
+    logger.info('Category updated', {
+      categoryId: req.params.id,
+      name: categoryName,
+      userId: req.userId,
+    });
     return res.json(updated);
   } catch (err) {
     if (err.message === 'CATEGORY_NOT_FOUND')
@@ -69,7 +88,11 @@ const updateCategory = async (req, res) => {
       return res
         .status(409)
         .json({ error: 'A category with that name already exists' });
-    console.error(err);
+    logger.error('Failed to update category', {
+      id: req.params.id,
+      error: err.message,
+      stack: err.stack,
+    });
     return res.status(500).json({ error: 'Failed to update category' });
   }
 };
@@ -77,6 +100,10 @@ const updateCategory = async (req, res) => {
 const deleteCategory = async (req, res) => {
   try {
     await categoriesService.deleteCategory(Number(req.params.id));
+    logger.info('Category deleted', {
+      categoryId: req.params.id,
+      userId: req.userId,
+    });
     return res.json({ message: 'Category deleted successfully' });
   } catch (err) {
     if (err.message === 'CATEGORY_NOT_FOUND')
@@ -87,7 +114,11 @@ const deleteCategory = async (req, res) => {
           'This category has active events linked to it. Reassign them before deleting.',
         active_events: err.activeEventsCount,
       });
-    console.error(err);
+    logger.error('Failed to delete category', {
+      id: req.params.id,
+      error: err.message,
+      stack: err.stack,
+    });
     return res.status(500).json({ error: 'Failed to delete category' });
   }
 };
@@ -95,13 +126,21 @@ const deleteCategory = async (req, res) => {
 const restoreCategory = async (req, res) => {
   try {
     await categoriesService.restoreCategory(Number(req.params.id));
+    logger.info('Category restored', {
+      categoryId: req.params.id,
+      userId: req.userId,
+    });
     return res.json({ message: 'Category restored successfully' });
   } catch (err) {
     if (err.message === 'CATEGORY_NOT_FOUND_OR_ACTIVE')
       return res
         .status(404)
         .json({ error: 'Category not found or already active' });
-    console.error(err);
+    logger.error('Failed to restore category', {
+      id: req.params.id,
+      error: err.message,
+      stack: err.stack,
+    });
     return res.status(500).json({ error: 'Failed to restore category' });
   }
 };
