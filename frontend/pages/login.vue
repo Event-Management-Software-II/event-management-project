@@ -149,7 +149,11 @@ async function submit() {
   errors.value = {};
   const result = await login(form.value);
   if (result.success) {
+<<<<<<< Updated upstream
     if (isAdmin.value) await navigateTo('/admin');
+=======
+    if (isAdmin.value) await navigateTo('/admin/events');
+>>>>>>> Stashed changes
     else await navigateTo('/public');
   } else {
     errors.value = (result as any).errors ?? {};
