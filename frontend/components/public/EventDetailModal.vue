@@ -537,7 +537,6 @@ const props = defineProps<{
 }>();
 const emit = defineEmits(['close']);
 
- 
 const { isGuest, user } = useAuth();
 const {
   getTypesForEvent,
