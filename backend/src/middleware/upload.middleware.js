@@ -1,5 +1,4 @@
 const multer = require('multer');
-const path = require('path');
 
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const MAX_SIZE_MB = 5;
