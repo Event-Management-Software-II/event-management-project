@@ -1,28 +1,44 @@
 <template>
-  <article class="event-card" :class="{ 'event-card--past': !isActive }">
+  <article
+    class="event-card"
+    :class="{ 'event-card--past': !isActive }"
+  >
     <!-- Media -->
-    <div class="card-media" @click="openDetail">
+    <div
+      class="card-media"
+      @click="openDetail"
+    >
       <img
         v-if="event.imageUrl"
         :src="event.imageUrl"
         :alt="event.eventName"
         class="card-img"
-      />
+      >
       <div
         v-else
         class="image-placeholder"
         :style="{ background: categoryGradient }"
-      ></div>
-      <div class="category-badge">{{ event.categoryName }}</div>
-      <span v-if="!isActive" class="past-badge">Finalizado</span>
+      />
+      <div class="category-badge">
+        {{ event.categoryName }}
+      </div>
+      <span
+        v-if="!isActive"
+        class="past-badge"
+      >Finalizado</span>
       <button
         v-if="isActive"
         class="btn-like"
         :class="{ active: liked }"
-        @click.stop="toggleLike"
         :title="liked ? 'Ya no me interesa' : 'Me interesa'"
+        @click.stop="toggleLike"
       >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+        >
           <path
             d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"
             :fill="liked ? '#e74c3c' : 'none'"
@@ -35,20 +51,33 @@
     </div>
 
     <!-- Body -->
-    <div class="card-body" @click="openDetail">
+    <div
+      class="card-body"
+      @click="openDetail"
+    >
       <p class="card-meta">
         <span>📅 {{ formatDate(event.date_time) }}</span>
         <span>📍 {{ event.location }}</span>
       </p>
-      <h2 class="card-title">{{ event.eventName }}</h2>
-      <p class="card-description">{{ event.description }}</p>
+      <h2 class="card-title">
+        {{ event.eventName }}
+      </h2>
+      <p class="card-description">
+        {{ event.description }}
+      </p>
     </div>
 
     <!-- Footer -->
     <div class="card-footer">
-      <div v-if="!isActive" class="footer-past">
+      <div
+        v-if="!isActive"
+        class="footer-past"
+      >
         <span class="price-tag price-tag--free">Evento finalizado</span>
-        <button class="btn-detail-ghost" @click="openDetail">
+        <button
+          class="btn-detail-ghost"
+          @click="openDetail"
+        >
           Ver historial
         </button>
       </div>
@@ -87,7 +116,10 @@
                 : `Desde $${event.min_price.toLocaleString('es-CO')}`
             }}
           </span>
-          <button class="btn-detail-ghost" @click="openDetail">
+          <button
+            class="btn-detail-ghost"
+            @click="openDetail"
+          >
             Ver evento
           </button>
         </div>
@@ -116,8 +148,12 @@
             >
               ✕
             </button>
-            <div class="guest-modal-icon">🎟️</div>
-            <h3 class="guest-modal-title">¿Te interesa este evento?</h3>
+            <div class="guest-modal-icon">
+              🎟️
+            </div>
+            <h3 class="guest-modal-title">
+              ¿Te interesa este evento?
+            </h3>
             <p class="guest-modal-text">
               Crea una cuenta gratis para guardar tus eventos favoritos.
             </p>
@@ -125,11 +161,15 @@
               <NuxtLink
                 to="/register"
                 class="guest-modal-btn guest-modal-btn--primary"
-                >Registrarse</NuxtLink
               >
-              <NuxtLink to="/login" class="guest-modal-btn"
-                >Iniciar sesión</NuxtLink
+                Registrarse
+              </NuxtLink>
+              <NuxtLink
+                to="/login"
+                class="guest-modal-btn"
               >
+                Iniciar sesión
+              </NuxtLink>
             </div>
           </div>
         </div>
@@ -178,7 +218,9 @@ onMounted(async () => {
         const data = await res.json();
         liked.value = data.favorited;
       }
-    } catch {}
+    } catch (_e) {
+      // Error al verificar favorito — se ignora silenciosamente
+    }
   }
 });
 

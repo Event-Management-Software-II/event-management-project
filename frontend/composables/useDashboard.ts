@@ -21,7 +21,7 @@ export interface ActiveEventDetail {
 }
 
 export interface MonthlyRevenue {
-  label: string;   // e.g. "Ene 2026"
+  label: string; // e.g. "Ene 2026"
   revenue: number;
 }
 
@@ -49,10 +49,10 @@ const error = ref<string | null>(null);
 // ── Composable ─────────────────────────────────────────────────────────────────
 
 export function useDashboard() {
-const config = useRuntimeConfig();
-const API = `${config.public.apiUrl}/api`;
+  const config = useRuntimeConfig();
+  const API = `${config.public.apiUrl}/api`;
 
-const { authHeaders } = useAuth();
+  const { authHeaders } = useAuth();
 
   async function fetchStats(force = false): Promise<void> {
     if (stats.value && !force) return;

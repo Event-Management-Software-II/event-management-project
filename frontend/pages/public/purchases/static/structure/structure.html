@@ -1,222 +1,213 @@
 <div class="pub-shell">
-    <header class="pub-header">
-      <div class="pub-header-inner">
-        <NuxtLink to="/public" class="pub-logo">🎟️ Eventos Boyacá</NuxtLink>
-        <div class="pub-header-actions">
-          <div class="user-menu" v-click-outside="closeDropdown">
-            <button class="user-icon-btn" @click="dropdownOpen = !dropdownOpen">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                <path
-                  d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"
-                  stroke="currentColor"
-                  stroke-width="1.8"
-                  stroke-linecap="round"
-                />
-                <circle
-                  cx="12"
-                  cy="7"
-                  r="4"
-                  stroke="currentColor"
-                  stroke-width="1.8"
-                />
-              </svg>
-            </button>
-            <Transition name="dropdown">
-              <div v-if="dropdownOpen" class="pub-dropdown">
-                <div class="pub-dropdown-header">
-                  <div class="pub-dropdown-name">{{ user?.name }}</div>
-                  <div class="pub-dropdown-email">{{ user?.email }}</div>
-                </div>
-                <div class="pub-dropdown-divider"></div>
-                <NuxtLink
-                  to="/public/profile"
-                  class="pub-dropdown-item"
-                  @click="closeDropdown"
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                    <path
-                      d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"
-                      stroke="currentColor"
-                      stroke-width="1.8"
-                      stroke-linecap="round"
-                    />
-                    <circle
-                      cx="12"
-                      cy="7"
-                      r="4"
-                      stroke="currentColor"
-                      stroke-width="1.8"
-                    />
-                  </svg>
-                  Ver perfil
-                </NuxtLink>
-                <NuxtLink
-                  to="/public/favorites"
-                  class="pub-dropdown-item"
-                  @click="closeDropdown"
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                    <path
-                      d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"
-                      stroke="currentColor"
-                      stroke-width="1.8"
-                      stroke-linecap="round"
-                    />
-                  </svg>
-                  Ver favoritos
-                </NuxtLink>
-                <NuxtLink
-                  to="/public/purchases"
-                  class="pub-dropdown-item active-item"
-                  @click="closeDropdown"
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                    <path
-                      d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"
-                      stroke="currentColor"
-                      stroke-width="1.8"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    />
-                    <path
-                      d="M3 6h18M16 10a4 4 0 01-8 0"
-                      stroke="currentColor"
-                      stroke-width="1.8"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    />
-                  </svg>
-                  Mis compras
-                </NuxtLink>
-                <div class="pub-dropdown-divider"></div>
-                <button
-                  class="pub-dropdown-item pub-dropdown-item--danger"
-                  @click="handleLogout"
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                    <path
-                      d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"
-                      stroke="currentColor"
-                      stroke-width="1.8"
-                      stroke-linecap="round"
-                    />
-                  </svg>
-                  Cerrar sesión
-                </button>
+  <header class="pub-header">
+    <div class="pub-header-inner">
+      <NuxtLink to="/public" class="pub-logo">🎟️ Eventos Boyacá</NuxtLink>
+      <div class="pub-header-actions">
+        <div class="user-menu" v-click-outside="closeDropdown">
+          <button class="user-icon-btn" @click="dropdownOpen = !dropdownOpen">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path
+                d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+              />
+              <circle
+                cx="12"
+                cy="7"
+                r="4"
+                stroke="currentColor"
+                stroke-width="1.8"
+              />
+            </svg>
+          </button>
+          <Transition name="dropdown">
+            <div v-if="dropdownOpen" class="pub-dropdown">
+              <div class="pub-dropdown-header">
+                <div class="pub-dropdown-name">{{ user?.name }}</div>
+                <div class="pub-dropdown-email">{{ user?.email }}</div>
               </div>
-            </Transition>
-          </div>
+              <div class="pub-dropdown-divider"></div>
+              <NuxtLink
+                to="/public/profile"
+                class="pub-dropdown-item"
+                @click="closeDropdown"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                  <path
+                    d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                  />
+                  <circle
+                    cx="12"
+                    cy="7"
+                    r="4"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                  />
+                </svg>
+                Ver perfil
+              </NuxtLink>
+              <NuxtLink
+                to="/public/favorites"
+                class="pub-dropdown-item"
+                @click="closeDropdown"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                  <path
+                    d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                  />
+                </svg>
+                Ver favoritos
+              </NuxtLink>
+              <NuxtLink
+                to="/public/purchases"
+                class="pub-dropdown-item active-item"
+                @click="closeDropdown"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                  <path
+                    d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                  <path
+                    d="M3 6h18M16 10a4 4 0 01-8 0"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+                Mis compras
+              </NuxtLink>
+              <div class="pub-dropdown-divider"></div>
+              <button
+                class="pub-dropdown-item pub-dropdown-item--danger"
+                @click="handleLogout"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                  <path
+                    d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                  />
+                </svg>
+                Cerrar sesión
+              </button>
+            </div>
+          </Transition>
         </div>
       </div>
-    </header>
+    </div>
+  </header>
 
-    <main class="pub-main">
-      <div class="pub-head">
-        <h2 class="pub-title">Mis compras</h2>
-        <p class="pub-count">{{ purchases.length }} compra(s)</p>
-      </div>
+  <main class="pub-main">
+    <div class="pub-head">
+      <h2 class="pub-title">Mis compras</h2>
+      <p class="pub-count">{{ purchases.length }} compra(s)</p>
+    </div>
 
-      <div
-        v-if="loading"
-        style="text-align: center; padding: 48px; color: var(--text-muted)"
-      >
-        Cargando compras…
-      </div>
+    <div
+      v-if="loading"
+      style="text-align: center; padding: 48px; color: var(--text-muted)"
+    >
+      Cargando compras…
+    </div>
 
-      <div v-else-if="purchases.length === 0" class="pub-empty">
-        <p>🛍️</p>
-        <p>Aún no tienes compras registradas</p>
-        <NuxtLink to="/public" class="back-btn">Explorar eventos</NuxtLink>
-      </div>
+    <div v-else-if="purchases.length === 0" class="pub-empty">
+      <p>🛍️</p>
+      <p>Aún no tienes compras registradas</p>
+      <NuxtLink to="/public" class="back-btn">Explorar eventos</NuxtLink>
+    </div>
 
-      <div v-else class="purchase-list">
-        <div v-for="p in purchases" :key="p.idPurchase" class="purchase-card">
-          <div class="purchase-card-img">
-            <img v-if="p.imageUrl" :src="p.imageUrl" :alt="p.eventName" />
-            <div v-else class="purchase-card-placeholder"></div>
-            <span class="purchase-card-category">{{ p.category }}</span>
-            
-            <div class="purchase-badges-container">
-              <span class="purchase-badge"
-                :class="p.eventStatus === 'Activo' ? 'purchase-badge--active' : 'purchase-badge--finished'">
-                {{ p.eventStatus }}
-              </span>
-              
-              <span class="purchase-badge"
-                :class="{
+    <div v-else class="purchase-list">
+      <div v-for="p in purchases" :key="p.idPurchase" class="purchase-card">
+        <div class="purchase-card-img">
+          <img v-if="p.imageUrl" :src="p.imageUrl" :alt="p.eventName" />
+          <div v-else class="purchase-card-placeholder"></div>
+          <span class="purchase-card-category">{{ p.category }}</span>
+
+          <div class="purchase-badges-container">
+            <span
+              class="purchase-badge"
+              :class="p.eventStatus === 'Activo' ? 'purchase-badge--active' : 'purchase-badge--finished'"
+            >
+              {{ p.eventStatus }}
+            </span>
+
+            <span
+              class="purchase-badge"
+              :class="{
                   'purchase-badge--paid': p.status === 'completed',
                   'purchase-badge--pending': p.status === 'pending',
                   'purchase-badge--cancelled': p.status === 'cancelled'
-                }">
-                {{ p.paymentStatus }}
+                }"
+            >
+              {{ p.paymentStatus }}
+            </span>
+          </div>
+        </div>
+
+        <div class="purchase-card-body">
+          <div class="purchase-card-top">
+            <h3 class="purchase-card-title">{{ p.eventName }}</h3>
+            <p class="purchase-card-meta">
+              <span>📅 {{ formatDate(p.dateTime) }}</span>
+              <span>📍 {{ p.location }}</span>
+            </p>
+          </div>
+
+          <div class="purchase-card-detail">
+            <div class="purchase-detail-row">
+              <span class="purchase-detail-label">Tickets</span>
+              <span class="purchase-detail-value">{{ p.quantity }}</span>
+            </div>
+            <div class="purchase-detail-row">
+              <span class="purchase-detail-label">Precio unitario</span>
+              <span class="purchase-detail-value">
+                {{ p.unitPrice === 0 ? 'Gratis' :
+                `$${Number(p.unitPrice).toLocaleString('es-CO')}` }}
+              </span>
+            </div>
+            <div class="purchase-detail-row purchase-detail-row--total">
+              <span class="purchase-detail-label">Total</span>
+              <span class="purchase-detail-value">
+                {{ p.totalPrice === 0 ? 'Gratis' :
+                `$${Number(p.totalPrice).toLocaleString('es-CO')}` }}
               </span>
             </div>
           </div>
 
-          <div class="purchase-card-body">
-            <div class="purchase-card-top">
-              <h3 class="purchase-card-title">{{ p.eventName }}</h3>
-              <p class="purchase-card-meta">
-                <span>📅 {{ formatDate(p.dateTime) }}</span>
-                <span>📍 {{ p.location }}</span>
-              </p>
-            </div>
+          <p class="purchase-card-date">
+            Comprado el {{ formatDate(p.createdAt) }}
+          </p>
 
-            <div class="purchase-card-detail">
-              <div class="purchase-detail-row">
-                <span class="purchase-detail-label">Tickets</span>
-                <span class="purchase-detail-value">{{ p.quantity }}</span>
-              </div>
-              <div class="purchase-detail-row">
-                <span class="purchase-detail-label">Precio unitario</span>
-                <span class="purchase-detail-value">
-                  {{
-                    p.unitPrice === 0
-                      ? 'Gratis'
-                      : `$${Number(p.unitPrice).toLocaleString('es-CO')}`
-                  }}
-                </span>
-              </div>
-              <div class="purchase-detail-row purchase-detail-row--total">
-                <span class="purchase-detail-label">Total</span>
-                <span class="purchase-detail-value">
-                  {{
-                    p.totalPrice === 0
-                      ? 'Gratis'
-                      : `$${Number(p.totalPrice).toLocaleString('es-CO')}`
-                  }}
-                </span>
-              </div>
-            </div>
-
-            <p class="purchase-card-date">
-              Comprado el {{ formatDate(p.createdAt) }}
-            </p>
-
-            <div v-if="p.tickets?.length" class="tickets-section">
-              <button class="tickets-toggle" @click="toggleOpen(p.idPurchase)">
-                {{
-                  openIds.has(p.idPurchase)
-                    ? '▲ Ocultar boletas'
-                    : '▼ Ver boletas (' + p.tickets.length + ')'
-                }}
-              </button>
-              <div v-if="openIds.has(p.idPurchase)" class="tickets-list">
-                <div
-                  v-for="t in p.tickets"
-                  :key="t.idTicket"
-                  class="ticket-row"
-                >
-                  <div class="ticket-row-info">
-                    <span class="ticket-number">{{ t.ticketNumber }}</span>
-                    <span class="ticket-type-tag">{{ p.ticketType }}</span>
-                  </div>
-                  <QrCode :value="t.qrCode" :size="80" />
+          <div v-if="p.tickets?.length" class="tickets-section">
+            <button class="tickets-toggle" @click="toggleOpen(p.idPurchase)">
+              {{ openIds.has(p.idPurchase) ? '▲ Ocultar boletas' : '▼ Ver
+              boletas (' + p.tickets.length + ')' }}
+            </button>
+            <div v-if="openIds.has(p.idPurchase)" class="tickets-list">
+              <div v-for="t in p.tickets" :key="t.idTicket" class="ticket-row">
+                <div class="ticket-row-info">
+                  <span class="ticket-number">{{ t.ticketNumber }}</span>
+                  <span class="ticket-type-tag">{{ p.ticketType }}</span>
                 </div>
+                <QrCode :value="t.qrCode" :size="80" />
               </div>
             </div>
           </div>
         </div>
       </div>
-    </main>
-  </div>
+    </div>
+  </main>
+</div>

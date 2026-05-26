@@ -1,19 +1,26 @@
 <template>
   <div class="auth-shell">
     <div class="auth-card">
-      <div class="auth-logo">🎟️ Eventos Boyacá</div>
-      <h1 class="auth-title">Iniciar sesión</h1>
-      <p class="auth-sub">Bienvenido de nuevo</p>
+      <div class="auth-logo">
+        🎟️ Eventos Boyacá
+      </div>
+      <h1 class="auth-title">
+        Iniciar sesión
+      </h1>
+      <p class="auth-sub">
+        Bienvenido de nuevo
+      </p>
 
-      <p v-if="errors._global" class="auth-error-global">
+      <p
+        v-if="errors._global"
+        class="auth-error-global"
+      >
         {{ errors._global }}
       </p>
 
       <div class="auth-form">
         <div class="field">
-          <label class="field-label"
-            >Correo electrónico <span class="field-required">*</span></label
-          >
+          <label class="field-label">Correo electrónico <span class="field-required">*</span></label>
           <input
             v-model="form.email"
             type="email"
@@ -21,14 +28,17 @@
             class="field-input"
             :class="{ 'field-input--error': errors.email }"
             @keyup.enter="submit"
-          />
-          <p v-if="errors.email" class="field-error">{{ errors.email }}</p>
+          >
+          <p
+            v-if="errors.email"
+            class="field-error"
+          >
+            {{ errors.email }}
+          </p>
         </div>
 
         <div class="field">
-          <label class="field-label"
-            >Contraseña <span class="field-required">*</span></label
-          >
+          <label class="field-label">Contraseña <span class="field-required">*</span></label>
           <div class="field-password-wrap">
             <input
               v-model="form.password"
@@ -37,12 +47,12 @@
               class="field-input"
               :class="{ 'field-input--error': errors.password }"
               @keyup.enter="submit"
-            />
+            >
             <button
               class="toggle-pass"
               type="button"
-              @click="showPass = !showPass"
               tabindex="-1"
+              @click="showPass = !showPass"
             >
               <svg
                 v-if="showPass"
@@ -80,15 +90,21 @@
               </svg>
             </button>
           </div>
-          <p v-if="errors.password" class="field-error">
+          <p
+            v-if="errors.password"
+            class="field-error"
+          >
             {{ errors.password }}
           </p>
         </div>
 
         <div class="auth-forgot">
-          <NuxtLink to="/forgot-password" class="auth-link"
-            >¿Olvidaste tu contraseña?</NuxtLink
+          <NuxtLink
+            to="/forgot-password"
+            class="auth-link"
           >
+            ¿Olvidaste tu contraseña?
+          </NuxtLink>
         </div>
 
         <button
@@ -122,13 +138,24 @@
 
       <p class="auth-footer-text">
         ¿No tienes cuenta?
-        <NuxtLink to="/register" class="auth-link">Regístrate</NuxtLink>
+        <NuxtLink
+          to="/register"
+          class="auth-link"
+        >
+          Regístrate
+        </NuxtLink>
       </p>
 
-      <p class="auth-footer-text" style="margin-top: 8px">
-        <NuxtLink to="/public" class="auth-link auth-link--muted"
-          >Continuar como invitado →</NuxtLink
+      <p
+        class="auth-footer-text"
+        style="margin-top: 8px"
+      >
+        <NuxtLink
+          to="/public"
+          class="auth-link auth-link--muted"
         >
+          Continuar como invitado →
+        </NuxtLink>
       </p>
     </div>
   </div>
@@ -149,11 +176,7 @@ async function submit() {
   errors.value = {};
   const result = await login(form.value);
   if (result.success) {
-<<<<<<< Updated upstream
-    if (isAdmin.value) await navigateTo('/admin');
-=======
     if (isAdmin.value) await navigateTo('/admin/events');
->>>>>>> Stashed changes
     else await navigateTo('/public');
   } else {
     errors.value = (result as any).errors ?? {};

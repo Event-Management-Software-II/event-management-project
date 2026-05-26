@@ -41,7 +41,7 @@ export function useTicketCatalog() {
 
   const sortedActiveCatalog = computed(() =>
     [...activeCatalog.value].sort((a, b) =>
-      a.typeName.localeCompare(a.typeName, 'es')
+      a.typeName.localeCompare(b.typeName, 'es')
     )
   );
 
@@ -66,9 +66,7 @@ export function useTicketCatalog() {
     }
   }
 
-  async function createCatalogItem(
-    typeName: string
-  ): Promise<{
+  async function createCatalogItem(typeName: string): Promise<{
     success: boolean;
     errors?: TicketCatalogFormErrors;
     message?: string;

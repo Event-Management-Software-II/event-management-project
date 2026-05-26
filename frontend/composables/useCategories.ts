@@ -77,9 +77,7 @@ export function useCategories() {
     }
   }
 
-  async function createCategory(
-    categoryName: string
-  ): Promise<{
+  async function createCategory(categoryName: string): Promise<{
     success: boolean;
     errors?: CategoryFormErrors;
     message?: string;

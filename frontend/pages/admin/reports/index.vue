@@ -1,7 +1,9 @@
 <template>
   <div>
     <div class="section-header">
-      <h1 class="section-title">Reportes</h1>
+      <h1 class="section-title">
+        Reportes
+      </h1>
     </div>
 
     <!-- ── Reporte de ventas por evento (acordeón) ───────────────────────── -->
@@ -13,7 +15,7 @@
         <table class="admin-table">
           <thead>
             <tr>
-              <th style="width:32px"></th>
+              <th style="width: 32px" />
               <th>#</th>
               <th>Evento</th>
               <th>Categoría</th>
@@ -23,17 +25,29 @@
           </thead>
           <tbody>
             <tr v-if="loadingSales">
-              <td colspan="6" class="td-loading">Cargando…</td>
+              <td
+                colspan="6"
+                class="td-loading"
+              >
+                Cargando…
+              </td>
             </tr>
             <tr v-else-if="salesByEvent.length === 0">
               <td colspan="6">
                 <div class="empty-state">
-                  <div class="empty-state-icon">🎟️</div>
-                  <div class="empty-state-text">No hay datos de ventas aún.</div>
+                  <div class="empty-state-icon">
+                    🎟️
+                  </div>
+                  <div class="empty-state-text">
+                    No hay datos de ventas aún.
+                  </div>
                 </div>
               </td>
             </tr>
-            <template v-for="(row, i) in salesByEvent" :key="row.id_event">
+            <template
+              v-for="(row, i) in salesByEvent"
+              :key="row.id_event"
+            >
               <!-- fila principal del evento -->
               <tr
                 class="event-row"
@@ -49,12 +63,20 @@
                   <span
                     :class="[
                       'rank-badge',
-                      i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '',
+                      i === 0
+                        ? 'gold'
+                        : i === 1
+                          ? 'silver'
+                          : i === 2
+                            ? 'bronze'
+                            : '',
                     ]"
                   >{{ i + 1 }}</span>
                 </td>
-                <td class="td-name">{{ row.event_name }}</td>
-                <td style="font-size:0.85rem; color:var(--text-muted)">
+                <td class="td-name">
+                  {{ row.event_name }}
+                </td>
+                <td style="font-size: 0.85rem; color: var(--text-muted)">
                   {{ row.category_name }}
                 </td>
                 <td class="td-count">
@@ -62,11 +84,11 @@
                     <div
                       class="bar"
                       :style="{ width: salesBarWidth(row.total_sold) + '%' }"
-                    ></div>
+                    />
                     <span>{{ row.total_sold }}</span>
                   </div>
                 </td>
-                <td style="font-weight:700; font-size:0.88rem">
+                <td style="font-weight: 700; font-size: 0.88rem">
                   {{ formatCurrency(row.total_revenue) }}
                 </td>
               </tr>
@@ -74,10 +96,13 @@
               <!-- detalle expandible por tipo de entrada -->
               <tr
                 v-if="openEvents.has(row.id_event)"
-                class="detail-row"
                 :key="`detail-${row.id_event}`"
+                class="detail-row"
               >
-                <td colspan="6" class="td-detail">
+                <td
+                  colspan="6"
+                  class="td-detail"
+                >
                   <table class="detail-table">
                     <thead>
                       <tr>
@@ -93,26 +118,37 @@
                         v-for="tt in row.ticket_types"
                         :key="tt.id_event_ticket"
                       >
-                        <td class="tt-name">{{ tt.ticket_type_name }}</td>
+                        <td class="tt-name">
+                          {{ tt.ticket_type_name }}
+                        </td>
                         <td>{{ tt.capacity }}</td>
                         <td>
                           <span class="sold-chip">{{ tt.tickets_sold }}</span>
                         </td>
                         <td
-                          :class="tt.tickets_remaining === 0 ? 'td-agotado' : ''"
+                          :class="
+                            tt.tickets_remaining === 0 ? 'td-agotado' : ''
+                          "
                         >
-                          {{ tt.tickets_remaining === 0 ? 'Agotado' : tt.tickets_remaining }}
+                          {{
+                            tt.tickets_remaining === 0
+                              ? 'Agotado'
+                              : tt.tickets_remaining
+                          }}
                         </td>
-                        <td style="font-weight:600">
+                        <td style="font-weight: 600">
                           {{ formatCurrency(tt.revenue) }}
                         </td>
                       </tr>
                       <!-- total -->
                       <tr class="detail-total-row">
-                        <td colspan="4" style="text-align:right; font-weight:700">
+                        <td
+                          colspan="4"
+                          style="text-align: right; font-weight: 700"
+                        >
                           Total del evento
                         </td>
-                        <td style="font-weight:800; color:var(--primary)">
+                        <td style="font-weight: 800; color: var(--primary)">
                           {{ formatCurrency(row.total_revenue) }}
                         </td>
                       </tr>
@@ -127,7 +163,10 @@
     </div>
 
     <!-- ── Ranking de interés ────────────────────────────────────────────── -->
-    <div class="card" style="margin-top:24px">
+    <div
+      class="card"
+      style="margin-top: 24px"
+    >
       <div class="report-header">
         <span class="report-title">Ranking de interés por evento</span>
       </div>
@@ -142,32 +181,54 @@
           </thead>
           <tbody>
             <tr v-if="loadingInterest">
-              <td colspan="3" class="td-loading">Cargando…</td>
+              <td
+                colspan="3"
+                class="td-loading"
+              >
+                Cargando…
+              </td>
             </tr>
             <tr v-else-if="interestReport.length === 0">
               <td colspan="3">
                 <div class="empty-state">
-                  <div class="empty-state-icon">📊</div>
-                  <div class="empty-state-text">No hay datos de interés aún.</div>
+                  <div class="empty-state-icon">
+                    📊
+                  </div>
+                  <div class="empty-state-text">
+                    No hay datos de interés aún.
+                  </div>
                 </div>
               </td>
             </tr>
-            <tr v-for="(row, i) in interestReport" :key="row['Event Name']">
+            <tr
+              v-for="(row, i) in interestReport"
+              :key="row['Event Name']"
+            >
               <td class="td-rank">
                 <span
                   :class="[
                     'rank-badge',
-                    i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '',
+                    i === 0
+                      ? 'gold'
+                      : i === 1
+                        ? 'silver'
+                        : i === 2
+                          ? 'bronze'
+                          : '',
                   ]"
                 >{{ i + 1 }}</span>
               </td>
-              <td class="td-name">{{ row['Event Name'] }}</td>
+              <td class="td-name">
+                {{ row['Event Name'] }}
+              </td>
               <td class="td-count">
                 <div class="bar-wrap">
                   <div
                     class="bar"
-                    :style="{ width: barWidth(row['Number of Interests']) + '%' }"
-                  ></div>
+                    :style="{
+                      width: barWidth(row['Number of Interests']) + '%',
+                    }"
+                  />
                   <span>{{ row['Number of Interests'] }}</span>
                 </div>
               </td>
@@ -178,7 +239,10 @@
     </div>
 
     <!-- ── Ranking de favoritos ──────────────────────────────────────────── -->
-    <div class="card" style="margin-top:24px">
+    <div
+      class="card"
+      style="margin-top: 24px"
+    >
       <div class="report-header">
         <span class="report-title">Ranking de eventos favoritos</span>
       </div>
@@ -193,32 +257,52 @@
           </thead>
           <tbody>
             <tr v-if="loadingFavorites">
-              <td colspan="3" class="td-loading">Cargando…</td>
+              <td
+                colspan="3"
+                class="td-loading"
+              >
+                Cargando…
+              </td>
             </tr>
             <tr v-else-if="favoritesReport.length === 0">
               <td colspan="3">
                 <div class="empty-state">
-                  <div class="empty-state-icon">❤️</div>
-                  <div class="empty-state-text">No hay datos de favoritos aún.</div>
+                  <div class="empty-state-icon">
+                    ❤️
+                  </div>
+                  <div class="empty-state-text">
+                    No hay datos de favoritos aún.
+                  </div>
                 </div>
               </td>
             </tr>
-            <tr v-for="(row, i) in favoritesReport" :key="row.event_name">
+            <tr
+              v-for="(row, i) in favoritesReport"
+              :key="row.event_name"
+            >
               <td class="td-rank">
                 <span
                   :class="[
                     'rank-badge',
-                    i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '',
+                    i === 0
+                      ? 'gold'
+                      : i === 1
+                        ? 'silver'
+                        : i === 2
+                          ? 'bronze'
+                          : '',
                   ]"
                 >{{ i + 1 }}</span>
               </td>
-              <td class="td-name">{{ row.event_name }}</td>
+              <td class="td-name">
+                {{ row.event_name }}
+              </td>
               <td class="td-count">
                 <div class="bar-wrap">
                   <div
                     class="bar bar--fav"
                     :style="{ width: favBarWidth(row.total_favorites) + '%' }"
-                  ></div>
+                  />
                   <span>{{ row.total_favorites }}</span>
                 </div>
               </td>
@@ -323,11 +407,10 @@ const maxSold = computed(() =>
     ? Math.max(...salesByEvent.value.map((r) => r.total_sold))
     : 1
 );
-const maxInterests = computed(() =>
-  interestReport.value.length
-    ? Math.max(...interestReport.value.map((r) => r['Number of Interests']))
-    : 1
-);
+const maxInterests = computed(() => {
+  if (!interestReport.value.length) return 1;
+  return Math.max(...interestReport.value.map((r) => r['Number of Interests']));
+});
 const maxFavs = computed(() =>
   favoritesReport.value.length
     ? Math.max(...favoritesReport.value.map((r) => r.total_favorites))
@@ -463,9 +546,18 @@ function formatCurrency(value: number): string {
   background: var(--bg-elevated);
   color: var(--text-muted);
 }
-.rank-badge.gold   { background: #fef9c3; color: #b45309; }
-.rank-badge.silver { background: #f1f5f9; color: #5e718d; }
-.rank-badge.bronze { background: #fff7ed; color: #c2410c; }
+.rank-badge.gold {
+  background: #fef9c3;
+  color: #b45309;
+}
+.rank-badge.silver {
+  background: #f1f5f9;
+  color: #5e718d;
+}
+.rank-badge.bronze {
+  background: #fff7ed;
+  color: #c2410c;
+}
 
 .bar-wrap {
   display: flex;

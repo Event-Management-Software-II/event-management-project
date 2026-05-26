@@ -537,7 +537,7 @@ const props = defineProps<{
 }>();
 const emit = defineEmits(['close']);
 
-// eslint-disable-next-line no-undef
+ 
 const { isGuest, user } = useAuth();
 const {
   getTypesForEvent,

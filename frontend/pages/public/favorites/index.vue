@@ -13,7 +13,7 @@ if (import.meta.server) {
   await navigateTo('/login');
 }
 
-const { user, logout, authHeaders } = useAuth();
+const { user: _user, logout, authHeaders } = useAuth();
 const dropdownOpen = ref(false);
 
 const favoriteEvents = ref<any[]>([]);
@@ -126,4 +126,3 @@ const vClickOutside = {
 </script>
 
 <style src="./static/styles/styles.css" scoped></style>
-
