@@ -11,8 +11,11 @@ export default [
       ecmaVersion: 2022,
     },
     rules: {
-      // Advertir variables declaradas pero no usadas (excepto las que empiezan con _)
-      'no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+      // Error en variables no usadas (excepto las que empiezan con _)
+      'no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
+      ],
       // Permitir console.log (útil en un backend)
       'no-console': 'off',
       // Evitar el uso de eval
@@ -20,16 +23,6 @@ export default [
       // Requerir manejo de errores en callbacks de Node
       'handle-callback-err': 'warn',
     },
-<<<<<<< Updated upstream
-    ...js.configs.recommended,
-    rules: {
-      'no-unused-vars': [
-        'error',
-        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
-      ],
-    },
-=======
->>>>>>> Stashed changes
   },
   {
     // Ignorar archivos generados y dependencias
