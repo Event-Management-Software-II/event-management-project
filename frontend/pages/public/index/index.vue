@@ -54,7 +54,7 @@ const filtered = computed(() =>
     const matchCategory =
       !selectedCategory.value || e.id_category === selectedCategory.value;
     const matchFree =
-      !activeFilters.value.free || !e.ticketTypes || e.ticketTypes.length === 0; // ← CORRECCIÓN
+      !activeFilters.value.free || !e.ticketTypes || e.ticketTypes.length === 0;
     return matchQuery && matchCategory && matchFree;
   })
 );
