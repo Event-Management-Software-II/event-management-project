@@ -1,23 +1,12 @@
 <template>
   <div class="dash">
     <div class="dash-header">
-      <h1 class="dash-title">
-        Dashboard Admin
-      </h1>
+      <h1 class="dash-title">Dashboard Admin</h1>
     </div>
 
     <!-- Error global -->
-    <div
-      v-if="error"
-      class="dash-error"
-      role="alert"
-    >
-      <svg
-        width="15"
-        height="15"
-        viewBox="0 0 24 24"
-        fill="none"
-      >
+    <div v-if="error" class="dash-error" role="alert">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
         <circle
           cx="12"
           cy="12"
@@ -39,30 +28,14 @@
     <div class="kpi-row">
       <!-- Total de Ganancias -->
       <div class="kpi-card kpi-card--revenue">
-        <p class="kpi-label">
-          Total de Ganancias
-        </p>
-        <div
-          v-if="loading"
-          class="kpi-skeleton kpi-skeleton--value"
-        />
-        <div
-          v-else
-          class="kpi-revenue"
-        >
+        <p class="kpi-label">Total de Ganancias</p>
+        <div v-if="loading" class="kpi-skeleton kpi-skeleton--value" />
+        <div v-else class="kpi-revenue">
           {{ formatCurrency(stats?.total_revenue ?? 0) }}
           <span class="kpi-currency">COP</span>
         </div>
-        <p
-          v-if="!loading"
-          class="kpi-trend"
-        >
-          <svg
-            width="13"
-            height="13"
-            viewBox="0 0 24 24"
-            fill="none"
-          >
+        <p v-if="!loading" class="kpi-trend">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
             <path
               d="M3 17l5-5 4 4 9-9"
               stroke="currentColor"
@@ -78,16 +51,9 @@
       <!-- Eventos Activos -->
       <div class="kpi-card">
         <div class="kpi-card-head">
-          <p class="kpi-label">
-            Eventos Activos
-          </p>
+          <p class="kpi-label">Eventos Activos</p>
           <span class="kpi-badge kpi-badge--blue">
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-            >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
               <path
                 d="M3 11l9-9 9 9v10a1 1 0 01-1 1H4a1 1 0 01-1-1V11z"
                 stroke="currentColor"
@@ -96,14 +62,8 @@
             </svg>
           </span>
         </div>
-        <div
-          v-if="loading"
-          class="kpi-skeleton kpi-skeleton--count"
-        />
-        <p
-          v-else
-          class="kpi-count"
-        >
+        <div v-if="loading" class="kpi-skeleton kpi-skeleton--count" />
+        <p v-else class="kpi-count">
           {{ stats?.active_events.count ?? 0 }}
         </p>
         <div class="kpi-divider" />
@@ -127,35 +87,20 @@
             >
               {{ ev.eventName }}
             </div>
-            <p
-              v-if="stats.active_events.count > 5"
-              class="kpi-more"
-            >
+            <p v-if="stats.active_events.count > 5" class="kpi-more">
               +{{ stats.active_events.count - 5 }} más
             </p>
           </template>
-          <p
-            v-else
-            class="kpi-empty"
-          >
-            Sin eventos activos
-          </p>
+          <p v-else class="kpi-empty">Sin eventos activos</p>
         </div>
       </div>
 
       <!-- Eventos Pasados -->
       <div class="kpi-card">
         <div class="kpi-card-head">
-          <p class="kpi-label">
-            Eventos Pasados
-          </p>
+          <p class="kpi-label">Eventos Pasados</p>
           <span class="kpi-badge kpi-badge--orange">
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-            >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
               <rect
                 x="3"
                 y="4"
@@ -174,14 +119,8 @@
             </svg>
           </span>
         </div>
-        <div
-          v-if="loading"
-          class="kpi-skeleton kpi-skeleton--count"
-        />
-        <p
-          v-else
-          class="kpi-count"
-        >
+        <div v-if="loading" class="kpi-skeleton kpi-skeleton--count" />
+        <p v-else class="kpi-count">
           {{ stats?.completed_events.count ?? 0 }}
         </p>
         <div class="kpi-divider" />
@@ -205,35 +144,20 @@
               <span>{{ ev.eventName }}</span>
               <span>{{ formatDate(ev.date_time) }}</span>
             </div>
-            <p
-              v-if="stats.completed_events.count > 4"
-              class="kpi-more"
-            >
+            <p v-if="stats.completed_events.count > 4" class="kpi-more">
               +{{ stats.completed_events.count - 4 }} más
             </p>
           </template>
-          <p
-            v-else
-            class="kpi-empty"
-          >
-            Sin eventos pasados
-          </p>
+          <p v-else class="kpi-empty">Sin eventos pasados</p>
         </div>
       </div>
 
       <!-- Usuarios Registrados -->
       <div class="kpi-card">
         <div class="kpi-card-head">
-          <p class="kpi-label">
-            Usuarios Registrados
-          </p>
+          <p class="kpi-label">Usuarios Registrados</p>
           <span class="kpi-badge kpi-badge--teal">
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-            >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
               <path
                 d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"
                 stroke="currentColor"
@@ -256,19 +180,11 @@
             </svg>
           </span>
         </div>
-        <div
-          v-if="loading"
-          class="kpi-skeleton kpi-skeleton--count"
-        />
-        <p
-          v-else
-          class="kpi-count"
-        >
+        <div v-if="loading" class="kpi-skeleton kpi-skeleton--count" />
+        <p v-else class="kpi-count">
           {{ (stats?.registered_users ?? 0).toLocaleString('es-CO') }}
         </p>
-        <p class="kpi-note">
-          (excluyendo admins)
-        </p>
+        <p class="kpi-note">(excluyendo admins)</p>
       </div>
     </div>
 
@@ -276,9 +192,7 @@
     <div class="bottom-row">
       <!-- Gráfico de Ingresos Mensuales -->
       <div class="card">
-        <p class="card-title">
-          Gráfico de Ingresos Mensuales
-        </p>
+        <p class="card-title">Gráfico de Ingresos Mensuales</p>
         <div class="chart-wrap">
           <template v-if="loading">
             <div class="chart-skeleton" />
@@ -286,10 +200,7 @@
           <template v-else-if="stats?.monthly_revenue?.length">
             <!-- Eje Y -->
             <div class="chart-y-axis">
-              <span
-                v-for="tick in yTicks"
-                :key="tick"
-              >{{
+              <span v-for="tick in yTicks" :key="tick">{{
                 formatShort(tick)
               }}</span>
             </div>
@@ -323,9 +234,7 @@
 
       <!-- Lista Detallada de Eventos Activos -->
       <div class="card">
-        <p class="card-title">
-          Lista Detallada de Eventos Activos
-        </p>
+        <p class="card-title">Lista Detallada de Eventos Activos</p>
         <div class="table-scroll">
           <table class="admin-table">
             <thead>
@@ -339,10 +248,7 @@
             </thead>
             <tbody>
               <tr v-if="loading">
-                <td
-                  colspan="5"
-                  class="td-center"
-                >
+                <td colspan="5" class="td-center">
                   <div
                     class="kpi-skeleton kpi-skeleton--line"
                     style="width: 80%; margin: 16px auto"
@@ -352,19 +258,12 @@
               <tr v-else-if="!stats?.active_events_detail?.length">
                 <td colspan="5">
                   <div class="empty-state">
-                    <div class="empty-state-icon">
-                      📅
-                    </div>
-                    <div class="empty-state-text">
-                      No hay eventos activos
-                    </div>
+                    <div class="empty-state-icon">📅</div>
+                    <div class="empty-state-text">No hay eventos activos</div>
                   </div>
                 </td>
               </tr>
-              <tr
-                v-for="ev in stats?.active_events_detail"
-                :key="ev.id_event"
-              >
+              <tr v-for="ev in stats?.active_events_detail" :key="ev.id_event">
                 <td class="td-name">
                   {{ ev.eventName }}
                 </td>
@@ -383,10 +282,7 @@
                   </div>
                 </td>
                 <td>
-                  <span
-                    class="status-badge"
-                    :class="statusClass(ev.progress)"
-                  >
+                  <span class="status-badge" :class="statusClass(ev.progress)">
                     {{ statusLabel(ev.progress) }}
                   </span>
                 </td>

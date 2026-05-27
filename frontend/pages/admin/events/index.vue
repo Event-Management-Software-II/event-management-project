@@ -1,20 +1,10 @@
 <template>
   <div>
     <div class="section-header">
-      <h1 class="section-title">
-        Eventos
-      </h1>
-      <AppButtonAdmin
-        variant="primary"
-        @click="openModal('create')"
-      >
+      <h1 class="section-title">Eventos</h1>
+      <AppButtonAdmin variant="primary" @click="openModal('create')">
         <template #icon>
-          <svg
-            width="13"
-            height="13"
-            viewBox="0 0 24 24"
-            fill="none"
-          >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
             <path
               d="M12 5v14M5 12h14"
               stroke="currentColor"
@@ -54,15 +44,10 @@
           v-model="searchQuery"
           placeholder="Buscar evento…"
           class="search-input"
-        >
+        />
       </div>
-      <select
-        v-model="filterCategory"
-        class="filter-select"
-      >
-        <option value="">
-          Todas las categorías
-        </option>
+      <select v-model="filterCategory" class="filter-select">
+        <option value="">Todas las categorías</option>
         <option
           v-for="c in sortedActiveCategories"
           :key="c.id_category"
@@ -102,12 +87,8 @@
             <tr v-else-if="filteredEvents.length === 0">
               <td colspan="6">
                 <div class="empty-state">
-                  <div class="empty-state-icon">
-                    🎟️
-                  </div>
-                  <div class="empty-state-text">
-                    No hay eventos.
-                  </div>
+                  <div class="empty-state-icon">🎟️</div>
+                  <div class="empty-state-text">No hay eventos.</div>
                 </div>
               </td>
             </tr>
@@ -256,22 +237,13 @@
     <!-- MODAL CREATE / EDIT -->
     <Teleport to="body">
       <Transition name="modal">
-        <div
-          v-if="modalOpen"
-          class="modal-overlay"
-          @click.self="closeModal"
-        >
+        <div v-if="modalOpen" class="modal-overlay" @click.self="closeModal">
           <div class="modal-box">
             <div class="modal-header">
               <h2 class="modal-title">
                 {{ mode === 'create' ? 'Nuevo evento' : 'Editar evento' }}
               </h2>
-              <button
-                class="modal-close"
-                @click="closeModal"
-              >
-                ✕
-              </button>
+              <button class="modal-close" @click="closeModal">✕</button>
             </div>
             <div class="modal-body">
               <AppInputAdmin
@@ -288,12 +260,7 @@
                 :error="formErrors.id_category"
                 required
               >
-                <option
-                  value=""
-                  disabled
-                >
-                  Selecciona una categoría
-                </option>
+                <option value="" disabled>Selecciona una categoría</option>
                 <option
                   v-for="c in sortedActiveCategories"
                   :key="c.id_category"
@@ -332,9 +299,7 @@
 
               <!-- ── SECCIÓN DE TICKETS ── -->
               <div class="ticket-section">
-                <div class="ticket-section-label">
-                  Tipo de acceso
-                </div>
+                <div class="ticket-section-label">Tipo de acceso</div>
 
                 <!-- Toggle Gratis / Pago -->
                 <div class="ticket-toggle">
@@ -343,12 +308,7 @@
                     :class="['toggle-btn', !isPaid && 'toggle-btn--active']"
                     @click="setPaid(false)"
                   >
-                    <svg
-                      width="13"
-                      height="13"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                    >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
                       <path
                         d="M20 12V22H4V12"
                         stroke="currentColor"
@@ -387,12 +347,7 @@
                     :class="['toggle-btn', isPaid && 'toggle-btn--active']"
                     @click="setPaid(true)"
                   >
-                    <svg
-                      width="13"
-                      height="13"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                    >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
                       <circle
                         cx="12"
                         cy="12"
@@ -412,17 +367,16 @@
                 </div>
 
                 <!-- Lista de tipos de ticket (solo si isPaid) -->
-                <div
-                  v-if="isPaid"
-                  class="ticket-types-builder"
-                >
+                <div v-if="isPaid" class="ticket-types-builder">
                   <div
                     v-for="(tt, idx) in form.ticketTypes"
                     :key="idx"
                     class="ticket-type-row"
                   >
                     <div class="ticket-type-row-header">
-                      <span class="ticket-type-row-title">Tipo {{ idx + 1 }}</span>
+                      <span class="ticket-type-row-title"
+                        >Tipo {{ idx + 1 }}</span
+                      >
                       <button
                         type="button"
                         class="ticket-type-remove"
@@ -447,7 +401,9 @@
 
                     <div class="ticket-type-fields">
                       <div class="field-group">
-                        <label class="field-label">Tipo de ticket <span class="required">*</span></label>
+                        <label class="field-label"
+                          >Tipo de ticket <span class="required">*</span></label
+                        >
                         <select
                           v-model="tt.id_catalog"
                           class="field-select"
@@ -455,12 +411,7 @@
                             'field-error': formErrors[`tt_${idx}_id_catalog`],
                           }"
                         >
-                          <option
-                            value=""
-                            disabled
-                          >
-                            Seleccionar…
-                          </option>
+                          <option value="" disabled>Seleccionar…</option>
                           <option
                             v-for="cat in availableCatalogFor(idx)"
                             :key="cat.id_catalog"
@@ -478,7 +429,9 @@
                       </div>
 
                       <div class="field-group">
-                        <label class="field-label">Precio (COP) <span class="required">*</span></label>
+                        <label class="field-label"
+                          >Precio (COP) <span class="required">*</span></label
+                        >
                         <input
                           v-model="tt.price"
                           type="number"
@@ -488,7 +441,7 @@
                           :class="{
                             'field-error': formErrors[`tt_${idx}_price`],
                           }"
-                        >
+                        />
                         <span
                           v-if="formErrors[`tt_${idx}_price`]"
                           class="field-error-msg"
@@ -498,7 +451,9 @@
                       </div>
 
                       <div class="field-group">
-                        <label class="field-label">Capacidad <span class="required">*</span></label>
+                        <label class="field-label"
+                          >Capacidad <span class="required">*</span></label
+                        >
                         <input
                           v-model="tt.capacity"
                           type="number"
@@ -508,7 +463,7 @@
                           :class="{
                             'field-error': formErrors[`tt_${idx}_capacity`],
                           }"
-                        >
+                        />
                         <span
                           v-if="formErrors[`tt_${idx}_capacity`]"
                           class="field-error-msg"
@@ -519,10 +474,7 @@
                     </div>
                   </div>
 
-                  <p
-                    v-if="formErrors.ticketTypes"
-                    class="ticket-global-error"
-                  >
+                  <p v-if="formErrors.ticketTypes" class="ticket-global-error">
                     {{ formErrors.ticketTypes }}
                   </p>
 
@@ -532,12 +484,7 @@
                     :disabled="allCatalogUsed"
                     @click="addTicketType"
                   >
-                    <svg
-                      width="12"
-                      height="12"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                    >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
                       <path
                         d="M12 5v14M5 12h14"
                         stroke="currentColor"
@@ -549,33 +496,20 @@
                   </button>
                 </div>
 
-                <p
-                  v-if="!isPaid"
-                  class="free-note"
-                >
+                <p v-if="!isPaid" class="free-note">
                   El evento será gratuito. No se requerirán tickets de pago.
                 </p>
               </div>
 
-              <p
-                v-if="formErrors._global"
-                class="global-error"
-              >
+              <p v-if="formErrors._global" class="global-error">
                 {{ formErrors._global }}
               </p>
             </div>
             <div class="modal-footer">
-              <AppButtonAdmin
-                variant="secondary"
-                @click="closeModal"
-              >
+              <AppButtonAdmin variant="secondary" @click="closeModal">
                 Cancelar
               </AppButtonAdmin>
-              <AppButtonAdmin
-                variant="primary"
-                :loading="saving"
-                @click="save"
-              >
+              <AppButtonAdmin variant="primary" :loading="saving" @click="save">
                 {{ mode === 'create' ? 'Guardar' : 'Actualizar' }}
               </AppButtonAdmin>
             </div>
@@ -592,28 +526,20 @@
           class="modal-overlay"
           @click.self="deleteConfirmOpen = false"
         >
-          <div
-            class="modal-box"
-            style="max-width: 420px"
-          >
+          <div class="modal-box" style="max-width: 420px">
             <div class="modal-header">
-              <h2
-                class="modal-title"
-                style="color: var(--danger)"
-              >
+              <h2 class="modal-title" style="color: var(--danger)">
                 Eliminar evento
               </h2>
-              <button
-                class="modal-close"
-                @click="deleteConfirmOpen = false"
-              >
+              <button class="modal-close" @click="deleteConfirmOpen = false">
                 ✕
               </button>
             </div>
             <div class="modal-body">
               <p style="font-size: 0.88rem; color: var(--text-secondary)">
                 ¿Seguro que quieres eliminar
-                <strong>{{ deletingEvent?.eventName }}</strong>? El evento quedará inactivo.
+                <strong>{{ deletingEvent?.eventName }}</strong
+                >? El evento quedará inactivo.
               </p>
             </div>
             <div class="modal-footer">

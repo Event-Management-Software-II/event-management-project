@@ -2,11 +2,7 @@
   <div class="stat-card">
     <div class="stat-card__header">
       <span class="stat-card__label">{{ label }}</span>
-      <span
-        v-if="icon"
-        class="stat-card__icon"
-        :style="{ background: iconBg }"
-      >
+      <span v-if="icon" class="stat-card__icon" :style="{ background: iconBg }">
         <!-- Slot para pasar SVG personalizado -->
         <slot name="icon" />
       </span>
@@ -18,10 +14,7 @@
       </slot>
     </div>
 
-    <div
-      v-if="$slots.detail"
-      class="stat-card__detail"
-    >
+    <div v-if="$slots.detail" class="stat-card__detail">
       <slot name="detail" />
     </div>
   </div>

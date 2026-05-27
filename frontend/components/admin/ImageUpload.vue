@@ -6,27 +6,19 @@
     </label>
 
     <!-- Preview cuando ya hay una imagen (existente o recién subida) -->
-    <div
-      v-if="previewUrl"
-      class="image-upload__preview-wrap"
-    >
+    <div v-if="previewUrl" class="image-upload__preview-wrap">
       <img
         :src="previewUrl"
         alt="Preview del evento"
         class="image-upload__preview"
-      >
+      />
       <button
         type="button"
         class="image-upload__remove"
         title="Quitar imagen"
         @click="removeImage"
       >
-        <svg
-          width="14"
-          height="14"
-          viewBox="0 0 24 24"
-          fill="none"
-        >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
           <path
             d="M18 6L6 18M6 6l12 12"
             stroke="currentColor"
@@ -55,7 +47,7 @@
         accept="image/jpeg,image/png,image/webp"
         class="image-upload__file-input"
         @change="onFileChange"
-      >
+      />
 
       <template v-if="!uploading">
         <svg
@@ -74,12 +66,7 @@
             stroke="currentColor"
             stroke-width="1.6"
           />
-          <circle
-            cx="8.5"
-            cy="8.5"
-            r="1.5"
-            fill="currentColor"
-          />
+          <circle cx="8.5" cy="8.5" r="1.5" fill="currentColor" />
           <path
             d="M21 15l-5-5L5 21"
             stroke="currentColor"
@@ -115,10 +102,7 @@
       </template>
     </label>
 
-    <p
-      v-if="error"
-      class="image-upload__error"
-    >
+    <p v-if="error" class="image-upload__error">
       {{ error }}
     </p>
   </div>

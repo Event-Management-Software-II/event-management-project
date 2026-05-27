@@ -2,28 +2,11 @@
   <!-- eslint-disable vue/require-toggle-inside-transition -->
   <Transition name="modal">
     <!-- eslint-enable vue/require-toggle-inside-transition -->
-    <div
-      v-show="true"
-      class="modal-overlay"
-      @click.self="$emit('close')"
-    >
-      <div
-        class="detail-modal"
-        role="dialog"
-        :aria-label="event.NameEvent"
-      >
+    <div v-show="true" class="modal-overlay" @click.self="$emit('close')">
+      <div class="detail-modal" role="dialog" :aria-label="event.NameEvent">
         <!-- Botón cerrar -->
-        <button
-          class="modal-close"
-          aria-label="Cerrar"
-          @click="$emit('close')"
-        >
-          <svg
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-          >
+        <button class="modal-close" aria-label="Cerrar" @click="$emit('close')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
             <path
               d="M18 6L6 18M6 6l12 12"
               stroke="currentColor"
@@ -43,7 +26,7 @@
               :src="event.imageUrl"
               :alt="event.NameEvent"
               class="modal-img"
-            >
+            />
             <div
               v-else
               class="modal-img-placeholder"
@@ -65,12 +48,7 @@
             </h2>
             <div class="modal-metas">
               <span class="modal-meta">
-                <svg
-                  width="13"
-                  height="13"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
                   <rect
                     x="3"
                     y="4"
@@ -90,12 +68,7 @@
                 {{ formatDate(event.date_time) }}
               </span>
               <span class="modal-meta">
-                <svg
-                  width="13"
-                  height="13"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
                   <path
                     d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"
                     stroke="currentColor"
@@ -119,13 +92,8 @@
 
           <!-- Imagen distribución del lugar -->
           <div class="venue-map-section">
-            <h4 class="section-label">
-              Distribución del lugar
-            </h4>
-            <div
-              class="venue-map"
-              :class="`venue-map--${venueLayout}`"
-            >
+            <h4 class="section-label">Distribución del lugar</h4>
+            <div class="venue-map" :class="`venue-map--${venueLayout}`">
               <!-- Escenario -->
 
               <!-- Zonas según tipos de entrada -->
@@ -160,16 +128,15 @@
                   :key="tp.id"
                   class="legend-item"
                 >
+                  <span class="legend-dot" :class="`zone-color-${i % 6}`" />
                   <span
-                    class="legend-dot"
-                    :class="`zone-color-${i % 6}`"
-                  />
-                  <span>{{ tp.name }} —
+                    >{{ tp.name }} —
                     {{
                       tp.price === 0
                         ? 'Gratis'
                         : `$${tp.price.toLocaleString('es-CO')}`
-                    }}</span>
+                    }}</span
+                  >
                 </div>
               </div>
             </div>
@@ -179,13 +146,8 @@
         <!-- Columna derecha: compra -->
         <div class="modal-right">
           <!-- Evento finalizado -->
-          <div
-            v-if="!isActive"
-            class="past-notice"
-          >
-            <div class="past-notice-icon">
-              📁
-            </div>
+          <div v-if="!isActive" class="past-notice">
+            <div class="past-notice-icon">📁</div>
             <h3>Evento finalizado</h3>
             <p>
               Este evento ya concluyó. Puedes revisar tus boletas anteriores en
@@ -202,20 +164,11 @@
 
           <template v-else>
             <!-- Sin sesión -->
-            <div
-              v-if="isGuest"
-              class="login-prompt"
-            >
-              <div class="login-prompt-icon">
-                🔒
-              </div>
+            <div v-if="isGuest" class="login-prompt">
+              <div class="login-prompt-icon">🔒</div>
               <h3>Inicia sesión para comprar</h3>
               <p>Necesitas una cuenta para adquirir boletas.</p>
-              <NuxtLink
-                to="/login"
-                class="btn-primary"
-                @click="$emit('close')"
-              >
+              <NuxtLink to="/login" class="btn-primary" @click="$emit('close')">
                 Iniciar sesión
               </NuxtLink>
               <NuxtLink
@@ -230,9 +183,7 @@
             <template v-else>
               <!-- PASO 1: Selección de tipos -->
               <div v-if="step === 'select'">
-                <h3 class="aside-title">
-                  Selecciona tus entradas
-                </h3>
+                <h3 class="aside-title">Selecciona tus entradas</h3>
                 <p class="aside-sub">
                   Haz clic en una zona del mapa o elige aquí
                 </p>
@@ -290,33 +241,25 @@
                     </div>
                   </div>
 
-                  <div
-                    v-if="!ticketTypes.length"
-                    class="no-types"
-                  >
+                  <div v-if="!ticketTypes.length" class="no-types">
                     ℹ️ El administrador aún no configuró los tipos de entrada.
                   </div>
                 </div>
 
                 <!-- Descripción del tipo seleccionado -->
                 <Transition name="slide">
-                  <div
-                    v-if="selectedType"
-                    class="type-description"
-                  >
+                  <div v-if="selectedType" class="type-description">
                     <h4>{{ selectedType.name }}</h4>
                     <p>
                       {{
                         typeDescriptions[selectedType.id] ??
-                          defaultDescription(selectedType)
+                        defaultDescription(selectedType)
                       }}
                     </p>
                     <div class="qty-row">
                       <span class="qty-label">Cantidad</span>
                       <div class="qty-control">
-                        <button @click="qty = Math.max(1, qty - 1)">
-                          −
-                        </button>
+                        <button @click="qty = Math.max(1, qty - 1)">−</button>
                         <span>{{ qty }}</span>
                         <button
                           :disabled="
@@ -335,10 +278,7 @@
                     </div>
 
                     <div class="add-row">
-                      <button
-                        class="btn-add"
-                        @click="addToCart"
-                      >
+                      <button class="btn-add" @click="addToCart">
                         + Agregar al carrito
                         <span class="add-price">{{
                           selectedType.price === 0
@@ -351,19 +291,12 @@
                 </Transition>
 
                 <!-- Carrito acumulado -->
-                <div
-                  v-if="cart.length"
-                  class="cart-section"
-                >
-                  <h4 class="cart-title">
-                    Tu selección
-                  </h4>
-                  <div
-                    v-for="(item, idx) in cart"
-                    :key="idx"
-                    class="cart-item"
-                  >
-                    <span class="cart-item-name">{{ item.typeName }} × {{ item.qty }}</span>
+                <div v-if="cart.length" class="cart-section">
+                  <h4 class="cart-title">Tu selección</h4>
+                  <div v-for="(item, idx) in cart" :key="idx" class="cart-item">
+                    <span class="cart-item-name"
+                      >{{ item.typeName }} × {{ item.qty }}</span
+                    >
                     <div class="cart-item-right">
                       <span class="cart-item-price">{{
                         item.total === 0
@@ -390,7 +323,9 @@
                   <div class="no-cancel-notice">
                     ⚠️ Las boletas <strong>no se pueden cancelar</strong>. Para
                     ayuda escribe a
-                    <a href="mailto:soporte@eventosboyaca.com">soporte@eventosboyaca.com</a>
+                    <a href="mailto:soporte@eventosboyaca.com"
+                      >soporte@eventosboyaca.com</a
+                    >
                   </div>
 
                   <button
@@ -404,15 +339,10 @@
 
               <!-- PASO 2: Confirmación -->
               <div v-if="step === 'confirm'">
-                <button
-                  class="btn-back"
-                  @click="step = 'select'"
-                >
+                <button class="btn-back" @click="step = 'select'">
                   ← Volver
                 </button>
-                <h3 class="aside-title">
-                  Confirmar compra
-                </h3>
+                <h3 class="aside-title">Confirmar compra</h3>
 
                 <div class="confirm-summary">
                   <div class="confirm-event">
@@ -451,17 +381,14 @@
                     v-model="holderName"
                     class="form-input"
                     placeholder="Ej: María García"
-                  >
+                  />
                 </div>
 
                 <template v-if="cartTotal > 0">
                   <div class="form-group">
                     <label class="form-label">
                       Número de tarjeta
-                      <span
-                        v-if="detectedCardType"
-                        class="card-type-badge"
-                      >{{
+                      <span v-if="detectedCardType" class="card-type-badge">{{
                         detectedCardType
                       }}</span>
                     </label>
@@ -471,7 +398,7 @@
                       placeholder="Ej: 5412345678901234"
                       maxlength="16"
                       inputmode="numeric"
-                    >
+                    />
                   </div>
                   <div class="form-group">
                     <label class="form-label">CVV</label>
@@ -481,14 +408,11 @@
                       placeholder="123"
                       maxlength="4"
                       inputmode="numeric"
-                    >
+                    />
                   </div>
                 </template>
 
-                <span
-                  v-if="buyError"
-                  class="form-err"
-                >{{ buyError }}</span>
+                <span v-if="buyError" class="form-err">{{ buyError }}</span>
 
                 <button
                   class="btn-primary btn-checkout"

@@ -1,9 +1,7 @@
 <template>
   <div>
     <div class="section-header">
-      <h1 class="section-title">
-        Reportes
-      </h1>
+      <h1 class="section-title">Reportes</h1>
     </div>
 
     <!-- ── Reporte de ventas por evento (acordeón) ───────────────────────── -->
@@ -25,29 +23,19 @@
           </thead>
           <tbody>
             <tr v-if="loadingSales">
-              <td
-                colspan="6"
-                class="td-loading"
-              >
-                Cargando…
-              </td>
+              <td colspan="6" class="td-loading">Cargando…</td>
             </tr>
             <tr v-else-if="salesByEvent.length === 0">
               <td colspan="6">
                 <div class="empty-state">
-                  <div class="empty-state-icon">
-                    🎟️
-                  </div>
+                  <div class="empty-state-icon">🎟️</div>
                   <div class="empty-state-text">
                     No hay datos de ventas aún.
                   </div>
                 </div>
               </td>
             </tr>
-            <template
-              v-for="(row, i) in salesByEvent"
-              :key="row.id_event"
-            >
+            <template v-for="(row, i) in salesByEvent" :key="row.id_event">
               <!-- fila principal del evento -->
               <tr
                 class="event-row"
@@ -71,7 +59,8 @@
                             ? 'bronze'
                             : '',
                     ]"
-                  >{{ i + 1 }}</span>
+                    >{{ i + 1 }}</span
+                  >
                 </td>
                 <td class="td-name">
                   {{ row.event_name }}
@@ -99,10 +88,7 @@
                 :key="`detail-${row.id_event}`"
                 class="detail-row"
               >
-                <td
-                  colspan="6"
-                  class="td-detail"
-                >
+                <td colspan="6" class="td-detail">
                   <table class="detail-table">
                     <thead>
                       <tr>
@@ -163,10 +149,7 @@
     </div>
 
     <!-- ── Ranking de interés ────────────────────────────────────────────── -->
-    <div
-      class="card"
-      style="margin-top: 24px"
-    >
+    <div class="card" style="margin-top: 24px">
       <div class="report-header">
         <span class="report-title">Ranking de interés por evento</span>
       </div>
@@ -181,29 +164,19 @@
           </thead>
           <tbody>
             <tr v-if="loadingInterest">
-              <td
-                colspan="3"
-                class="td-loading"
-              >
-                Cargando…
-              </td>
+              <td colspan="3" class="td-loading">Cargando…</td>
             </tr>
             <tr v-else-if="interestReport.length === 0">
               <td colspan="3">
                 <div class="empty-state">
-                  <div class="empty-state-icon">
-                    📊
-                  </div>
+                  <div class="empty-state-icon">📊</div>
                   <div class="empty-state-text">
                     No hay datos de interés aún.
                   </div>
                 </div>
               </td>
             </tr>
-            <tr
-              v-for="(row, i) in interestReport"
-              :key="row['Event Name']"
-            >
+            <tr v-for="(row, i) in interestReport" :key="row['Event Name']">
               <td class="td-rank">
                 <span
                   :class="[
@@ -216,7 +189,8 @@
                           ? 'bronze'
                           : '',
                   ]"
-                >{{ i + 1 }}</span>
+                  >{{ i + 1 }}</span
+                >
               </td>
               <td class="td-name">
                 {{ row['Event Name'] }}
@@ -239,10 +213,7 @@
     </div>
 
     <!-- ── Ranking de favoritos ──────────────────────────────────────────── -->
-    <div
-      class="card"
-      style="margin-top: 24px"
-    >
+    <div class="card" style="margin-top: 24px">
       <div class="report-header">
         <span class="report-title">Ranking de eventos favoritos</span>
       </div>
@@ -257,29 +228,19 @@
           </thead>
           <tbody>
             <tr v-if="loadingFavorites">
-              <td
-                colspan="3"
-                class="td-loading"
-              >
-                Cargando…
-              </td>
+              <td colspan="3" class="td-loading">Cargando…</td>
             </tr>
             <tr v-else-if="favoritesReport.length === 0">
               <td colspan="3">
                 <div class="empty-state">
-                  <div class="empty-state-icon">
-                    ❤️
-                  </div>
+                  <div class="empty-state-icon">❤️</div>
                   <div class="empty-state-text">
                     No hay datos de favoritos aún.
                   </div>
                 </div>
               </td>
             </tr>
-            <tr
-              v-for="(row, i) in favoritesReport"
-              :key="row.event_name"
-            >
+            <tr v-for="(row, i) in favoritesReport" :key="row.event_name">
               <td class="td-rank">
                 <span
                   :class="[
@@ -292,7 +253,8 @@
                           ? 'bronze'
                           : '',
                   ]"
-                >{{ i + 1 }}</span>
+                  >{{ i + 1 }}</span
+                >
               </td>
               <td class="td-name">
                 {{ row.event_name }}
