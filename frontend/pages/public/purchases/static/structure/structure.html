@@ -193,8 +193,8 @@
 
           <div v-if="p.tickets?.length" class="tickets-section">
             <button class="tickets-toggle" @click="toggleOpen(p.idPurchase)">
-              {{ openIds.has(p.idPurchase) ? '▲ Ocultar boletas' : '▼ Ver
-              boletas (' + p.tickets.length + ')' }}
+              <span v-if="openIds.has(p.idPurchase)">▲ Ocultar boletas</span>
+              <span v-else>▼ Ver boletas ({{ p.tickets.length }})</span>
             </button>
             <div v-if="openIds.has(p.idPurchase)" class="tickets-list">
               <div v-for="t in p.tickets" :key="t.idTicket" class="ticket-row">
