@@ -83,6 +83,7 @@ export function useAuth() {
 
   const isAdmin = computed(() => role.value === 'admin');
   const isExternal = computed(() => role.value === 'external');
+  const isGuest = computed(() => role.value === 'guest');
 
   function restoreSession() {
     if (import.meta.client) {
@@ -254,6 +255,7 @@ export function useAuth() {
     isAuthenticated,
     isAdmin,
     isExternal,
+    isGuest,
     login,
     register,
     logout,

@@ -15,10 +15,11 @@ export interface Event {
     id_category: number;
     categoryName: string;
   };
-  images?: { image_url: string; type: string }[];
+  images?: readonly { readonly image_url: string; readonly type: string }[];
   categoryName?: string;
   imageUrl?: string | null;
-  ticketTypes?: any[];
+  min_price?: number | null;
+  ticketTypes?: readonly any[];
 }
 
 export interface EventForm {

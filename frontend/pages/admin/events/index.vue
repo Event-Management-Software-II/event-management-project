@@ -634,7 +634,7 @@ interface TicketTypeRow {
   capacity: string;
 }
 
-interface ExtendedEventForm extends EventForm {
+interface ExtendedEventForm extends Omit<EventForm, 'ticketTypes'> {
   ticketTypes: TicketTypeRow[];
   image_url: string | null;
 }
