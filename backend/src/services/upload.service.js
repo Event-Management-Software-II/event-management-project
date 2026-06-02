@@ -47,7 +47,10 @@ const deleteImage = async (imageUrl) => {
     await cloudinary.uploader.destroy(publicId);
   } catch (err) {
     // No es crítico si falla la eliminación; solo se loguea
-    console.error('[uploadService] Error al eliminar imagen en Cloudinary:', err);
+    console.error(
+      '[uploadService] Error al eliminar imagen en Cloudinary:',
+      err
+    );
   }
 };
 

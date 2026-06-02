@@ -97,12 +97,18 @@
               :key="ev.id_event"
               :class="{ 'row-deleted': ev.deleted_at }"
             >
-              <td class="td-name">{{ ev.eventName }}</td>
+              <td class="td-name">
+                {{ ev.eventName }}
+              </td>
               <td class="td-secondary">
                 {{ ev.category?.categoryName ?? ev.categoryName }}
               </td>
-              <td class="td-secondary">{{ formatPrice(ev) }}</td>
-              <td class="td-secondary">{{ ev.location }}</td>
+              <td class="td-secondary">
+                {{ formatPrice(ev) }}
+              </td>
+              <td class="td-secondary">
+                {{ ev.location }}
+              </td>
               <td>
                 <span
                   :class="[
@@ -119,13 +125,13 @@
                     variant="ghost"
                     size="sm"
                     icon-only
+                    title="Editar"
                     @click="
                       openModal('edit', {
                         ...ev,
                         images: ev.images ? [...ev.images] : undefined,
                       })
                     "
-                    title="Editar"
                   >
                     <template #icon>
                       <svg
@@ -154,13 +160,13 @@
                     variant="danger"
                     size="sm"
                     icon-only
+                    title="Eliminar"
                     @click="
                       confirmDelete({
                         ...ev,
                         images: ev.images ? [...ev.images] : undefined,
                       })
                     "
-                    title="Eliminar"
                   >
                     <template #icon>
                       <svg
@@ -195,8 +201,8 @@
                     variant="secondary"
                     size="sm"
                     icon-only
-                    @click="handleRestore(ev.id_event)"
                     title="Restaurar"
+                    @click="handleRestore(ev.id_event)"
                   >
                     <template #icon>
                       <svg
@@ -374,8 +380,8 @@
                       <button
                         type="button"
                         class="ticket-type-remove"
-                        @click="removeTicketType(idx)"
                         title="Eliminar"
+                        @click="removeTicketType(idx)"
                       >
                         <svg
                           width="12"
@@ -500,9 +506,9 @@
               </p>
             </div>
             <div class="modal-footer">
-              <AppButtonAdmin variant="secondary" @click="closeModal"
-                >Cancelar</AppButtonAdmin
-              >
+              <AppButtonAdmin variant="secondary" @click="closeModal">
+                Cancelar
+              </AppButtonAdmin>
               <AppButtonAdmin variant="primary" :loading="saving" @click="save">
                 {{ mode === 'create' ? 'Guardar' : 'Actualizar' }}
               </AppButtonAdmin>
@@ -540,14 +546,16 @@
               <AppButtonAdmin
                 variant="secondary"
                 @click="deleteConfirmOpen = false"
-                >Cancelar</AppButtonAdmin
               >
+                Cancelar
+              </AppButtonAdmin>
               <AppButtonAdmin
                 variant="danger"
                 :loading="deleting"
                 @click="handleDelete"
-                >Eliminar</AppButtonAdmin
               >
+                Eliminar
+              </AppButtonAdmin>
             </div>
           </div>
         </div>
@@ -560,7 +568,7 @@
 import type { Event, EventForm } from '~/composables/useEvents';
 import AppButtonAdmin from '~/components/admin/AppButtonAdmin.vue';
 import AppInputAdmin from '~/components/admin/AppInputAdmin.vue';
-import ImageUpload from '~/components/admin/ImageUpload.vue'; 
+import ImageUpload from '~/components/admin/ImageUpload.vue';
 
 definePageMeta({ layout: 'admin' });
 
@@ -626,7 +634,7 @@ interface TicketTypeRow {
   capacity: string;
 }
 
-interface ExtendedEventForm extends EventForm {
+interface ExtendedEventForm extends Omit<EventForm, 'ticketTypes'> {
   ticketTypes: TicketTypeRow[];
   image_url: string | null;
 }

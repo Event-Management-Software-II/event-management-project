@@ -7,7 +7,11 @@
 
     <!-- Preview cuando ya hay una imagen (existente o recién subida) -->
     <div v-if="previewUrl" class="image-upload__preview-wrap">
-      <img :src="previewUrl" alt="Preview del evento" class="image-upload__preview" />
+      <img
+        :src="previewUrl"
+        alt="Preview del evento"
+        class="image-upload__preview"
+      />
       <button
         type="button"
         class="image-upload__remove"
@@ -46,13 +50,33 @@
       />
 
       <template v-if="!uploading">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" class="image-upload__icon">
-          <rect x="3" y="3" width="18" height="18" rx="3" stroke="currentColor" stroke-width="1.6" />
+        <svg
+          width="28"
+          height="28"
+          viewBox="0 0 24 24"
+          fill="none"
+          class="image-upload__icon"
+        >
+          <rect
+            x="3"
+            y="3"
+            width="18"
+            height="18"
+            rx="3"
+            stroke="currentColor"
+            stroke-width="1.6"
+          />
           <circle cx="8.5" cy="8.5" r="1.5" fill="currentColor" />
-          <path d="M21 15l-5-5L5 21" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+          <path
+            d="M21 15l-5-5L5 21"
+            stroke="currentColor"
+            stroke-width="1.6"
+            stroke-linecap="round"
+          />
         </svg>
         <span class="image-upload__cta">
-          Arrastra una imagen o <span class="image-upload__link">selecciona un archivo</span>
+          Arrastra una imagen o
+          <span class="image-upload__link">selecciona un archivo</span>
         </span>
       </template>
 
@@ -78,7 +102,9 @@
       </template>
     </label>
 
-    <p v-if="error" class="image-upload__error">{{ error }}</p>
+    <p v-if="error" class="image-upload__error">
+      {{ error }}
+    </p>
   </div>
 </template>
 
@@ -256,7 +282,9 @@ async function uploadFile(file: File) {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* ── Preview ── */

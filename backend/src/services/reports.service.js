@@ -293,13 +293,29 @@ const getAdminHomeStats = async () => {
     };
   });
 
-  const MONTH_NAMES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+  const MONTH_NAMES = [
+    'Ene',
+    'Feb',
+    'Mar',
+    'Abr',
+    'May',
+    'Jun',
+    'Jul',
+    'Ago',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dic',
+  ];
   const monthMap = {};
   for (let i = 5; i >= 0; i--) {
     const d = new Date(now);
     d.setMonth(d.getMonth() - i);
     const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-    monthMap[key] = { label: `${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}`, revenue: 0 };
+    monthMap[key] = {
+      label: `${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}`,
+      revenue: 0,
+    };
   }
   for (const p of monthlyPurchases) {
     const d = new Date(p.created_at);

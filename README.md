@@ -1,4 +1,6 @@
-# Eventos Boyacá — Plataforma de Gestión y Venta de Entradas
+# event-management-project
+
+This a webapp for viewing and managing events. This project includes the development and the engineering behind the bulding process for an app. This is an academic project and it belongs to "Software Engineering II" subject.
 
 Aplicación web full-stack para la gestión y venta de entradas a eventos presenciales en Colombia, desarrollada como proyecto de la materia **Software II**.
 
@@ -411,44 +413,14 @@ npm install
 npm run dev             # http://localhost:3002
 ```
 
-### 8.5 LLM (Ollama)
+Notes:
 
-```bash
-docker pull ollama/ollama
-docker run -d --name ollama \
-  -v ollama:/root/.ollama \
-  -p 11434:11434 \
-  -e OLLAMA_ORIGINS="*" \
-  ollama/ollama
-docker exec -it ollama ollama pull qwen2.5:0.5b
-```
-
----
-
-## 9. Variables de entorno
-
-### Backend (`backend/.env`)
-
-| Variable | Descripción | Ejemplo |
-|---|---|---|
-| `DATABASE_URL` | Conexión a PostgreSQL | `postgresql://postgres:admin@localhost:5432/gestor_eventos` |
-| `PORT` | Puerto del backend | `3001` |
-| `JWT_SECRET` | Clave secreta para tokens | `mi-clave-secreta` |
-| `FRONTEND_URL` | URL del frontend para CORS | `http://localhost:3002` |
-| `PAYMENT_GATEWAY_URL` | URL de la pasarela de pagos | `http://localhost:3003` |
-| `CLOUDINARY_CLOUD_NAME` | Nombre del cloud en Cloudinary | `mi-cloud` |
-| `CLOUDINARY_API_KEY` | API Key de Cloudinary | `123456789` |
-| `CLOUDINARY_API_SECRET` | Secret de Cloudinary | `mi-secret` |
-
-### Credenciales de prueba (seeds)
+- Archivos añadidos: `package.json`, `nuxt.config.ts`, `tsconfig.json`, `app.vue`, `pages/index.vue`, `components/EventCard.vue`, `assets/styles/main.css`.
+- Siguiente: instalar dependencias y ajustar layout/Design System según el equipo.
 
 | Rol | Email | Contraseña |
 |---|---|---|
 | Admin | `admin@eventos.com` | `admin123` |
 | Usuario | `cliente@eventos.com` | `cliente123` |
 
----
-
-## 10. Integrantes
-
-Proyecto desarrollado por el grupo **8MB P6G** — Materia Software II, Semestre 2026-I.
+He añadido un Design System base con tokens CSS (colores, radios, sombras, tipografías) en `assets/styles/main.css` y actualicé el `EventCard` para usar las variables y estilos responsivos.

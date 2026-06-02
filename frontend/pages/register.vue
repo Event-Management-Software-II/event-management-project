@@ -217,7 +217,7 @@ async function submit() {
   if (result.success) {
     await navigateTo('/public');
   } else {
-    errors.value = result.errors ?? {};
+    errors.value = result.message ? { _global: result.message } : {};
   }
 }
 </script>

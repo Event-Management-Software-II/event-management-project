@@ -1,4 +1,3 @@
-const { Prisma } = require('@prisma/client');
 const prisma = require('../prisma/prisma');
 const NodeCache = require('node-cache');
 

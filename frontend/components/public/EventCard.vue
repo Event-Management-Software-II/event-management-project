@@ -12,15 +12,17 @@
         v-else
         class="image-placeholder"
         :style="{ background: categoryGradient }"
-      ></div>
-      <div class="category-badge">{{ event.categoryName }}</div>
+      />
+      <div class="category-badge">
+        {{ event.categoryName }}
+      </div>
       <span v-if="!isActive" class="past-badge">Finalizado</span>
       <button
         v-if="isActive"
         class="btn-like"
         :class="{ active: liked }"
-        @click.stop="toggleLike"
         :title="liked ? 'Ya no me interesa' : 'Me interesa'"
+        @click.stop="toggleLike"
       >
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
           <path
@@ -40,8 +42,12 @@
         <span>📅 {{ formatDate(event.date_time) }}</span>
         <span>📍 {{ event.location }}</span>
       </p>
-      <h2 class="card-title">{{ event.eventName }}</h2>
-      <p class="card-description">{{ event.description }}</p>
+      <h2 class="card-title">
+        {{ event.eventName }}
+      </h2>
+      <p class="card-description">
+        {{ event.description }}
+      </p>
     </div>
 
     <!-- Footer -->
@@ -125,11 +131,12 @@
               <NuxtLink
                 to="/register"
                 class="guest-modal-btn guest-modal-btn--primary"
-                >Registrarse</NuxtLink
               >
-              <NuxtLink to="/login" class="guest-modal-btn"
-                >Iniciar sesión</NuxtLink
-              >
+                Registrarse
+              </NuxtLink>
+              <NuxtLink to="/login" class="guest-modal-btn">
+                Iniciar sesión
+              </NuxtLink>
             </div>
           </div>
         </div>
@@ -178,7 +185,9 @@ onMounted(async () => {
         const data = await res.json();
         liked.value = data.favorited;
       }
-    } catch {}
+    } catch (_e) {
+      // Error al verificar favorito — se ignora silenciosamente
+    }
   }
 });
 
