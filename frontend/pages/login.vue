@@ -22,7 +22,9 @@
             :class="{ 'field-input--error': errors.email }"
             @keyup.enter="submit"
           />
-          <p v-if="errors.email" class="field-error">{{ errors.email }}</p>
+          <p v-if="errors.email" class="field-error">
+            {{ errors.email }}
+          </p>
         </div>
 
         <div class="field">
@@ -41,8 +43,8 @@
             <button
               class="toggle-pass"
               type="button"
-              @click="showPass = !showPass"
               tabindex="-1"
+              @click="showPass = !showPass"
             >
               <svg
                 v-if="showPass"
@@ -86,9 +88,9 @@
         </div>
 
         <div class="auth-forgot">
-          <NuxtLink to="/forgot-password" class="auth-link"
-            >¿Olvidaste tu contraseña?</NuxtLink
-          >
+          <NuxtLink to="/forgot-password" class="auth-link">
+            ¿Olvidaste tu contraseña?
+          </NuxtLink>
         </div>
 
         <button
@@ -122,13 +124,13 @@
 
       <p class="auth-footer-text">
         ¿No tienes cuenta?
-        <NuxtLink to="/register" class="auth-link">Regístrate</NuxtLink>
+        <NuxtLink to="/register" class="auth-link"> Regístrate </NuxtLink>
       </p>
 
       <p class="auth-footer-text" style="margin-top: 8px">
-        <NuxtLink to="/public" class="auth-link auth-link--muted"
-          >Continuar como invitado →</NuxtLink
-        >
+        <NuxtLink to="/public" class="auth-link auth-link--muted">
+          Continuar como invitado →
+        </NuxtLink>
       </p>
     </div>
   </div>
@@ -149,7 +151,7 @@ async function submit() {
   errors.value = {};
   const result = await login(form.value);
   if (result.success) {
-    if (isAdmin.value) await navigateTo('/admin');
+    if (isAdmin.value) await navigateTo('/admin/events');
     else await navigateTo('/public');
   } else {
     errors.value = (result as any).errors ?? {};

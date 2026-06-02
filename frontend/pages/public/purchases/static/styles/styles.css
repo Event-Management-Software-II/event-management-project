@@ -393,15 +393,15 @@
 
 .purchase-badge {
   display: inline-block;
-  width: 95px;                /* Ancho fijo para simetría perfecta */
-  text-align: center;         /* Centra el contenido textual interno */
-  padding: 4px 0;             /* Relleno vertical controlado */
+  width: 95px; /* Ancho fijo para simetría perfecta */
+  text-align: center; /* Centra el contenido textual interno */
+  padding: 4px 0; /* Relleno vertical controlado */
   border-radius: 20px;
   font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.03em;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
-  box-sizing: border-box;     /* Mantiene los 95px exactos con el padding activo */
+  box-sizing: border-box; /* Mantiene los 95px exactos con el padding activo */
 }
 
 /* Variantes del Evento */

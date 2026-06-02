@@ -37,11 +37,9 @@ const createCatalogItem = async (req, res) => {
     return res.status(400).json({ error: 'Type name is required' });
 
   if (!TYPE_NAME_REGEX.test(typeName))
-    return res
-      .status(400)
-      .json({
-        error: 'Invalid type name: only letters, numbers and spaces allowed',
-      });
+    return res.status(400).json({
+      error: 'Invalid type name: only letters, numbers and spaces allowed',
+    });
 
   try {
     const data = await catalogService.createCatalogItem(typeName);
